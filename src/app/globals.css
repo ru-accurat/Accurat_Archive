@@ -1,26 +1,82 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('https://rsms.me/inter/font-files/InterVariable.woff2') format('woff2');
+}
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --c-black: #0a0a0a;
+  --c-white: #ffffff;
+  --c-off-white: #f7f7f5;
+
+  --c-gray-50: #fafaf9;
+  --c-gray-100: #f3f3f1;
+  --c-gray-200: #e5e5e2;
+  --c-gray-300: #d4d4d0;
+  --c-gray-400: #a3a3a0;
+  --c-gray-500: #737370;
+  --c-gray-600: #525250;
+  --c-gray-700: #3f3f3d;
+  --c-gray-800: #292929;
+  --c-gray-900: #171717;
+  --c-gray-950: #0a0a0a;
+
+  --c-accent: #3b82f6;
+  --c-accent-hover: #2563eb;
+  --c-accent-light: #eff6ff;
+  --c-accent-muted: #93c5fd;
+
+  --c-success: #22c55e;
+  --c-warning: #eab308;
+  --c-error: #ef4444;
+  --c-ai: #a78bfa;
+  --c-ai-bg: #f5f3ff;
+
+  --max-w: 1040px;
+  --sidebar-w: 260px;
+  --topbar-h: 48px;
+
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 2px 8px rgba(0,0,0,.05);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,.07);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+* { box-sizing: border-box; margin: 0; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  color: var(--c-gray-900);
+  background: var(--c-white);
+  line-height: 1.6;
+  letter-spacing: -0.011em;
 }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--c-gray-300); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--c-gray-400); }
+
+.dark-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); }
+.dark-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.25); }
+
+:focus-visible { outline: 2px solid var(--c-accent-muted); outline-offset: 1px; }
+::selection { background: var(--c-accent-light); color: var(--c-accent); }
+
+input, textarea, select { font-family: inherit; font-size: inherit; letter-spacing: inherit; }
+
+img, video { display: block; }
