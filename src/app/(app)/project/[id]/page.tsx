@@ -93,8 +93,17 @@ export default function ProjectPage() {
 
   const handleFilesSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!id || !e.target.files?.length) return
-    await api.addMedia(id, e.target.files)
-    window.location.reload()
+    try {
+      const result = await api.addMedia(id, e.target.files)
+      if (result.success) {
+        window.location.reload()
+      } else {
+        alert('Upload failed. Please try again.')
+      }
+    } catch (err) {
+      console.error('Media upload error:', err)
+      alert('Upload failed: ' + String(err))
+    }
   }, [id])
 
   const handleDeleteMedia = useCallback(async (filename: string) => {

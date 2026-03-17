@@ -47,12 +47,16 @@ export default function SettingsPage() {
     if (!file) return
     setImportParsing(true)
     try {
-      const res = await api.parseCsvForImport(file) as { headers: string[]; rows: Record<string, string>[]; rowCount: number }
+      const res = await api.parseCsvForImport(file) as {
+        headers: string[]; rows: Record<string, string>[]; rowCount: number;
+        matches?: { rowIndex: number; projectId: string; projectFullName: string; matchType: string }[];
+        totalProjects?: number;
+      }
       setImportData({
         headers: res.headers,
         rows: res.rows,
-        matches: [],
-        totalProjects: res.rowCount,
+        matches: res.matches || [],
+        totalProjects: res.totalProjects || res.rowCount,
       })
       setImportModalOpen(true)
     } catch (err) {

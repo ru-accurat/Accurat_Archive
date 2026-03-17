@@ -7,7 +7,7 @@ import { useFilterOptions } from '@/hooks/use-filters'
 interface FilterDef {
   key: string
   label: string
-  storeKey: 'section' | 'domains' | 'services' | 'output' | 'tier'
+  storeKey: 'section' | 'domains' | 'services' | 'output' | 'tier' | 'missing'
   options: string[]
   selected: string[]
   onChange: (v: string[]) => void
@@ -58,6 +58,14 @@ export function FilterAccordion() {
       options: ['1', '2', '3'],
       selected: filters.tier.map(String),
       onChange: (v) => setFilter('tier', v.map(Number))
+    },
+    {
+      key: 'missing',
+      label: 'Missing',
+      storeKey: 'missing',
+      options: ['description', 'media'],
+      selected: filters.missing,
+      onChange: (v) => setFilter('missing', v)
     }
   ]
 

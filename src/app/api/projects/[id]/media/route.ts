@@ -85,5 +85,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!error) uploaded++
   }
 
+  // Update media_order in DB to include new files
+  if (uploaded > 0) {
+    const { data: allFiles } = await supabase.storage
+      .from('project-media')
+      .list(project.folder_name, { sortBy: { column: 'name', order: 'asc' } })
+
+    if (allFiles) {
+      const mediaOrder = allFiles
+        .filter(f => {
+          const ext = '.' + f.name.split('.').pop()?.toLowerCase()
+          return IMAGE_EXTS.has(ext) || VIDEO_EXTS.has(ext)
+        })
+        .map(f => f.name)
+
+      await supabase
+        .from('projects')
+        .update({ media_order: mediaOrder })
+        .eq('id', id)
+    }
+  }
+
   return NextResponse.json({ success: true, uploaded })
 }

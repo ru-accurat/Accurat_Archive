@@ -11,6 +11,7 @@ export function FilterBar() {
     filters.output.length +
     filters.section.length +
     filters.tier.length +
+    filters.missing.length +
     (filters.yearRange[0] !== null ? 1 : 0)
 
   if (activeCount === 0 && !filters.search) return null
@@ -52,6 +53,14 @@ export function FilterBar() {
           key={s}
           label={s}
           onRemove={() => setFilter('section', filters.section.filter((x) => x !== s))}
+        />
+      ))}
+
+      {filters.missing.map((m) => (
+        <Chip
+          key={`missing-${m}`}
+          label={`Missing ${m}`}
+          onRemove={() => setFilter('missing', filters.missing.filter((x) => x !== m))}
         />
       ))}
 
