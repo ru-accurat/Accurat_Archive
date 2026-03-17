@@ -30,8 +30,8 @@ const IMAGES_DIR = path.resolve(__dirname, '../../Images')
 const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif'])
 const VIDEO_EXTS = new Set(['.mp4', '.mov', '.avi', '.webm'])
 
-/** Sanitize folder name for Supabase Storage compatibility */
-function sanitizeFolder(name: string): string {
+/** Sanitize a name for Supabase Storage compatibility */
+function sanitize(name: string): string {
   return name
     .replace(/°/g, '')
     .replace(/[—–]/g, '-')
