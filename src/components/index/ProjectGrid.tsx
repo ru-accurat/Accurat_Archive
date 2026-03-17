@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api-client'
-import { mediaUrl } from '@/lib/media-url'
 import { useFilteredProjects } from '@/hooks/use-filters'
 
 type SpecialMediaMap = Record<string, { header: string | null; thumb: string | null; first: string | null }>
@@ -28,13 +27,10 @@ export function ProjectGrid() {
       >
         {filteredProjects.map((project) => {
           const special = specialMedia[project.folderName]
-          // Priority: project.thumbImage > Thumb special > Header special > project.heroImage > first image
-          const thumbFile = project.thumbImage || special?.thumb || special?.header || project.heroImage || special?.first
+          // Special media values are already full URLs from the API
+          const heroSrc = special?.thumb || special?.header || special?.first || null
           const hasMedia = !!(special?.first || special?.header || special?.thumb)
           const hasDescription = !!project.description
-          const heroSrc = thumbFile
-            ? mediaUrl(project.folderName, thumbFile)
-            : null
 
           return (
             <div
