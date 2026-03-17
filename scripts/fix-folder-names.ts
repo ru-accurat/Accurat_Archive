@@ -78,9 +78,9 @@ async function main() {
     return
   }
 
-  // Find projects that need fixing
+  // Find projects whose folder or media files have special chars
   const toFix = projects.filter(p => {
-    const sanitized = sanitizeFolder(p.folder_name)
+    const sanitized = sanitize(p.folder_name)
     return sanitized !== p.folder_name
   })
 
@@ -92,63 +92,87 @@ async function main() {
   console.log(`Found ${toFix.length} projects with special characters:\n`)
 
   for (const project of toFix) {
-    const oldName = project.folder_name
-    const newName = sanitizeFolder(oldName)
-    console.log(`  "${oldName}" → "${newName}"`)
+    const oldFolderName = project.folder_name
+    const newFolderName = sanitize(oldFolderName)
+    console.log(`  "${oldFolderName}" → "${newFolderName}"`)
 
-    // 1. Update the database
+    // 1. Upload media under sanitized folder AND file names
+    const localFolder = path.join(IMAGES_DIR, oldFolderName)
+    const fileRenameMap: Record<string, string> = {} // old filename → new filename
+
+    if (fs.existsSync(localFolder)) {
+      const files = fs.readdirSync(localFolder).filter(f => {
+        const ext = path.extname(f).toLowerCase()
+        return IMAGE_EXTS.has(ext) || VIDEO_EXTS.has(ext)
+      })
+
+      let uploaded = 0
+      let errors = 0
+      const concurrency = 5
+
+      for (let i = 0; i < files.length; i += concurrency) {
+        const batch = files.slice(i, i + concurrency)
+        const results = await Promise.all(
+          batch.map(file => {
+            const sanitizedFile = sanitize(file)
+            fileRenameMap[file] = sanitizedFile
+            const localPath = path.join(localFolder, file)
+            const storagePath = `${newFolderName}/${sanitizedFile}`
+            return uploadFile('project-media', storagePath, localPath)
+          })
+        )
+        for (const ok of results) {
+          if (ok) uploaded++
+          else errors++
+        }
+      }
+
+      console.log(`  Uploaded ${uploaded} files${errors ? `, ${errors} errors` : ''}`)
+
+      // Clean up old storage files (best effort)
+      const { data: oldFiles } = await supabase.storage
+        .from('project-media')
+        .list(oldFolderName)
+
+      if (oldFiles && oldFiles.length > 0) {
+        const oldPaths = oldFiles.map(f => `${oldFolderName}/${f.name}`)
+        await supabase.storage.from('project-media').remove(oldPaths)
+        console.log(`  Cleaned up ${oldPaths.length} old storage files`)
+      }
+    } else {
+      console.log(`  No local folder found, skipping media upload`)
+    }
+
+    // 2. Update the database: folder_name + media references
+    const { data: fullProject } = await supabase
+      .from('projects')
+      .select('media_order, hero_image, thumb_image')
+      .eq('id', project.id)
+      .single()
+
+    const updates: Record<string, unknown> = { folder_name: newFolderName }
+
+    if (fullProject) {
+      if (fullProject.media_order) {
+        updates.media_order = (fullProject.media_order as string[]).map(
+          f => fileRenameMap[f] || sanitize(f)
+        )
+      }
+      if (fullProject.hero_image) {
+        updates.hero_image = fileRenameMap[fullProject.hero_image] || sanitize(fullProject.hero_image)
+      }
+      if (fullProject.thumb_image) {
+        updates.thumb_image = fileRenameMap[fullProject.thumb_image] || sanitize(fullProject.thumb_image)
+      }
+    }
+
     const { error: updateErr } = await supabase
       .from('projects')
-      .update({ folder_name: newName })
+      .update(updates)
       .eq('id', project.id)
 
     if (updateErr) {
       console.error(`  DB update failed: ${updateErr.message}`)
-      continue
-    }
-
-    // 2. Upload media under the new folder name
-    const localFolder = path.join(IMAGES_DIR, oldName)
-    if (!fs.existsSync(localFolder)) {
-      console.log(`  No local folder found, skipping media upload`)
-      continue
-    }
-
-    const files = fs.readdirSync(localFolder).filter(f => {
-      const ext = path.extname(f).toLowerCase()
-      return IMAGE_EXTS.has(ext) || VIDEO_EXTS.has(ext)
-    })
-
-    let uploaded = 0
-    let errors = 0
-    const concurrency = 5
-
-    for (let i = 0; i < files.length; i += concurrency) {
-      const batch = files.slice(i, i + concurrency)
-      const results = await Promise.all(
-        batch.map(file => {
-          const localPath = path.join(localFolder, file)
-          const storagePath = `${newName}/${file}`
-          return uploadFile('project-media', storagePath, localPath)
-        })
-      )
-      for (const ok of results) {
-        if (ok) uploaded++
-        else errors++
-      }
-    }
-
-    console.log(`  Uploaded ${uploaded} files${errors ? `, ${errors} errors` : ''}`)
-
-    // 3. Try to remove old files from storage (best effort)
-    const { data: oldFiles } = await supabase.storage
-      .from('project-media')
-      .list(oldName)
-
-    if (oldFiles && oldFiles.length > 0) {
-      const oldPaths = oldFiles.map(f => `${oldName}/${f.name}`)
-      await supabase.storage.from('project-media').remove(oldPaths)
-      console.log(`  Cleaned up ${oldPaths.length} old storage files`)
     }
   }
 
