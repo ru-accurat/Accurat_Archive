@@ -109,9 +109,11 @@ export function ChecklistTagField({ title, tags, onChange, allTags }: Props) {
             {allUnique.map((tag) => {
               const checked = pending.includes(tag)
               return (
-                <label
+                <button
+                  type="button"
                   key={tag}
-                  className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-[var(--c-gray-50)] transition-colors duration-100"
+                  onClick={() => toggleTag(tag)}
+                  className="flex items-center gap-3 px-4 py-2 w-full text-left cursor-pointer hover:bg-[var(--c-gray-50)] transition-colors duration-100"
                 >
                   <span
                     className={`w-4 h-4 rounded-[3px] border flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
@@ -127,7 +129,7 @@ export function ChecklistTagField({ title, tags, onChange, allTags }: Props) {
                     )}
                   </span>
                   <span className="text-[13px] font-[400] text-[var(--c-gray-700)]">{tag}</span>
-                </label>
+                </button>
               )
             })}
             {allUnique.length === 0 && (
