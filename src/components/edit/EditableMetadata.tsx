@@ -1,3 +1,5 @@
+'use client'
+
 interface Props {
   client: string
   start: number | null
@@ -15,6 +17,7 @@ interface Props {
 }
 
 const inputClass = "w-full px-0 py-2 text-[13px] font-[400] bg-transparent border-b border-[var(--c-gray-200)] focus:border-[var(--c-gray-900)] focus:outline-none transition-colors duration-200 text-[var(--c-gray-800)]"
+const selectClass = "w-full px-0 py-2 text-[13px] font-[400] bg-white border-b border-[var(--c-gray-200)] focus:border-[var(--c-gray-900)] focus:outline-none transition-colors duration-200 text-[var(--c-gray-800)] cursor-pointer"
 const labelClass = "text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] block mb-1"
 
 export function EditableMetadata({
@@ -73,7 +76,7 @@ export function EditableMetadata({
           <select
             value={section}
             onChange={(e) => onSectionChange(e.target.value)}
-            className={inputClass}
+            className={selectClass}
           >
             <option value="">—</option>
             <option value="Studio">Studio</option>
@@ -86,7 +89,7 @@ export function EditableMetadata({
           <select
             value={tier}
             onChange={(e) => onTierChange(parseInt(e.target.value))}
-            className={inputClass}
+            className={selectClass}
           >
             <option value={1}>1</option>
             <option value={2}>2</option>
@@ -95,12 +98,12 @@ export function EditableMetadata({
         </div>
       </div>
 
-      <div className="col-span-3">
+      <div className="col-span-3 relative z-10">
         <label className={labelClass}>Category</label>
         <select
           value={output}
           onChange={(e) => onOutputChange(e.target.value)}
-          className={inputClass}
+          className={selectClass}
         >
           <option value="">—</option>
           {outputOptions.map((o) => (
