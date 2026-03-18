@@ -27,7 +27,7 @@ import { AiDiffModal } from '@/components/edit/AiDiffModal'
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { project, media, heroMedia, galleryMedia, loading, setProject } = useProjectDetail(id)
+  const { project, media, setMedia, heroMedia, galleryMedia, loading, setProject } = useProjectDetail(id)
   const filteredProjects = useFilteredProjects()
   const filterOptions = useFilterOptions()
   const updateProjectInStore = useProjectStore((s) => s.updateProject)
@@ -41,6 +41,7 @@ export default function ProjectPage() {
   const [generatingField, setGeneratingField] = useState<string | null>(null)
   const [aiResult, setAiResult] = useState<{ field: string; text: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
 
   useKeyboardNav(editMode ? [] : filteredProjects, id)
 
@@ -83,6 +84,10 @@ export default function ProjectPage() {
     setSaving(false)
   }, [draft, id, setProject, updateProjectInStore])
 
+  const setField = useCallback(<K extends keyof Project>(key: K, value: Project[K]) => {
+    setDraft((prev) => (prev ? { ...prev, [key]: value } : null))
+  }, [])
+
   const handleRestore = useCallback((entry: HistoryEntry) => {
     if (confirm('Restore this version? Current unsaved changes will be lost.')) {
       setDraft({ ...entry.project })
@@ -106,11 +111,64 @@ export default function ProjectPage() {
     }
   }, [id])
 
-  const handleDeleteMedia = useCallback(async (filename: string) => {
-    if (!id) return
-    const result = await api.deleteMedia(id, filename)
-    if (result.success) window.location.reload()
+  const handleDeleteMedia = useCallback(async (filenames: string[]) => {
+    if (!id || filenames.length === 0) return
+    try {
+      const result = await api.batchDeleteMedia(id, filenames)
+      if (result.success) window.location.reload()
+    } catch (err) {
+      console.error('Batch delete error:', err)
+      alert('Failed to delete media: ' + String(err))
+    }
   }, [id])
+
+  const handleReorderMedia = useCallback(async (orderedFilenames: string[]) => {
+    if (!id) return
+    // Update local state immediately for snappy UI
+    setMedia((prev) => {
+      const byName = new Map(prev.map((m) => [m.filename, m]))
+      return orderedFilenames.map((fn) => byName.get(fn)).filter(Boolean) as typeof prev
+    })
+    setField('mediaOrder', orderedFilenames)
+    // Persist to DB
+    try {
+      await api.reorderMedia(id, orderedFilenames)
+    } catch (err) {
+      console.error('Reorder error:', err)
+    }
+  }, [id, setField])
+
+  const handleUploadLogo = useCallback(() => { logoInputRef.current?.click() }, [])
+
+  const handleLogoSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!id || !e.target.files?.length) return
+    try {
+      const result = await api.uploadLogo(id, e.target.files[0])
+      if (result.success) {
+        setField('clientLogo', result.filename)
+        setProject((prev) => prev ? { ...prev, clientLogo: result.filename } : null)
+      }
+    } catch (err) {
+      console.error('Logo upload error:', err)
+      alert('Logo upload failed: ' + String(err))
+    }
+    e.target.value = ''
+  }, [id, setField, setProject])
+
+  const handleDeleteLogo = useCallback(async () => {
+    if (!id) return
+    if (!confirm('Delete client logo?')) return
+    try {
+      const result = await api.deleteLogo(id)
+      if (result.success) {
+        setField('clientLogo', undefined as unknown as string)
+        setProject((prev) => prev ? { ...prev, clientLogo: undefined } : null)
+      }
+    } catch (err) {
+      console.error('Logo delete error:', err)
+      alert('Failed to delete logo: ' + String(err))
+    }
+  }, [id, setField, setProject])
 
   const handleDelete = useCallback(async () => {
     if (!id || !project) return
@@ -145,10 +203,6 @@ export default function ProjectPage() {
     setAiResult(null)
   }, [aiResult, draft])
 
-  const setField = useCallback(<K extends keyof Project>(key: K, value: Project[K]) => {
-    setDraft((prev) => (prev ? { ...prev, [key]: value } : null))
-  }, [])
-
   if (loading) {
     return <div className="flex items-center justify-center h-full bg-[var(--c-black)] text-white/30 text-[13px] font-[350]">Loading...</div>
   }
@@ -165,9 +219,12 @@ export default function ProjectPage() {
   const p = editMode && draft ? draft : project
   const isAi = (field: string) => p.aiGenerated?.includes(field) || false
 
-  // Hidden file input for media upload
+  // Hidden file inputs for media and logo upload
   const fileInput = (
-    <input ref={fileInputRef} type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleFilesSelected} />
+    <>
+      <input ref={fileInputRef} type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleFilesSelected} />
+      <input ref={logoInputRef} type="file" accept=".svg,image/svg+xml,image/png,image/jpeg" className="hidden" onChange={handleLogoSelected} />
+    </>
   )
 
   if (editMode) {
@@ -207,10 +264,12 @@ export default function ProjectPage() {
           <EditableTagsField title="Team" tags={p.team} onChange={(v) => setField('team', v)} placeholder="Add team member..." />
           <MediaManager
             media={media} folderName={p.folderName} heroIndex={heroIndex} thumbIndex={thumbIndex}
+            clientLogo={p.clientLogo || null}
             onHeroChange={(idx) => { setHeroIndex(idx); if (media[idx]) setField('heroImage', media[idx].filename) }}
             onThumbChange={(idx) => { setThumbIndex(idx); if (media[idx]) setField('thumbImage', media[idx].filename) }}
-            onGalleryReorder={(filenames) => setField('mediaOrder', filenames)}
+            onGalleryReorder={handleReorderMedia}
             onAddMedia={handleAddMedia} onDeleteMedia={handleDeleteMedia}
+            onUploadLogo={handleUploadLogo} onDeleteLogo={handleDeleteLogo}
           />
           <HistoryPanel projectId={p.id} onRestore={handleRestore} />
           <div className="mt-12 pt-8 border-t border-[var(--c-gray-200)]">

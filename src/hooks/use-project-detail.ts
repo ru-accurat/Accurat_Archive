@@ -47,5 +47,5 @@ export function useProjectDetail(id: string | undefined) {
   const heroMedia = headerFile || savedHero || media[0] || null
   const galleryMedia = media.filter((m) => m.filename !== specialMedia.header && m.filename !== specialMedia.thumb)
 
-  return { project, media, heroMedia, galleryMedia, specialMedia, loading, setProject }
+  return { project, media, setMedia, heroMedia, galleryMedia, specialMedia, loading, setProject }
 }

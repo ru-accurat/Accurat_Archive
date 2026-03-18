@@ -52,6 +52,29 @@ export const api = {
   deleteMedia: (projectId: string, filename: string): Promise<{ success: boolean }> =>
     fetch(`/api/projects/${projectId}/media/${encodeURIComponent(filename)}`, { method: 'DELETE' }).then(r => json(r)),
 
+  batchDeleteMedia: (projectId: string, filenames: string[]): Promise<{ success: boolean; deleted: number }> =>
+    fetch(`/api/projects/${projectId}/media/batch-delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filenames })
+    }).then(r => json(r)),
+
+  reorderMedia: (projectId: string, mediaOrder: string[]): Promise<{ success: boolean }> =>
+    fetch(`/api/projects/${projectId}/media/reorder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mediaOrder })
+    }).then(r => json(r)),
+
+  uploadLogo: async (projectId: string, file: File): Promise<{ success: boolean; filename: string }> => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return fetch(`/api/projects/${projectId}/logo`, { method: 'POST', body: fd }).then(r => json(r))
+  },
+
+  deleteLogo: (projectId: string): Promise<{ success: boolean }> =>
+    fetch(`/api/projects/${projectId}/logo`, { method: 'DELETE' }).then(r => json(r)),
+
   // History
   getProjectHistory: (id: string): Promise<HistoryEntry[]> =>
     fetch(`/api/projects/${id}/history`).then(r => json(r)),
