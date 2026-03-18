@@ -101,6 +101,49 @@ export const api = {
   deleteLogo: (projectId: string): Promise<{ success: boolean }> =>
     fetch(`/api/projects/${projectId}/logo`, { method: 'DELETE' }).then(r => json(r)),
 
+  // PDFs
+  addPdfs: async (projectId: string, files: FileList): Promise<{ success: boolean; count?: number }> => {
+    const fileMeta = Array.from(files).map(f => ({ name: f.name, size: f.size, type: f.type }))
+    const { urls } = await fetch(`/api/projects/${projectId}/pdfs/upload-urls`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: fileMeta })
+    }).then(r => json<{ urls: { name: string; url: string; path: string }[] }>(r))
+
+    let uploaded = 0
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const urlInfo = urls.find(u => u.name === file.name)
+      if (!urlInfo) continue
+      const res = await fetch(urlInfo.url, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/pdf' },
+        body: file,
+      })
+      if (res.ok) uploaded++
+    }
+
+    if (uploaded > 0) {
+      await fetch(`/api/projects/${projectId}/pdfs/finalize`, { method: 'POST' })
+    }
+
+    return { success: uploaded > 0, count: uploaded }
+  },
+
+  batchDeletePdfs: (projectId: string, filenames: string[]): Promise<{ success: boolean; deleted: number }> =>
+    fetch(`/api/projects/${projectId}/pdfs/batch-delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filenames })
+    }).then(r => json(r)),
+
+  renamePdf: (projectId: string, oldName: string, newName: string): Promise<{ success: boolean; filename: string }> =>
+    fetch(`/api/projects/${projectId}/pdfs/rename`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ oldName, newName })
+    }).then(r => json(r)),
+
   // History
   getProjectHistory: (id: string): Promise<HistoryEntry[]> =>
     fetch(`/api/projects/${id}/history`).then(r => json(r)),

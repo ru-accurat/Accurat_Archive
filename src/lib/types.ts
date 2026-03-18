@@ -25,6 +25,7 @@ export interface Project {
   aiGenerated?: string[]
   folderName: string
   clientLogo?: string
+  pdfFiles?: string[]
 }
 
 export interface HistoryEntry {
@@ -36,6 +37,7 @@ export interface MediaFile {
   filename: string
   path: string
   type: 'image' | 'video' | 'gif'
+  size?: number
 }
 
 export const SCORED_FIELDS = [

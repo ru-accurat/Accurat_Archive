@@ -27,6 +27,7 @@ export interface ProjectRow {
   thumb_image: string | null
   ai_generated: string[] | null
   client_logo: string | null
+  pdf_files: string[] | null
   created_at?: string
   updated_at?: string
 }
@@ -59,6 +60,7 @@ export function rowToProject(row: ProjectRow): Project {
     thumbImage: row.thumb_image || undefined,
     aiGenerated: row.ai_generated || undefined,
     clientLogo: row.client_logo || undefined,
+    pdfFiles: row.pdf_files || [],
   }
 }
 
@@ -91,6 +93,7 @@ export function projectToRow(project: Partial<Project>): Partial<ProjectRow> {
   if (project.thumbImage !== undefined) row.thumb_image = project.thumbImage
   if (project.aiGenerated !== undefined) row.ai_generated = project.aiGenerated
   if (project.clientLogo !== undefined) row.client_logo = project.clientLogo
+  if (project.pdfFiles !== undefined) row.pdf_files = project.pdfFiles
 
   return row as Partial<ProjectRow>
 }

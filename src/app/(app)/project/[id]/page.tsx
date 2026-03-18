@@ -7,6 +7,7 @@ import { useKeyboardNav } from '@/hooks/use-keyboard-nav'
 import { useFilteredProjects, useFilterOptions } from '@/hooks/use-filters'
 import { useProjectStore } from '@/stores/project-store'
 import { api } from '@/lib/api-client'
+import { pdfUrl } from '@/lib/media-url'
 import type { Project, HistoryEntry } from '@/lib/types'
 
 import { HeroSection } from '@/components/project/HeroSection'
@@ -45,6 +46,7 @@ export default function ProjectPage() {
   const [uploadProgress, setUploadProgress] = useState<{ active: boolean; message: string; done: boolean }>({ active: false, message: '', done: false })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
+  const pdfInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch all tags from DB when entering edit mode
   useEffect(() => {
@@ -193,6 +195,64 @@ export default function ProjectPage() {
     }
   }, [id, setField, setProject])
 
+  const handleAddPdfs = useCallback(() => { pdfInputRef.current?.click() }, [])
+
+  const handlePdfFilesSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!id || !e.target.files?.length) return
+    const count = e.target.files.length
+    setUploadProgress({ active: true, message: `Uploading ${count} PDF${count > 1 ? 's' : ''}...`, done: false })
+    try {
+      const result = await api.addPdfs(id, e.target.files)
+      if (result.success) {
+        setUploadProgress({ active: true, message: `${count} PDF${count > 1 ? 's' : ''} uploaded`, done: true })
+        // Refresh project to get updated pdf_files
+        const updated = await api.getProject(id)
+        setProject(updated)
+        if (draft) setDraft((prev) => prev ? { ...prev, pdfFiles: updated.pdfFiles } : null)
+        setTimeout(() => setUploadProgress({ active: false, message: '', done: false }), 1500)
+      } else {
+        setUploadProgress({ active: false, message: '', done: false })
+        alert('PDF upload failed.')
+      }
+    } catch (err) {
+      setUploadProgress({ active: false, message: '', done: false })
+      alert('PDF upload failed: ' + String(err))
+    }
+    e.target.value = ''
+  }, [id, draft, setProject])
+
+  const handleDeletePdfs = useCallback(async (filenames: string[]) => {
+    if (!id || filenames.length === 0) return
+    setUploadProgress({ active: true, message: `Deleting ${filenames.length} PDF${filenames.length > 1 ? 's' : ''}...`, done: false })
+    try {
+      const result = await api.batchDeletePdfs(id, filenames)
+      if (result.success) {
+        setUploadProgress({ active: true, message: 'Deleted successfully', done: true })
+        const updated = await api.getProject(id)
+        setProject(updated)
+        if (draft) setDraft((prev) => prev ? { ...prev, pdfFiles: updated.pdfFiles } : null)
+        setTimeout(() => setUploadProgress({ active: false, message: '', done: false }), 1500)
+      }
+    } catch (err) {
+      setUploadProgress({ active: false, message: '', done: false })
+      alert('Failed to delete PDFs: ' + String(err))
+    }
+  }, [id, draft, setProject])
+
+  const handleRenamePdf = useCallback(async (oldName: string, newName: string) => {
+    if (!id) return
+    try {
+      const result = await api.renamePdf(id, oldName, newName)
+      if (result.success) {
+        const updated = await api.getProject(id)
+        setProject(updated)
+        if (draft) setDraft((prev) => prev ? { ...prev, pdfFiles: updated.pdfFiles } : null)
+      }
+    } catch (err) {
+      alert('Failed to rename PDF: ' + String(err))
+    }
+  }, [id, draft, setProject])
+
   const handleDelete = useCallback(async () => {
     if (!id || !project) return
     if (!confirm(`Delete "${project.client} - ${project.projectName}"? This cannot be undone.`)) return
@@ -247,6 +307,7 @@ export default function ProjectPage() {
     <>
       <input ref={fileInputRef} type="file" multiple accept="image/*,video/*,.heic,.heif,.avif" className="hidden" onChange={handleFilesSelected} />
       <input ref={logoInputRef} type="file" accept=".svg,image/svg+xml,image/png,image/jpeg" className="hidden" onChange={handleLogoSelected} />
+      <input ref={pdfInputRef} type="file" multiple accept=".pdf,application/pdf" className="hidden" onChange={handlePdfFilesSelected} />
     </>
   )
 
@@ -288,11 +349,13 @@ export default function ProjectPage() {
           <MediaManager
             media={media} folderName={p.folderName} heroIndex={heroIndex} thumbIndex={thumbIndex}
             clientLogo={p.clientLogo || null}
+            pdfFiles={p.pdfFiles || []}
             onHeroChange={(idx) => { setHeroIndex(idx); if (media[idx]) setField('heroImage', media[idx].filename) }}
             onThumbChange={(idx) => { setThumbIndex(idx); if (media[idx]) setField('thumbImage', media[idx].filename) }}
             onGalleryReorder={handleReorderMedia}
             onAddMedia={handleAddMedia} onDeleteMedia={handleDeleteMedia}
             onUploadLogo={handleUploadLogo} onDeleteLogo={handleDeleteLogo}
+            onAddPdfs={handleAddPdfs} onDeletePdfs={handleDeletePdfs} onRenamePdf={handleRenamePdf}
           />
           <HistoryPanel projectId={p.id} onRestore={handleRestore} />
           <div className="mt-12 pt-8 border-t border-[var(--c-gray-200)]">
@@ -388,6 +451,47 @@ export default function ProjectPage() {
               <TeamList team={p.team} />
             </div>
           )}
+
+          {/* Documents (PDFs) */}
+          {(p.pdfFiles?.length ?? 0) > 0 && (
+            <div className="mb-12">
+              <h3 className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] mb-4">
+                Documents
+              </h3>
+              <div className="space-y-2">
+                {p.pdfFiles!.map((filename) => (
+                  <div
+                    key={filename}
+                    className="flex items-center gap-3 px-4 py-3 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] bg-[var(--c-gray-50)] hover:bg-[var(--c-gray-100)] transition-colors duration-150"
+                  >
+                    <svg width="20" height="24" viewBox="0 0 20 24" fill="none" className="flex-shrink-0">
+                      <rect x="0.5" y="0.5" width="19" height="23" rx="2" stroke="var(--c-gray-300)" />
+                      <text x="10" y="16" textAnchor="middle" fill="var(--c-gray-400)" fontSize="7" fontWeight="600">PDF</text>
+                    </svg>
+                    <span className="flex-1 text-[13px] font-[400] text-[var(--c-gray-700)]">
+                      {filename.replace(/\.pdf$/i, '')}
+                    </span>
+                    <a
+                      href={pdfUrl(p.folderName, filename)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-[450] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors px-2 py-1"
+                    >
+                      View ↗
+                    </a>
+                    <a
+                      href={pdfUrl(p.folderName, filename)}
+                      download={filename}
+                      className="text-[11px] font-[450] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors px-2 py-1"
+                    >
+                      Download
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <GalleryGrid media={galleryMedia} folderName={p.folderName} />
         </div>
       </div>

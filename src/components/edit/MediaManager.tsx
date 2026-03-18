@@ -19,8 +19,8 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { MediaFile } from '@/lib/types'
-import { mediaUrl, logoUrl } from '@/lib/media-url'
-import { isVideo } from '@/lib/format'
+import { mediaUrl, logoUrl, pdfUrl } from '@/lib/media-url'
+import { isVideo, formatFileSize, getFileExt } from '@/lib/format'
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -30,6 +30,7 @@ interface Props {
   heroIndex: number
   thumbIndex: number
   clientLogo: string | null
+  pdfFiles: string[]
   onHeroChange: (index: number) => void
   onThumbChange: (index: number) => void
   onGalleryReorder: (orderedFilenames: string[]) => void
@@ -37,6 +38,9 @@ interface Props {
   onDeleteMedia: (filenames: string[]) => void
   onUploadLogo: () => void
   onDeleteLogo: () => void
+  onAddPdfs: () => void
+  onDeletePdfs: (filenames: string[]) => void
+  onRenamePdf: (oldName: string, newName: string) => void
 }
 
 /* ── Sortable Item ─────────────────────────────────────── */
@@ -148,14 +152,17 @@ function SortableMediaItem({
         <div className="absolute inset-0 bg-red-500/15" />
       )}
 
-      {/* Drag handle hint — only when not in any mode */}
-      {!isSelecting && !deleteMode && (
-        <div className="absolute bottom-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-          <span className="text-[9px] font-[450] text-white/70 bg-black/40 px-1.5 py-0.5 rounded-[2px]">
-            Drag to reorder
+      {/* File info caption */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-1.5 py-1 flex items-center gap-1.5">
+        <span className="text-[8px] font-[500] text-white/80 bg-white/20 px-1 py-0.5 rounded-[2px] uppercase">
+          {getFileExt(item.filename)}
+        </span>
+        {item.size && (
+          <span className="text-[8px] font-[400] text-white/60">
+            {formatFileSize(item.size)}
           </span>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
@@ -168,6 +175,7 @@ export function MediaManager({
   heroIndex,
   thumbIndex,
   clientLogo,
+  pdfFiles,
   onHeroChange,
   onThumbChange,
   onGalleryReorder,
@@ -175,10 +183,17 @@ export function MediaManager({
   onDeleteMedia,
   onUploadLogo,
   onDeleteLogo,
+  onAddPdfs,
+  onDeletePdfs,
+  onRenamePdf,
 }: Props) {
   const [selectingFor, setSelectingFor] = useState<'hero' | 'thumb' | null>(null)
   const [deleteMode, setDeleteMode] = useState(false)
   const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set())
+  const [pdfDeleteMode, setPdfDeleteMode] = useState(false)
+  const [selectedPdfsForDelete, setSelectedPdfsForDelete] = useState<Set<string>>(new Set())
+  const [editingPdfName, setEditingPdfName] = useState<string | null>(null)
+  const [pdfNameInput, setPdfNameInput] = useState('')
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -430,6 +445,172 @@ export function MediaManager({
         {media.length === 0 && (
           <div className="text-[13px] text-[var(--c-gray-300)] font-[350] py-10 text-center">
             No media files yet. Click &quot;+ Add Media&quot; to upload images or videos.
+          </div>
+        )}
+      </div>
+
+      {/* ── Documents (PDF) Section ──────────────────── */}
+      <div className="mt-8 pt-8 border-t border-[var(--c-gray-200)]">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)]">
+            Documents
+          </h3>
+          <div className="flex gap-2">
+            {!pdfDeleteMode && (
+              <>
+                {pdfFiles.length > 0 && (
+                  <button
+                    onClick={() => { setPdfDeleteMode(true); setSelectedPdfsForDelete(new Set()) }}
+                    className="text-[11px] font-[450] tracking-[0.02em] px-3 py-1.5 rounded-[var(--radius-sm)] text-red-500 hover:bg-red-50 transition-colors duration-200"
+                  >
+                    Delete PDFs
+                  </button>
+                )}
+                <button
+                  onClick={onAddPdfs}
+                  className="text-[11px] font-[450] tracking-[0.02em] px-4 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors duration-200"
+                >
+                  + Add PDF
+                </button>
+              </>
+            )}
+            {pdfDeleteMode && (
+              <>
+                <button
+                  onClick={() => { setPdfDeleteMode(false); setSelectedPdfsForDelete(new Set()) }}
+                  className="text-[11px] font-[450] tracking-[0.02em] px-3 py-1.5 rounded-[var(--radius-sm)] text-[var(--c-gray-400)] hover:text-[var(--c-gray-600)] transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (selectedPdfsForDelete.size > 0) {
+                      onDeletePdfs(Array.from(selectedPdfsForDelete))
+                      setPdfDeleteMode(false)
+                      setSelectedPdfsForDelete(new Set())
+                    }
+                  }}
+                  disabled={selectedPdfsForDelete.size === 0}
+                  className="text-[11px] font-[450] tracking-[0.02em] px-4 py-1.5 rounded-[var(--radius-sm)] bg-red-500 text-white hover:bg-red-600 transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Delete {selectedPdfsForDelete.size > 0 ? `(${selectedPdfsForDelete.size})` : ''}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {pdfFiles.length === 0 && (
+          <div className="text-[13px] text-[var(--c-gray-300)] font-[350] py-6 text-center">
+            No documents attached. Click &quot;+ Add PDF&quot; to upload.
+          </div>
+        )}
+
+        {pdfFiles.length > 0 && (
+          <div className="space-y-2">
+            {pdfFiles.map((filename) => {
+              const displayName = filename.replace(/\.pdf$/i, '')
+              const isEditing = editingPdfName === filename
+              const isSelectedForPdfDelete = selectedPdfsForDelete.has(filename)
+
+              return (
+                <div
+                  key={filename}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-[var(--radius-sm)] border transition-colors duration-150 ${
+                    isSelectedForPdfDelete
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-[var(--c-gray-200)] bg-[var(--c-gray-50)]'
+                  }`}
+                >
+                  {/* PDF icon */}
+                  <svg width="20" height="24" viewBox="0 0 20 24" fill="none" className="flex-shrink-0">
+                    <rect x="0.5" y="0.5" width="19" height="23" rx="2" stroke="var(--c-gray-300)" />
+                    <text x="10" y="16" textAnchor="middle" fill="var(--c-gray-400)" fontSize="7" fontWeight="600">PDF</text>
+                  </svg>
+
+                  {/* Editable name */}
+                  {isEditing ? (
+                    <input
+                      value={pdfNameInput}
+                      onChange={(e) => setPdfNameInput(e.target.value)}
+                      onBlur={() => {
+                        if (pdfNameInput.trim() && pdfNameInput.trim() !== displayName) {
+                          onRenamePdf(filename, pdfNameInput.trim())
+                        }
+                        setEditingPdfName(null)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (pdfNameInput.trim() && pdfNameInput.trim() !== displayName) {
+                            onRenamePdf(filename, pdfNameInput.trim())
+                          }
+                          setEditingPdfName(null)
+                        } else if (e.key === 'Escape') {
+                          setEditingPdfName(null)
+                        }
+                      }}
+                      autoFocus
+                      className="flex-1 text-[13px] font-[400] text-[var(--c-gray-700)] bg-white border border-[var(--c-gray-300)] rounded px-2 py-1 outline-none focus:border-[var(--c-gray-500)]"
+                    />
+                  ) : (
+                    <span
+                      className="flex-1 text-[13px] font-[400] text-[var(--c-gray-700)] cursor-pointer hover:text-[var(--c-gray-900)] transition-colors"
+                      onClick={() => {
+                        if (!pdfDeleteMode) {
+                          setEditingPdfName(filename)
+                          setPdfNameInput(displayName)
+                        }
+                      }}
+                      title="Click to rename"
+                    >
+                      {displayName}
+                    </span>
+                  )}
+
+                  {/* Delete mode checkbox */}
+                  {pdfDeleteMode && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPdfsForDelete((prev) => {
+                          const next = new Set(prev)
+                          if (next.has(filename)) next.delete(filename)
+                          else next.add(filename)
+                          return next
+                        })
+                      }}
+                      className="flex-shrink-0"
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-[3px] border-2 flex items-center justify-center transition-colors duration-150 ${
+                          isSelectedForPdfDelete
+                            ? 'bg-red-500 border-red-500 text-white'
+                            : 'bg-white border-[var(--c-gray-300)]'
+                        }`}
+                      >
+                        {isSelectedForPdfDelete && (
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  )}
+
+                  {/* View link (when not in delete mode) */}
+                  {!pdfDeleteMode && (
+                    <a
+                      href={pdfUrl(folderName, filename)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-[450] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors"
+                    >
+                      View ↗
+                    </a>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

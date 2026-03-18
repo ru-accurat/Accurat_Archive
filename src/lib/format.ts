@@ -14,3 +14,17 @@ export function isVideo(filename: string): boolean {
 export function isGif(filename: string): boolean {
   return filename.toLowerCase().endsWith('.gif')
 }
+
+export function isPdf(filename: string): boolean {
+  return filename.toLowerCase().endsWith('.pdf')
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export function getFileExt(filename: string): string {
+  return (filename.split('.').pop() || '').toUpperCase()
+}

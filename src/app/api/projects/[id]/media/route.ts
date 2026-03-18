@@ -36,6 +36,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       filename: f.name,
       path: `${supabaseUrl}/storage/v1/object/public/project-media/${encodeURIComponent(project.folder_name)}/${encodeURIComponent(f.name)}`,
       type: getMediaType(f.name),
+      size: (f.metadata as Record<string, unknown>)?.size as number | undefined ?? undefined,
     }))
 
   return NextResponse.json(mediaFiles)

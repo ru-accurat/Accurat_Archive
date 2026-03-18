@@ -9,3 +9,8 @@ export function mediaUrl(folderName: string, filename: string): string {
 export function logoUrl(filename: string): string {
   return `${SUPABASE_URL}/storage/v1/object/public/logos/${encodeURIComponent(filename)}`
 }
+
+/** Get public URL for a project PDF from Supabase Storage */
+export function pdfUrl(folderName: string, filename: string): string {
+  return `${SUPABASE_URL}/storage/v1/object/public/project-pdfs/${encodeURIComponent(folderName)}/${encodeURIComponent(filename)}`
+}
