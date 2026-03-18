@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useProjectDetail } from '@/hooks/use-project-detail'
 import { useKeyboardNav } from '@/hooks/use-keyboard-nav'
@@ -18,6 +18,7 @@ import { UrlLinks } from '@/components/project/UrlLinks'
 
 import { EditableField } from '@/components/edit/EditableField'
 import { EditableTagsField } from '@/components/edit/EditableTagsField'
+import { ChecklistTagField } from '@/components/edit/ChecklistTagField'
 import { EditableUrlsField } from '@/components/edit/EditableUrlsField'
 import { EditableMetadata } from '@/components/edit/EditableMetadata'
 import { MediaManager } from '@/components/edit/MediaManager'
@@ -40,8 +41,16 @@ export default function ProjectPage() {
   const [thumbIndex, setThumbIndex] = useState(-1)
   const [generatingField, setGeneratingField] = useState<string | null>(null)
   const [aiResult, setAiResult] = useState<{ field: string; text: string } | null>(null)
+  const [allTags, setAllTags] = useState<{ domains: string[]; services: string[]; outputs: string[] }>({ domains: [], services: [], outputs: [] })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
+
+  // Fetch all tags from DB when entering edit mode
+  useEffect(() => {
+    if (editMode) {
+      api.getAllTags().then(setAllTags).catch(console.error)
+    }
+  }, [editMode])
 
   useKeyboardNav(editMode ? [] : filteredProjects, id)
 
@@ -246,11 +255,11 @@ export default function ProjectPage() {
             client={p.client} start={p.start} end={p.end} section={p.section} tier={p.tier} output={p.output}
             onClientChange={(v) => setField('client', v)} onStartChange={(v) => setField('start', v)} onEndChange={(v) => setField('end', v)}
             onSectionChange={(v) => setField('section', v)} onTierChange={(v) => setField('tier', v)} onOutputChange={(v) => setField('output', v)}
-            outputOptions={filterOptions.outputs}
+            outputOptions={allTags.outputs}
           />
           <div className="mt-6">
-            <EditableTagsField title="Domains" tags={p.domains} onChange={(v) => setField('domains', v)} suggestions={filterOptions.domains} />
-            <EditableTagsField title="Services" tags={p.services} onChange={(v) => setField('services', v)} suggestions={filterOptions.services} />
+            <ChecklistTagField title="Domains" tags={p.domains} onChange={(v) => setField('domains', v)} allTags={allTags.domains} />
+            <ChecklistTagField title="Services" tags={p.services} onChange={(v) => setField('services', v)} allTags={allTags.services} />
           </div>
           <div className="mt-8">
             <EditableField title="Tagline" value={p.tagline} onChange={(v) => setField('tagline', v)} large isAiGenerated={isAi('tagline')} onGenerate={() => handleGenerate('tagline')} generating={generatingField === 'tagline'} />

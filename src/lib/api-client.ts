@@ -157,6 +157,9 @@ export const api = {
     }).then(r => r.blob()),
 
   // Tags
+  getAllTags: (): Promise<{ domains: string[]; services: string[]; outputs: string[] }> =>
+    fetch('/api/tags').then(r => json(r)),
+
   renameTag: (type: string, oldValue: string, newValue: string) =>
     fetch('/api/tags/rename', {
       method: 'POST',
