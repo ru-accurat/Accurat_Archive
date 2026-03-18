@@ -38,6 +38,24 @@ export function useProjectDetail(id: string | undefined) {
     return () => { cancelled = true }
   }, [id])
 
+  const refreshMedia = async () => {
+    if (!id) return
+    try {
+      const [med, proj] = await Promise.all([
+        api.getProjectMedia(id),
+        api.getProject(id)
+      ])
+      setMedia(med)
+      setProject(proj)
+      if (proj?.folderName) {
+        const special = await api.getSpecialMedia(proj.folderName)
+        setSpecialMedia(special)
+      }
+    } catch (err) {
+      console.error('Failed to refresh media:', err)
+    }
+  }
+
   const headerFile = specialMedia.header
     ? media.find((m) => m.filename === specialMedia.header) || null
     : null
@@ -47,5 +65,5 @@ export function useProjectDetail(id: string | undefined) {
   const heroMedia = headerFile || savedHero || media[0] || null
   const galleryMedia = media.filter((m) => m.filename !== specialMedia.header && m.filename !== specialMedia.thumb)
 
-  return { project, media, setMedia, heroMedia, galleryMedia, specialMedia, loading, setProject }
+  return { project, media, setMedia, heroMedia, galleryMedia, specialMedia, loading, setProject, refreshMedia }
 }

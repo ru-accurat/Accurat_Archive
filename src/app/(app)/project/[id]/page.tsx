@@ -28,7 +28,7 @@ import { AiDiffModal } from '@/components/edit/AiDiffModal'
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { project, media, setMedia, heroMedia, galleryMedia, loading, setProject } = useProjectDetail(id)
+  const { project, media, setMedia, heroMedia, galleryMedia, loading, setProject, refreshMedia } = useProjectDetail(id)
   const filteredProjects = useFilteredProjects()
   const filterOptions = useFilterOptions()
   const updateProjectInStore = useProjectStore((s) => s.updateProject)
@@ -42,6 +42,7 @@ export default function ProjectPage() {
   const [generatingField, setGeneratingField] = useState<string | null>(null)
   const [aiResult, setAiResult] = useState<{ field: string; text: string } | null>(null)
   const [allTags, setAllTags] = useState<{ domains: string[]; services: string[]; outputs: string[] }>({ domains: [], services: [], outputs: [] })
+  const [uploadProgress, setUploadProgress] = useState<{ active: boolean; message: string; done: boolean }>({ active: false, message: '', done: false })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
@@ -107,29 +108,42 @@ export default function ProjectPage() {
 
   const handleFilesSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!id || !e.target.files?.length) return
+    const count = e.target.files.length
+    setUploadProgress({ active: true, message: `Uploading ${count} file${count > 1 ? 's' : ''}...`, done: false })
     try {
       const result = await api.addMedia(id, e.target.files)
       if (result.success) {
-        window.location.reload()
+        setUploadProgress({ active: true, message: `${count} file${count > 1 ? 's' : ''} uploaded successfully`, done: true })
+        await refreshMedia()
+        setTimeout(() => setUploadProgress({ active: false, message: '', done: false }), 1500)
       } else {
+        setUploadProgress({ active: false, message: '', done: false })
         alert('Upload failed. Please try again.')
       }
     } catch (err) {
       console.error('Media upload error:', err)
+      setUploadProgress({ active: false, message: '', done: false })
       alert('Upload failed: ' + String(err))
     }
-  }, [id])
+    e.target.value = ''
+  }, [id, refreshMedia])
 
   const handleDeleteMedia = useCallback(async (filenames: string[]) => {
     if (!id || filenames.length === 0) return
+    setUploadProgress({ active: true, message: `Deleting ${filenames.length} file${filenames.length > 1 ? 's' : ''}...`, done: false })
     try {
       const result = await api.batchDeleteMedia(id, filenames)
-      if (result.success) window.location.reload()
+      if (result.success) {
+        setUploadProgress({ active: true, message: 'Deleted successfully', done: true })
+        await refreshMedia()
+        setTimeout(() => setUploadProgress({ active: false, message: '', done: false }), 1500)
+      }
     } catch (err) {
       console.error('Batch delete error:', err)
+      setUploadProgress({ active: false, message: '', done: false })
       alert('Failed to delete media: ' + String(err))
     }
-  }, [id])
+  }, [id, refreshMedia])
 
   const handleReorderMedia = useCallback(async (orderedFilenames: string[]) => {
     if (!id) return
@@ -291,6 +305,20 @@ export default function ProjectPage() {
           currentText={aiResult ? String((p as unknown as Record<string, unknown>)[aiResult.field] || '') : ''}
           generatedText={aiResult?.text || ''} onAccept={handleAiAccept} onEdit={handleAiAccept}
         />
+        {uploadProgress.active && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+            <div className="bg-white rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] px-8 py-6 flex flex-col items-center gap-3 min-w-[240px]">
+              {!uploadProgress.done ? (
+                <div className="w-6 h-6 border-2 border-[var(--c-gray-300)] border-t-[var(--c-gray-900)] rounded-full animate-spin" />
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 13l4 4L19 7" stroke="var(--c-gray-900)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+              <span className="text-[13px] font-[450] text-[var(--c-gray-700)]">{uploadProgress.message}</span>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
