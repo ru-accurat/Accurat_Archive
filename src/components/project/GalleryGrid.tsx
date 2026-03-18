@@ -44,17 +44,28 @@ export function GalleryGrid({ media, folderName }: Props) {
       <h3 className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] mb-6">
         Gallery
       </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {media.map((m, i) => {
           const src = m.path
+          const video = isVideo(m.filename)
           return (
             <div
               key={m.filename}
-              className="aspect-[4/3] bg-[var(--c-gray-100)] overflow-hidden cursor-pointer hover:opacity-80 transition-opacity duration-200"
+              className="relative aspect-[4/3] bg-[var(--c-gray-100)] overflow-hidden cursor-pointer hover:opacity-80 transition-opacity duration-200 group"
               onClick={() => setLightboxIndex(i)}
             >
-              {isVideo(m.filename) ? (
-                <video src={src} className="w-full h-full object-cover" preload="metadata" />
+              {video ? (
+                <>
+                  <video src={src} className="w-full h-full object-cover" preload="metadata" />
+                  {/* Play icon overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center group-hover:bg-black/70 transition-colors duration-200">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M6 3.5L16.5 10L6 16.5V3.5Z" fill="white" />
+                      </svg>
+                    </div>
+                  </div>
+                </>
               ) : (
                 <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
               )}
