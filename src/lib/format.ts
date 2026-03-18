@@ -8,7 +8,7 @@ export function formatYearRange(start: number | null, end: number | null): strin
 
 export function isVideo(filename: string): boolean {
   const ext = filename.toLowerCase().split('.').pop() || ''
-  return ['mp4', 'mov', 'avi', 'webm'].includes(ext)
+  return ['mp4', 'mov', 'avi', 'webm', 'mkv', 'm4v'].includes(ext)
 }
 
 export function isGif(filename: string): boolean {

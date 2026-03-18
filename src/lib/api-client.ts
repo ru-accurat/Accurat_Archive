@@ -43,10 +43,36 @@ export const api = {
   getAllSpecialMedia: (): Promise<Record<string, { header: string | null; thumb: string | null; first: string | null }>> =>
     fetch('/api/projects/media/special').then(r => json(r)),
 
-  addMedia: async (projectId: string, files: FileList): Promise<{ success: boolean }> => {
-    const fd = new FormData()
-    for (let i = 0; i < files.length; i++) fd.append('files', files[i])
-    return fetch(`/api/projects/${projectId}/media`, { method: 'POST', body: fd }).then(r => json(r))
+  addMedia: async (projectId: string, files: FileList): Promise<{ success: boolean; uploaded?: number }> => {
+    // Get signed upload URLs from API
+    const fileMeta = Array.from(files).map(f => ({ name: f.name, size: f.size, type: f.type }))
+    const { urls } = await fetch(`/api/projects/${projectId}/media/upload-urls`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: fileMeta })
+    }).then(r => json<{ urls: { name: string; url: string; path: string }[] }>(r))
+
+    // Upload each file directly to Supabase Storage
+    let uploaded = 0
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const urlInfo = urls.find(u => u.name === file.name)
+      if (!urlInfo) continue
+
+      const res = await fetch(urlInfo.url, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+      })
+      if (res.ok) uploaded++
+    }
+
+    // Finalize: update media_order in DB
+    if (uploaded > 0) {
+      await fetch(`/api/projects/${projectId}/media/finalize`, { method: 'POST' })
+    }
+
+    return { success: uploaded > 0, uploaded }
   },
 
   deleteMedia: (projectId: string, filename: string): Promise<{ success: boolean }> =>

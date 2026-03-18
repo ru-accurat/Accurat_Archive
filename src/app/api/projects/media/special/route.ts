@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
-
-const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.gif']
+import { IMAGE_EXTS } from '@/lib/media-types'
 
 // GET /api/projects/media/special?folder=FolderName  — single project (with storage listing)
 // GET /api/projects/media/special                     — all projects (fast, DB-only)
@@ -34,7 +33,7 @@ export async function GET(request: Request) {
     // Use media_order[0] as "first" image if available
     const firstFile = (p.media_order as string[] | null)?.find(f => {
       const ext = '.' + f.split('.').pop()?.toLowerCase()
-      return IMAGE_EXTS.includes(ext)
+      return IMAGE_EXTS.has(ext)
     })
 
     const entry = {
@@ -59,7 +58,7 @@ async function getSpecialMedia(supabase: ReturnType<typeof createServiceClient>,
 
   const imageFiles = (files || []).filter(f => {
     const ext = '.' + f.name.split('.').pop()?.toLowerCase()
-    return IMAGE_EXTS.includes(ext)
+    return IMAGE_EXTS.has(ext)
   })
 
   const makeUrl = (filename: string) =>

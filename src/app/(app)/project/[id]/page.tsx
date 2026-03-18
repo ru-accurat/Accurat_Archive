@@ -222,7 +222,7 @@ export default function ProjectPage() {
   // Hidden file inputs for media and logo upload
   const fileInput = (
     <>
-      <input ref={fileInputRef} type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleFilesSelected} />
+      <input ref={fileInputRef} type="file" multiple accept="image/*,video/*,.heic,.heif,.avif" className="hidden" onChange={handleFilesSelected} />
       <input ref={logoInputRef} type="file" accept=".svg,image/svg+xml,image/png,image/jpeg" className="hidden" onChange={handleLogoSelected} />
     </>
   )

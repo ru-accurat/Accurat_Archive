@@ -1,23 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { MEDIA_EXTS, getMediaType } from '@/lib/media-types'
 import type { MediaFile } from '@/lib/types'
-
-const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif'])
-const VIDEO_EXTS = new Set(['.mp4', '.mov', '.avi', '.webm'])
-
-function getMediaType(filename: string): 'image' | 'video' | 'gif' {
-  const ext = '.' + filename.split('.').pop()?.toLowerCase()
-  if (ext === '.gif') return 'gif'
-  if (VIDEO_EXTS.has(ext)) return 'video'
-  return 'image'
-}
 
 // GET /api/projects/[id]/media — list media files
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = createServiceClient()
 
-  // Get project folder name
   const { data: project } = await supabase
     .from('projects')
     .select('folder_name')
@@ -40,7 +30,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const mediaFiles: MediaFile[] = (files || [])
     .filter(f => {
       const ext = '.' + f.name.split('.').pop()?.toLowerCase()
-      return IMAGE_EXTS.has(ext) || VIDEO_EXTS.has(ext)
+      return MEDIA_EXTS.has(ext)
     })
     .map(f => ({
       filename: f.name,
@@ -51,7 +41,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   return NextResponse.json(mediaFiles)
 }
 
-// POST /api/projects/[id]/media — upload media files
+// POST /api/projects/[id]/media — upload media files (small files only, <4MB)
+// For large files, use /api/projects/[id]/media/upload-urls for direct upload
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = createServiceClient()
@@ -95,7 +86,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       const mediaOrder = allFiles
         .filter(f => {
           const ext = '.' + f.name.split('.').pop()?.toLowerCase()
-          return IMAGE_EXTS.has(ext) || VIDEO_EXTS.has(ext)
+          return MEDIA_EXTS.has(ext)
         })
         .map(f => f.name)
 
