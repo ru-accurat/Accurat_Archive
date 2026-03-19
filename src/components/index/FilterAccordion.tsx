@@ -61,9 +61,9 @@ export function FilterAccordion() {
     },
     {
       key: 'missing',
-      label: 'Missing',
+      label: 'Completion',
       storeKey: 'missing',
-      options: ['description', 'media'],
+      options: ['Missing Description', 'Missing Media', 'Complete'],
       selected: filters.missing,
       onChange: (v) => setFilter('missing', v)
     }

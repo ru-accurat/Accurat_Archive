@@ -1,6 +1,5 @@
 'use client'
 
-import { useMemo, useState } from 'react'
 import { useProjects } from '@/hooks/use-projects'
 import { useProjectStore } from '@/stores/project-store'
 import { useUiStore } from '@/stores/ui-store'
@@ -9,15 +8,10 @@ import { ProjectGrid } from '@/components/index/ProjectGrid'
 import { FilterAccordion } from '@/components/index/FilterAccordion'
 import { FilterBar } from '@/components/index/FilterBar'
 import { BulkActions } from '@/components/index/BulkActions'
-import { findDuplicates } from '@/lib/similarity'
-
 export default function IndexPage() {
   const { loading } = useProjects()
   const { viewMode, setViewMode, editMode, setEditMode } = useUiStore()
   const { setSearch, filters, projects } = useProjectStore()
-  const [dismissedDuplicates, setDismissedDuplicates] = useState(false)
-
-  const duplicates = useMemo(() => findDuplicates(projects), [projects])
 
   if (loading) {
     return (
@@ -29,28 +23,6 @@ export default function IndexPage() {
 
   return (
     <div className="flex flex-col h-full bg-[var(--c-white)]">
-      {duplicates.length > 0 && !dismissedDuplicates && (
-        <div
-          className="flex items-center gap-3 bg-[var(--c-warning)]/10 border-b border-[var(--c-warning)]/20"
-          style={{ padding: '8px 48px' }}
-        >
-          <span className="text-[11px] font-[450] text-[var(--c-warning)]">
-            {duplicates.length} potential duplicate{duplicates.length !== 1 ? 's' : ''} detected
-          </span>
-          <span className="text-[11px] font-[400] text-[var(--c-gray-500)]">
-            {duplicates.slice(0, 3).map((d) => `"${d.a.client}" ≈ "${d.b.client}"`).join(', ')}
-            {duplicates.length > 3 ? '...' : ''}
-          </span>
-          <div className="flex-1" />
-          <button
-            onClick={() => setDismissedDuplicates(true)}
-            className="text-[10px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors duration-200"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-
       <div className="flex items-end gap-4" style={{ paddingLeft: 48, paddingRight: 48, paddingTop: 20, paddingBottom: 12 }}>
         <input
           type="text"

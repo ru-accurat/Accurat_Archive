@@ -41,10 +41,17 @@ function matchesFilters(project: Project, filters: Filters): boolean {
   if (maxYear && project.start && project.start > maxYear) return false
 
   if (filters.missing.length > 0) {
-    for (const m of filters.missing) {
-      if (m === 'description' && project.description) return false
-      if (m === 'media' && project.mediaOrder && project.mediaOrder.length > 0) return false
-    }
+    const hasDescription = !!project.description
+    const hasMedia = !!(project.mediaOrder && project.mediaOrder.length > 0)
+
+    // Each selected filter is OR'd — project must match at least one
+    const matchesAny = filters.missing.some((m) => {
+      if (m === 'Missing Description') return !hasDescription
+      if (m === 'Missing Media') return !hasMedia
+      if (m === 'Complete') return hasDescription && hasMedia
+      return false
+    })
+    if (!matchesAny) return false
   }
 
   return true

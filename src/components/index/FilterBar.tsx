@@ -59,7 +59,7 @@ export function FilterBar() {
       {filters.missing.map((m) => (
         <Chip
           key={`missing-${m}`}
-          label={`Missing ${m}`}
+          label={m}
           onRemove={() => setFilter('missing', filters.missing.filter((x) => x !== m))}
         />
       ))}

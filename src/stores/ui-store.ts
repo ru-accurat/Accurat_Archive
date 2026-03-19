@@ -9,7 +9,7 @@ export interface UiStore {
 }
 
 export const useUiStore = create<UiStore>((set) => ({
-  viewMode: 'table',
+  viewMode: 'grid',
   editMode: false,
 
   setViewMode: (viewMode) => set({ viewMode }),
