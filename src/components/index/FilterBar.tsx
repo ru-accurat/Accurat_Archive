@@ -12,6 +12,7 @@ export function FilterBar() {
     filters.section.length +
     filters.tier.length +
     filters.missing.length +
+    filters.status.length +
     (filters.yearRange[0] !== null ? 1 : 0)
 
   if (activeCount === 0 && !filters.search) return null
@@ -53,6 +54,14 @@ export function FilterBar() {
           key={s}
           label={s}
           onRemove={() => setFilter('section', filters.section.filter((x) => x !== s))}
+        />
+      ))}
+
+      {filters.status.map((s) => (
+        <Chip
+          key={`status-${s}`}
+          label={s}
+          onRemove={() => setFilter('status', filters.status.filter((x) => x !== s))}
         />
       ))}
 

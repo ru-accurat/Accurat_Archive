@@ -40,6 +40,10 @@ function matchesFilters(project: Project, filters: Filters): boolean {
   if (minYear && project.start && project.start < minYear) return false
   if (maxYear && project.start && project.start > maxYear) return false
 
+  if (filters.status.length > 0) {
+    if (!filters.status.includes(project.status)) return false
+  }
+
   if (filters.missing.length > 0) {
     const hasDescription = !!project.description
     const hasMedia = !!(project.mediaOrder && project.mediaOrder.length > 0)

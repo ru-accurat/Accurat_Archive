@@ -10,6 +10,7 @@ export interface Filters {
   yearRange: [number | null, number | null]
   tier: number[]
   missing: string[]
+  status: string[]
 }
 
 export interface ProjectStore {
@@ -42,7 +43,8 @@ const defaultFilters: Filters = {
   section: [],
   yearRange: [null, null],
   tier: [],
-  missing: []
+  missing: [],
+  status: []
 }
 
 export const useProjectStore = create<ProjectStore>((set) => ({

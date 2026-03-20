@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { rowToProject, projectToRow } from '@/lib/db-utils'
 import type { ProjectRow } from '@/lib/db-utils'
+import { logActivity } from '@/lib/activity'
 
 // GET /api/projects/[id]
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -53,7 +54,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(rowToProject(data as ProjectRow))
+  const project = rowToProject(data as ProjectRow)
+  await logActivity('project.updated', { projectName: project.fullName, fields: Object.keys(body) }, id)
+
+  return NextResponse.json(project)
 }
 
 // DELETE /api/projects/[id]
@@ -79,11 +83,14 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     }
   }
 
+  const projectName = project?.folder_name || id
   const { error } = await supabase.from('projects').delete().eq('id', id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  await logActivity('project.deleted', { projectName }, id)
 
   return NextResponse.json({ success: true })
 }

@@ -7,12 +7,14 @@ interface Props {
   section: string
   tier: number
   output: string
+  status: 'draft' | 'internal' | 'public'
   onClientChange: (v: string) => void
   onStartChange: (v: number | null) => void
   onEndChange: (v: number | null) => void
   onSectionChange: (v: string) => void
   onTierChange: (v: number) => void
   onOutputChange: (v: string) => void
+  onStatusChange: (v: 'draft' | 'internal' | 'public') => void
   outputOptions: string[]
 }
 
@@ -27,12 +29,14 @@ export function EditableMetadata({
   section,
   tier,
   output,
+  status,
   onClientChange,
   onStartChange,
   onEndChange,
   onSectionChange,
   onTierChange,
   onOutputChange,
+  onStatusChange,
   outputOptions
 }: Props) {
   return (
@@ -98,7 +102,7 @@ export function EditableMetadata({
         </div>
       </div>
 
-      <div className="sm:col-span-2 md:col-span-3 relative z-10">
+      <div className="relative z-10">
         <label className={labelClass}>Category</label>
         <select
           value={output}
@@ -111,6 +115,19 @@ export function EditableMetadata({
               {o}
             </option>
           ))}
+        </select>
+      </div>
+
+      <div className="relative z-10">
+        <label className={labelClass}>Status</label>
+        <select
+          value={status}
+          onChange={(e) => onStatusChange(e.target.value as 'draft' | 'internal' | 'public')}
+          className={selectClass}
+        >
+          <option value="draft">Draft</option>
+          <option value="internal">Internal</option>
+          <option value="public">Public</option>
         </select>
       </div>
     </div>

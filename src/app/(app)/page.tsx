@@ -3,6 +3,7 @@
 import { useProjects } from '@/hooks/use-projects'
 import { useProjectStore } from '@/stores/project-store'
 import { useUiStore } from '@/stores/ui-store'
+import { useFilteredProjects } from '@/hooks/use-filters'
 import { ProjectTable } from '@/components/index/ProjectTable'
 import { ProjectGrid } from '@/components/index/ProjectGrid'
 import { FilterAccordion } from '@/components/index/FilterAccordion'
@@ -12,6 +13,8 @@ export default function IndexPage() {
   const { loading } = useProjects()
   const { viewMode, setViewMode, editMode, setEditMode } = useUiStore()
   const { setSearch, filters, projects } = useProjectStore()
+  const filtered = useFilteredProjects()
+  const hasActiveFilters = !!(filters.search || filters.domains.length || filters.services.length || filters.output.length || filters.section.length || filters.tier.length || filters.missing.length || filters.status.length)
 
   if (loading) {
     return (
@@ -78,6 +81,13 @@ export default function IndexPage() {
 
       <FilterAccordion />
       <FilterBar />
+      {hasActiveFilters && (
+        <div className="px-4 sm:px-6 md:px-[48px] pb-2">
+          <span className="text-[11px] font-[400] text-[var(--c-gray-400)]">
+            {filtered.length} of {projects.length} projects
+          </span>
+        </div>
+      )}
       <BulkActions />
 
       <div className="flex-1 overflow-hidden">

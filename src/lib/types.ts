@@ -33,6 +33,7 @@ export interface Project {
   folderName: string
   clientLogo?: string
   pdfFiles?: string[]
+  status: 'draft' | 'internal' | 'public'
 }
 
 export interface HistoryEntry {

@@ -60,6 +60,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Tags
             </button>
             <button
+              onClick={() => navigate('/activity')}
+              className="text-[11px] font-[400] tracking-[0.02em] text-white/40 hover:text-white/80 transition-colors duration-200"
+            >
+              Activity
+            </button>
+            <button
               onClick={() => navigate('/settings')}
               className="text-white/40 hover:text-white/80 transition-colors duration-200"
             >
@@ -130,6 +136,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="sm:hidden bg-[var(--c-black)] border-t border-white/10 px-4 py-3 flex flex-col gap-3 z-40">
           <button onClick={() => navigate('/tags')} className="text-left text-[12px] font-[400] text-white/50 hover:text-white/80 py-1.5">
             Tags
+          </button>
+          <button onClick={() => navigate('/activity')} className="text-left text-[12px] font-[400] text-white/50 hover:text-white/80 py-1.5">
+            Activity
           </button>
           <button onClick={() => navigate('/settings')} className="text-left text-[12px] font-[400] text-white/50 hover:text-white/80 py-1.5">
             Settings

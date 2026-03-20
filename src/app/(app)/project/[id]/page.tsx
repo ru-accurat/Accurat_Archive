@@ -327,9 +327,10 @@ export default function ProjectPage() {
         <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-10">
           <EditableField title="Project Name" value={p.projectName} onChange={(v) => setField('projectName', v)} large multiline={false} />
           <EditableMetadata
-            client={p.client} start={p.start} end={p.end} section={p.section} tier={p.tier} output={p.output}
+            client={p.client} start={p.start} end={p.end} section={p.section} tier={p.tier} output={p.output} status={p.status}
             onClientChange={(v) => setField('client', v)} onStartChange={(v) => setField('start', v)} onEndChange={(v) => setField('end', v)}
             onSectionChange={(v) => setField('section', v)} onTierChange={(v) => setField('tier', v)} onOutputChange={(v) => setField('output', v)}
+            onStatusChange={(v) => setField('status', v)}
             outputOptions={allTags.outputs}
           />
           <div className="mt-6">
@@ -403,6 +404,13 @@ export default function ProjectPage() {
             {(p.start || p.end) && <span className="text-white/40 font-[400] tabular-nums">{p.start}{p.end && p.end !== p.start ? `–${p.end}` : ''}</span>}
             {p.section && <span className="text-[12px] font-[450] tracking-[0.06em] uppercase text-white/40">{p.section}</span>}
             <span className="text-[12px] font-[400] tracking-[0.04em] text-white/25 uppercase">Tier {p.tier}</span>
+            {p.status && p.status !== 'draft' && (
+              <span className={`text-[10px] font-[500] tracking-[0.06em] uppercase px-2 py-0.5 rounded-[var(--radius-sm)] ${
+                p.status === 'public' ? 'bg-[var(--c-success)]/20 text-[var(--c-success)]' : 'bg-[var(--c-accent)]/20 text-[var(--c-accent-muted)]'
+              }`}>
+                {p.status}
+              </span>
+            )}
           </div>
           <TagChips domains={p.domains} services={p.services} output={p.output} dark />
         </div>
