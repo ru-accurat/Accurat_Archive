@@ -43,6 +43,17 @@ export async function POST(request: Request) {
     'URL 2': p.urls[1] || '',
     'URL 3': p.urls[2] || '',
     'Output': p.output,
+    'Status': p.status,
+    'Location': p.locationName ?? '',
+    'Latitude': p.latitude ?? '',
+    'Longitude': p.longitude ?? '',
+    'Folder Name': p.folderName,
+    'Hero Image': p.heroImage ?? '',
+    'Thumb Image': p.thumbImage ?? '',
+    'Client Logo': p.clientLogo ?? '',
+    'PDF Files': (p.pdfFiles || []).join(', '),
+    'Media Order': (p.mediaOrder || []).join(', '),
+    'AI Generated': (p.aiGenerated || []).join(', '),
   }))
 
   const csv = Papa.unparse(rows)
