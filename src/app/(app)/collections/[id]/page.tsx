@@ -31,6 +31,9 @@ export default function CollectionDetailPage() {
   const [sharePopover, setSharePopover] = useState(false)
   const [sharingLoading, setSharingLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [deleteMode, setDeleteMode] = useState(false)
+  const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set())
+  const [batchRemoving, setBatchRemoving] = useState(false)
 
   useEffect(() => {
     fetch(`/api/collections/${id}`)
@@ -63,6 +66,36 @@ export default function CollectionDetailPage() {
     await fetch(`/api/collections/${id}`, { method: 'DELETE' })
     router.push('/collections')
   }, [id, router])
+
+  const toggleDeleteSelection = useCallback((projectId: string) => {
+    setSelectedForDelete((prev) => {
+      const next = new Set(prev)
+      if (next.has(projectId)) next.delete(projectId)
+      else next.add(projectId)
+      return next
+    })
+  }, [])
+
+  const handleBatchRemove = useCallback(async () => {
+    if (selectedForDelete.size === 0) return
+    setBatchRemoving(true)
+    const ids = Array.from(selectedForDelete)
+    await Promise.all(
+      ids.map((projectId) =>
+        fetch(`/api/collections/${id}/items`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId }),
+        })
+      )
+    )
+    setCollection((prev) =>
+      prev ? { ...prev, projects: prev.projects.filter((p) => !selectedForDelete.has(p.id)) } : null
+    )
+    setSelectedForDelete(new Set())
+    setDeleteMode(false)
+    setBatchRemoving(false)
+  }, [id, selectedForDelete])
 
   const handleProjectsAdded = useCallback((added: Project[]) => {
     setCollection((prev) =>
@@ -142,68 +175,96 @@ export default function CollectionDetailPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPickerOpen(true)}
-              className="text-[11px] font-[450] text-[var(--c-gray-600)] hover:text-[var(--c-gray-900)] transition-colors px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] hover:border-[var(--c-gray-400)]"
-            >
-              + Add Projects
-            </button>
-            <div className="relative">
-              <button
-                onClick={() => setSharePopover(!sharePopover)}
-                className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors px-3 py-1.5"
-              >
-                Share
-              </button>
-              {sharePopover && (
-                <div className="absolute right-0 top-9 w-72 bg-[var(--c-white)] border border-[var(--c-gray-200)] rounded-[var(--radius-md)] shadow-lg p-4 z-50">
-                  {collection.shareToken ? (
-                    <div>
-                      <p className="text-[11px] font-[450] text-[var(--c-gray-700)] mb-2">Shareable link</p>
-                      <div className="flex items-center gap-2 mb-3">
-                        <input
-                          readOnly
-                          value={shareUrl || ''}
-                          className="flex-1 text-[11px] text-[var(--c-gray-500)] bg-[var(--c-gray-50)] border border-[var(--c-gray-200)] rounded-[var(--radius-sm)] px-2.5 py-1.5 outline-none"
-                        />
-                        <button
-                          onClick={handleCopy}
-                          className="text-[10px] font-[500] px-2.5 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors"
-                        >
-                          {copied ? 'Copied!' : 'Copy'}
-                        </button>
-                      </div>
-                      <button
-                        onClick={handleRevokeShareLink}
-                        disabled={sharingLoading}
-                        className="text-[11px] text-[var(--c-error)] hover:text-[var(--c-error)]/80 transition-colors disabled:opacity-50"
-                      >
-                        Revoke link
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-[11px] text-[var(--c-gray-500)] mb-3">
-                        Generate a shareable link for this collection.
-                      </p>
-                      <button
-                        onClick={handleGenerateShareLink}
-                        disabled={sharingLoading}
-                        className="text-[11px] font-[450] px-4 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors disabled:opacity-50"
-                      >
-                        {sharingLoading ? 'Generating...' : 'Generate link'}
-                      </button>
+            {deleteMode ? (
+              <>
+                <button
+                  onClick={handleBatchRemove}
+                  disabled={selectedForDelete.size === 0 || batchRemoving}
+                  className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-error)] text-white hover:bg-[var(--c-error)]/80 transition-colors disabled:opacity-30"
+                >
+                  {batchRemoving ? 'Removing...' : `Remove${selectedForDelete.size > 0 ? ` (${selectedForDelete.size})` : ''}`}
+                </button>
+                <button
+                  onClick={() => { setDeleteMode(false); setSelectedForDelete(new Set()) }}
+                  className="text-[11px] font-[400] text-[var(--c-gray-500)] hover:text-[var(--c-gray-900)] transition-colors px-3 py-1.5"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setPickerOpen(true)}
+                  className="text-[11px] font-[450] text-[var(--c-gray-600)] hover:text-[var(--c-gray-900)] transition-colors px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] hover:border-[var(--c-gray-400)]"
+                >
+                  + Add Projects
+                </button>
+                {collection.projects.length > 0 && (
+                  <button
+                    onClick={() => setDeleteMode(true)}
+                    className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors px-3 py-1.5"
+                  >
+                    Remove Projects
+                  </button>
+                )}
+                <div className="relative">
+                  <button
+                    onClick={() => setSharePopover(!sharePopover)}
+                    className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors px-3 py-1.5"
+                  >
+                    Share
+                  </button>
+                  {sharePopover && (
+                    <div className="absolute right-0 top-9 w-72 bg-[var(--c-white)] border border-[var(--c-gray-200)] rounded-[var(--radius-md)] shadow-lg p-4 z-50">
+                      {collection.shareToken ? (
+                        <div>
+                          <p className="text-[11px] font-[450] text-[var(--c-gray-700)] mb-2">Shareable link</p>
+                          <div className="flex items-center gap-2 mb-3">
+                            <input
+                              readOnly
+                              value={shareUrl || ''}
+                              className="flex-1 text-[11px] text-[var(--c-gray-500)] bg-[var(--c-gray-50)] border border-[var(--c-gray-200)] rounded-[var(--radius-sm)] px-2.5 py-1.5 outline-none"
+                            />
+                            <button
+                              onClick={handleCopy}
+                              className="text-[10px] font-[500] px-2.5 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors"
+                            >
+                              {copied ? 'Copied!' : 'Copy'}
+                            </button>
+                          </div>
+                          <button
+                            onClick={handleRevokeShareLink}
+                            disabled={sharingLoading}
+                            className="text-[11px] text-[var(--c-error)] hover:text-[var(--c-error)]/80 transition-colors disabled:opacity-50"
+                          >
+                            Revoke link
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-[11px] text-[var(--c-gray-500)] mb-3">
+                            Generate a shareable link for this collection.
+                          </p>
+                          <button
+                            onClick={handleGenerateShareLink}
+                            disabled={sharingLoading}
+                            className="text-[11px] font-[450] px-4 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors disabled:opacity-50"
+                          >
+                            {sharingLoading ? 'Generating...' : 'Generate link'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-            <button
-              onClick={handleDelete}
-              className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-error)] transition-colors px-3 py-1.5"
-            >
-              Delete
-            </button>
+                <button
+                  onClick={handleDelete}
+                  className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-error)] transition-colors px-3 py-1.5"
+                >
+                  Delete Collection
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -223,18 +284,19 @@ export default function CollectionDetailPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
             {collection.projects.map((p) => {
               const img = thumbUrl(p.folderName, p.thumbImage || p.heroImage)
+              const isSelected = selectedForDelete.has(p.id)
               return (
                 <div key={p.id} className="group relative">
                   <button
-                    onClick={() => router.push(`/project/${p.id}`)}
-                    className="text-left w-full"
+                    onClick={() => deleteMode ? toggleDeleteSelection(p.id) : router.push(`/project/${p.id}`)}
+                    className={`text-left w-full transition-opacity duration-150 ${deleteMode && !isSelected ? 'opacity-60' : ''}`}
                   >
-                    <div className="aspect-[4/3] rounded-[var(--radius-sm)] overflow-hidden bg-[var(--c-gray-100)] mb-2">
+                    <div className={`aspect-[4/3] rounded-[var(--radius-sm)] overflow-hidden bg-[var(--c-gray-100)] mb-2 ${deleteMode ? 'cursor-pointer' : ''} ${isSelected ? 'ring-2 ring-[var(--c-error)]' : ''}`}>
                       {img ? (
                         <img
                           src={img}
                           alt={p.projectName}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className={`w-full h-full object-cover transition-transform duration-300 ${!deleteMode ? 'group-hover:scale-105' : ''}`}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[var(--c-gray-300)] text-[10px]">
@@ -245,15 +307,28 @@ export default function CollectionDetailPage() {
                     <p className="text-[12px] font-[500] text-[var(--c-gray-800)] truncate">{p.client}</p>
                     <p className="text-[11px] font-[350] text-[var(--c-gray-500)] truncate">{p.projectName}</p>
                   </button>
-                  <button
-                    onClick={() => handleRemove(p.id)}
-                    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 text-white/80 hover:bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Remove from collection"
-                  >
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2.5 2.5l5 5M7.5 2.5l-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                  </button>
+                  {/* Delete mode checkbox */}
+                  {deleteMode && (
+                    <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all ${isSelected ? 'bg-[var(--c-error)] text-white' : 'bg-black/40 text-white/60'}`}>
+                      {isSelected && (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <path d="M3 6l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                  )}
+                  {/* Single remove on hover (only when not in delete mode) */}
+                  {!deleteMode && (
+                    <button
+                      onClick={() => handleRemove(p.id)}
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 text-white/80 hover:bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove from collection"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <path d="M2.5 2.5l5 5M7.5 2.5l-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               )
             })}
