@@ -16,6 +16,11 @@ function parseYear(raw: string): number | null {
   return isNaN(n) ? null : n
 }
 
+function parseFloat_(raw: string): number | null {
+  const n = parseFloat(raw)
+  return isNaN(n) ? null : n
+}
+
 // Map a project field name + raw CSV value to a DB column update
 function fieldToDbUpdate(field: string, value: string): Record<string, unknown> {
   switch (field) {
@@ -36,6 +41,21 @@ function fieldToDbUpdate(field: string, value: string): Record<string, unknown> 
     case 'clientQuotes': return { client_quotes: value.trim() }
     case 'team': return { team: parseList(value) }
     case 'output': return { output: value.trim() }
+    case 'status': {
+      const v = value.trim().toLowerCase()
+      if (['draft', 'internal', 'public'].includes(v)) return { status: v }
+      return {}
+    }
+    case 'locationName': return { location_name: value.trim() }
+    case 'latitude': return { latitude: parseFloat_(value) }
+    case 'longitude': return { longitude: parseFloat_(value) }
+    case 'folderName': return { folder_name: value.trim() }
+    case 'heroImage': return { hero_image: value.trim() || null }
+    case 'thumbImage': return { thumb_image: value.trim() || null }
+    case 'clientLogo': return { client_logo: value.trim() || null }
+    case 'pdfFiles': return { pdf_files: parseList(value) }
+    case 'mediaOrder': return { media_order: parseList(value) }
+    case 'aiGenerated': return { ai_generated: parseList(value) }
     case 'urls': return {} // handled separately
     default: return {}
   }
@@ -64,7 +84,11 @@ export async function POST(request: Request) {
     'Description': 'description', 'Challenge': 'challenge', 'Solution': 'solution',
     'Deliverables': 'deliverables', 'Client Quotes': 'clientQuotes',
     'Accurat Team': 'team', 'URL 1': 'urls', 'URL 2': 'urls', 'URL 3': 'urls',
-    'Output': 'output',
+    'Output': 'output', 'Status': 'status',
+    'Location': 'locationName', 'Latitude': 'latitude', 'Longitude': 'longitude',
+    'Folder Name': 'folderName', 'Hero Image': 'heroImage', 'Thumb Image': 'thumbImage',
+    'Client Logo': 'clientLogo', 'PDF Files': 'pdfFiles', 'Media Order': 'mediaOrder',
+    'AI Generated': 'aiGenerated',
   }
 
   // Only process selected/enabled columns

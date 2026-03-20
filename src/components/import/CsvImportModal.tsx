@@ -25,7 +25,18 @@ const AUTO_MAP: Record<string, string> = {
   'URL 1': 'urls',
   'URL 2': 'urls',
   'URL 3': 'urls',
-  'Output': 'output'
+  'Output': 'output',
+  'Status': 'status',
+  'Location': 'locationName',
+  'Latitude': 'latitude',
+  'Longitude': 'longitude',
+  'Folder Name': 'folderName',
+  'Hero Image': 'heroImage',
+  'Thumb Image': 'thumbImage',
+  'Client Logo': 'clientLogo',
+  'PDF Files': 'pdfFiles',
+  'Media Order': 'mediaOrder',
+  'AI Generated': 'aiGenerated',
 }
 
 const TARGET_FIELDS = [
@@ -47,7 +58,18 @@ const TARGET_FIELDS = [
   { value: 'clientQuotes', label: 'Client Quotes' },
   { value: 'team', label: 'Team' },
   { value: 'urls', label: 'URLs' },
-  { value: 'output', label: 'Category / Output' }
+  { value: 'output', label: 'Category / Output' },
+  { value: 'status', label: 'Status' },
+  { value: 'locationName', label: 'Location Name' },
+  { value: 'latitude', label: 'Latitude' },
+  { value: 'longitude', label: 'Longitude' },
+  { value: 'folderName', label: 'Folder Name' },
+  { value: 'heroImage', label: 'Hero Image' },
+  { value: 'thumbImage', label: 'Thumb Image' },
+  { value: 'clientLogo', label: 'Client Logo' },
+  { value: 'pdfFiles', label: 'PDF Files' },
+  { value: 'mediaOrder', label: 'Media Order' },
+  { value: 'aiGenerated', label: 'AI Generated' },
 ]
 
 interface MatchInfo {
