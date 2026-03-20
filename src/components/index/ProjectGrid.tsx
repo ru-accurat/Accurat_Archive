@@ -19,11 +19,8 @@ export function ProjectGrid() {
   return (
     <div className="h-full overflow-auto">
       <div
-        className="grid gap-5"
-        style={{
-          padding: '20px 48px 48px',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))'
-        }}
+        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}
+        className="grid gap-5 px-4 sm:px-6 md:px-[48px] pt-5 pb-12"
       >
         {filteredProjects.map((project) => {
           const special = specialMedia[project.folderName]
@@ -68,7 +65,7 @@ export function ProjectGrid() {
                   </span>
                 )}
               </div>
-              <div className="text-[11px] font-[400] text-[var(--c-gray-500)] leading-tight truncate">
+              <div className="text-[11px] font-[400] text-[var(--c-gray-500)] leading-tight line-clamp-2">
                 {project.projectName}
               </div>
               {project.section && (
@@ -87,7 +84,7 @@ export function ProjectGrid() {
         </div>
       )}
 
-      <div className="px-[48px] py-4 text-[11px] text-[var(--c-gray-400)] font-[400]">
+      <div className="px-4 sm:px-6 md:px-[48px] py-4 text-[11px] text-[var(--c-gray-400)] font-[400]">
         {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''}
       </div>
     </div>

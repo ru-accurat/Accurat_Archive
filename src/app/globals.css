@@ -82,3 +82,6 @@ body {
 input, textarea, select { font-family: inherit; font-size: inherit; letter-spacing: inherit; }
 
 img, video { display: block; }
+
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }

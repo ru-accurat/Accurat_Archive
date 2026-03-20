@@ -23,14 +23,20 @@ export default function IndexPage() {
 
   return (
     <div className="flex flex-col h-full bg-[var(--c-white)]">
-      <div className="flex items-end gap-4" style={{ paddingLeft: 48, paddingRight: 48, paddingTop: 20, paddingBottom: 12 }}>
-        <input
-          type="text"
-          placeholder="Search projects..."
-          value={filters.search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-0 py-2 text-[14px] font-[350] bg-transparent border-b border-[var(--c-gray-200)] focus:border-[var(--c-gray-900)] focus:outline-none transition-colors duration-200 placeholder:text-[var(--c-gray-400)]"
-        />
+      <div className="flex items-end gap-4 px-4 sm:px-6 md:px-[48px] pt-5 pb-3">
+        <div className="flex-1 relative">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="absolute left-0 top-1/2 -translate-y-1/2 text-[var(--c-gray-300)]">
+            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.3" />
+            <path d="M9.5 9.5L13 13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search projects..."
+            value={filters.search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-6 pr-0 py-2 text-[14px] font-[350] bg-transparent border-b border-[var(--c-gray-200)] focus:border-[var(--c-gray-900)] focus:outline-none transition-colors duration-200 placeholder:text-[var(--c-gray-400)]"
+          />
+        </div>
         <div className="flex items-center gap-1 pb-1.5">
           {viewMode === 'table' && (
             <button

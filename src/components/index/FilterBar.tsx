@@ -17,7 +17,7 @@ export function FilterBar() {
   if (activeCount === 0 && !filters.search) return null
 
   return (
-    <div className="flex items-center gap-2 px-[48px] py-2.5">
+    <div className="flex items-center flex-wrap gap-2 px-4 sm:px-6 md:px-[48px] py-2.5">
       <span className="text-[10px] font-[500] uppercase tracking-[0.06em] text-[var(--c-gray-400)]">Active:</span>
 
       {filters.search && (

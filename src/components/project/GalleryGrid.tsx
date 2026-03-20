@@ -93,7 +93,7 @@ export function GalleryGrid({ media, folderName }: Props) {
         >
           {/* Close button */}
           <button
-            className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors duration-200 z-10"
+            className="absolute top-4 right-4 md:top-8 md:right-8 text-white/40 hover:text-white transition-colors duration-200 z-10"
             onClick={() => setLightboxIndex(null)}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -104,13 +104,13 @@ export function GalleryGrid({ media, folderName }: Props) {
           {/* Left arrow */}
           {lightboxIndex > 0 && (
             <button
-              className="absolute left-0 top-0 bottom-0 w-[100px] flex items-center justify-center text-white/25 hover:text-white transition-colors duration-200 cursor-pointer"
+              className="absolute left-0 top-0 bottom-0 w-12 md:w-[100px] flex items-center justify-center text-white/25 hover:text-white transition-colors duration-200 cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation()
                 setLightboxIndex(lightboxIndex - 1)
               }}
             >
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <svg width="28" height="28" viewBox="0 0 40 40" fill="none" className="md:w-10 md:h-10">
                 <path d="M25 8L13 20L25 32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
@@ -119,13 +119,13 @@ export function GalleryGrid({ media, folderName }: Props) {
           {/* Right arrow */}
           {lightboxIndex < media.length - 1 && (
             <button
-              className="absolute right-0 top-0 bottom-0 w-[100px] flex items-center justify-center text-white/25 hover:text-white transition-colors duration-200 cursor-pointer"
+              className="absolute right-0 top-0 bottom-0 w-12 md:w-[100px] flex items-center justify-center text-white/25 hover:text-white transition-colors duration-200 cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation()
                 setLightboxIndex(lightboxIndex + 1)
               }}
             >
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <svg width="28" height="28" viewBox="0 0 40 40" fill="none" className="md:w-10 md:h-10">
                 <path d="M15 8L27 20L15 32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
@@ -150,7 +150,7 @@ export function GalleryGrid({ media, folderName }: Props) {
           </div>
 
           {/* Counter */}
-          <div className="absolute bottom-8 text-[12px] text-white/30 font-[400] tabular-nums">
+          <div className="absolute bottom-4 md:bottom-8 text-[12px] text-white/30 font-[400] tabular-nums">
             {lightboxIndex + 1} / {media.length}
           </div>
         </div>

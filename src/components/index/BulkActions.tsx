@@ -47,8 +47,7 @@ export function BulkActions() {
   return (
     <>
       <div
-        className="flex items-center gap-4 bg-[var(--c-gray-900)] text-white"
-        style={{ padding: '10px 48px' }}
+        className="flex items-center flex-wrap gap-3 sm:gap-4 bg-[var(--c-gray-900)] text-white px-4 sm:px-6 md:px-[48px] py-2.5"
       >
         <span className="text-[12px] font-[450]">
           {selectedIds.length} selected

@@ -36,7 +36,7 @@ export function EditableMetadata({
   outputOptions
 }: Props) {
   return (
-    <div className="grid grid-cols-3 gap-6 py-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-5">
       <div>
         <label className={labelClass}>Client</label>
         <input
@@ -98,7 +98,7 @@ export function EditableMetadata({
         </div>
       </div>
 
-      <div className="col-span-3 relative z-10">
+      <div className="sm:col-span-2 md:col-span-3 relative z-10">
         <label className={labelClass}>Category</label>
         <select
           value={output}

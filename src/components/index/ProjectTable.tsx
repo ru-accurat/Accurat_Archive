@@ -71,7 +71,7 @@ export function ProjectTable() {
 
   return (
     <div className="h-full overflow-auto">
-      <table className="w-full text-[13px]">
+      <table className="w-full text-[13px] min-w-[800px]">
         <thead className="sticky top-0 bg-[var(--c-white)] z-10">
           <tr className="border-b border-[var(--c-gray-900)]">
             {/* Checkbox column */}
@@ -274,7 +274,7 @@ export function ProjectTable() {
         </div>
       )}
 
-      <div className="px-[48px] py-4 text-[11px] text-[var(--c-gray-400)] font-[400]">
+      <div className="px-4 sm:px-6 md:px-[48px] py-4 text-[11px] text-[var(--c-gray-400)] font-[400]">
         {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''}
       </div>
     </div>

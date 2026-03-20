@@ -316,7 +316,7 @@ export default function ProjectPage() {
       <div className="h-full overflow-y-auto bg-[var(--c-white)]">
         {fileInput}
         <div className="sticky top-0 z-40 bg-[var(--c-white)] border-b border-[var(--c-gray-200)]">
-          <div className="max-w-[1040px] px-[48px] py-3 flex items-center justify-between">
+          <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-3 flex items-center justify-between">
             <button onClick={cancelEdit} className="text-[12px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-900)] transition-colors duration-200">Cancel</button>
             <div className="text-[11px] font-[500] uppercase tracking-[0.08em] text-[var(--c-gray-400)]">Editing</div>
             <button onClick={saveEdit} disabled={saving} className="text-[12px] font-[500] px-5 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors duration-200 disabled:opacity-40">
@@ -324,7 +324,7 @@ export default function ProjectPage() {
             </button>
           </div>
         </div>
-        <div className="max-w-[1040px] px-[48px] py-10">
+        <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-10">
           <EditableField title="Project Name" value={p.projectName} onChange={(v) => setField('projectName', v)} large multiline={false} />
           <EditableMetadata
             client={p.client} start={p.start} end={p.end} section={p.section} tier={p.tier} output={p.output}
@@ -390,15 +390,15 @@ export default function ProjectPage() {
     <div className="h-full overflow-y-auto bg-[var(--c-black)]">
       <div className="bg-[var(--c-black)] text-white">
         <div className="sticky top-0 z-40 bg-[var(--c-black)]/80 backdrop-blur-xl">
-          <div className="max-w-[1040px] px-[48px] py-3 flex items-center justify-between">
+          <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-3 flex items-center justify-between">
             <button onClick={() => router.push('/')} className="text-[12px] font-[400] text-white/30 hover:text-white/70 transition-colors duration-200">&larr; Back</button>
             <button onClick={enterEdit} className="text-[11px] font-[450] tracking-[0.02em] px-4 py-1.5 rounded-[var(--radius-sm)] bg-white/10 text-white/60 hover:bg-white/15 hover:text-white transition-all duration-200">Edit</button>
           </div>
         </div>
         <HeroSection media={heroMedia} folderName={p.folderName} projectName={p.projectName} />
-        <div className="max-w-[1040px] px-[48px] pt-16 pb-12">
-          <h1 className="text-[2.8rem] font-[250] tracking-[-0.03em] leading-[1.1] mb-[12px] text-white">{p.projectName}</h1>
-          <div className="flex items-center gap-5 text-[15px] mb-[24px]">
+        <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] pt-16 pb-12">
+          <h1 className="text-[1.8rem] sm:text-[2.2rem] md:text-[2.8rem] font-[250] tracking-[-0.03em] leading-[1.1] mb-[12px] text-white">{p.projectName}</h1>
+          <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-[13px] sm:text-[15px] mb-[24px]">
             <span className="font-[500] text-white/90">{p.client}</span>
             {(p.start || p.end) && <span className="text-white/40 font-[400] tabular-nums">{p.start}{p.end && p.end !== p.start ? `–${p.end}` : ''}</span>}
             {p.section && <span className="text-[12px] font-[450] tracking-[0.06em] uppercase text-white/40">{p.section}</span>}
@@ -409,7 +409,7 @@ export default function ProjectPage() {
       </div>
 
       <div className="bg-[var(--c-white)]">
-        <div className="max-w-[1040px] px-[48px] pt-16 pb-12">
+        <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] pt-16 pb-12">
           {p.tagline && <div className="mb-12"><TextBlock title="Tagline" content={p.tagline} large isAiGenerated={isAi('tagline')} /></div>}
           {p.description && <TextBlock title="Description" content={p.description} isAiGenerated={isAi('description')} />}
           {!p.tagline && !p.description && <TextBlock title="Tagline" content="" />}
@@ -418,8 +418,8 @@ export default function ProjectPage() {
 
       {(p.challenge || p.solution) && (
         <div className="bg-[var(--c-white)]">
-          <div className="max-w-[1040px] px-[48px] py-12">
-            <div className="grid grid-cols-2 gap-16">
+          <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
               <TextBlock title="Challenge" content={p.challenge} isAiGenerated={isAi('challenge')} />
               <TextBlock title="Solution" content={p.solution} isAiGenerated={isAi('solution')} />
             </div>
@@ -429,7 +429,7 @@ export default function ProjectPage() {
 
       {p.deliverables && (
         <div className="bg-[var(--c-white)]">
-          <div className="max-w-[1040px] px-[48px] py-12">
+          <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-12">
             <TextBlock title="Deliverables" content={p.deliverables} isAiGenerated={isAi('deliverables')} />
           </div>
         </div>
@@ -437,16 +437,16 @@ export default function ProjectPage() {
 
       {p.clientQuotes && (
         <div className="bg-[var(--c-black)]">
-          <div className="max-w-[1040px] px-[48px] py-12">
+          <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-12">
             <TextBlock title="Client Quote" content={p.clientQuotes} large dark isAiGenerated={isAi('clientQuotes')} />
           </div>
         </div>
       )}
 
       <div className="bg-[var(--c-white)]">
-        <div className="max-w-[1040px] px-[48px] pt-12 pb-16">
+        <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] pt-12 pb-16">
           {(p.urls.filter(Boolean).length > 0 || p.team.length > 0) && (
-            <div className="grid grid-cols-2 gap-16 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-12">
               <UrlLinks urls={p.urls} />
               <TeamList team={p.team} />
             </div>
@@ -497,7 +497,7 @@ export default function ProjectPage() {
       </div>
 
       <div className="bg-[var(--c-black)] h-20" />
-      <div className="fixed bottom-5 right-5 text-[10px] font-[400] tracking-[0.04em] text-white/20 bg-[var(--c-black)]/80 backdrop-blur-sm px-3 py-1.5 rounded-[var(--radius-sm)]">← → navigate</div>
+      <div className="hidden md:block fixed bottom-5 right-5 text-[10px] font-[400] tracking-[0.04em] text-white/20 bg-[var(--c-black)]/80 backdrop-blur-sm px-3 py-1.5 rounded-[var(--radius-sm)]">← → navigate</div>
     </div>
   )
 }

@@ -82,9 +82,9 @@ export function FilterAccordion() {
   }
 
   return (
-    <div style={{ paddingLeft: 48, paddingRight: 48 }}>
+    <div className="px-4 sm:px-6 md:px-[48px]">
       {/* Category buttons row */}
-      <div className="flex items-center gap-1.5 pb-2">
+      <div className="flex items-center gap-1.5 pb-2 overflow-x-auto scrollbar-none">
         {defs.map((def) => {
           const count = def.selected.length
           const isOpen = openSection === def.key
@@ -92,7 +92,7 @@ export function FilterAccordion() {
             <button
               key={def.key}
               onClick={() => toggle(def.key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-sm)] text-[11px] font-[450] tracking-[0.02em] transition-all duration-150 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-sm)] text-[11px] font-[450] tracking-[0.02em] transition-all duration-150 shrink-0 whitespace-nowrap ${
                 isOpen
                   ? 'bg-[var(--c-gray-900)] text-white'
                   : count > 0
