@@ -157,28 +157,36 @@ export default function MapPage() {
 
       const popup = new mgl.Popup({ offset: 25, maxWidth: '280px' }).setHTML(popupHtml)
 
-      // Custom black marker element
+      // Custom black marker element — use wrapper + inner dot so hover scale
+      // doesn't interfere with MapLibre's transform-based positioning
+      const size = count > 1 ? 24 : 16
       const el = document.createElement('div')
-      el.style.width = count > 1 ? '24px' : '16px'
-      el.style.height = count > 1 ? '24px' : '16px'
-      el.style.borderRadius = '50%'
-      el.style.backgroundColor = '#1a1a1a'
-      el.style.border = '2px solid #fff'
-      el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.3)'
+      el.style.width = `${size}px`
+      el.style.height = `${size}px`
       el.style.cursor = 'pointer'
-      el.style.transition = 'transform 0.15s ease'
-      el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.2)' })
-      el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)' })
+
+      const dot = document.createElement('div')
+      dot.style.width = '100%'
+      dot.style.height = '100%'
+      dot.style.borderRadius = '50%'
+      dot.style.backgroundColor = '#1a1a1a'
+      dot.style.border = '2px solid #fff'
+      dot.style.boxShadow = '0 1px 4px rgba(0,0,0,0.3)'
+      dot.style.transition = 'transform 0.15s ease'
+      el.addEventListener('mouseenter', () => { dot.style.transform = 'scale(1.3)' })
+      el.addEventListener('mouseleave', () => { dot.style.transform = 'scale(1)' })
 
       if (count > 1) {
-        el.style.display = 'flex'
-        el.style.alignItems = 'center'
-        el.style.justifyContent = 'center'
-        el.style.fontSize = '9px'
-        el.style.fontWeight = '600'
-        el.style.color = '#fff'
-        el.textContent = String(count)
+        dot.style.display = 'flex'
+        dot.style.alignItems = 'center'
+        dot.style.justifyContent = 'center'
+        dot.style.fontSize = '9px'
+        dot.style.fontWeight = '600'
+        dot.style.color = '#fff'
+        dot.textContent = String(count)
       }
+
+      el.appendChild(dot)
 
       const marker = new mgl.Marker({ element: el })
         .setLngLat([lng, lat])
