@@ -32,6 +32,7 @@ export interface ProjectRow {
   location_name: string | null
   latitude: number | null
   longitude: number | null
+  share_token: string | null
   created_at?: string
   updated_at?: string
 }
@@ -69,6 +70,7 @@ export function rowToProject(row: ProjectRow): Project {
     locationName: row.location_name || undefined,
     latitude: row.latitude,
     longitude: row.longitude,
+    shareToken: row.share_token,
   }
 }
 

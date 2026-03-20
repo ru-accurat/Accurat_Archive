@@ -45,6 +45,9 @@ export default function ProjectPage() {
   const [aiResult, setAiResult] = useState<{ field: string; text: string } | null>(null)
   const [allTags, setAllTags] = useState<{ domains: string[]; services: string[]; outputs: string[] }>({ domains: [], services: [], outputs: [] })
   const [uploadProgress, setUploadProgress] = useState<{ active: boolean; message: string; done: boolean }>({ active: false, message: '', done: false })
+  const [sharePopover, setSharePopover] = useState(false)
+  const [sharingLoading, setSharingLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
   const pdfInputRef = useRef<HTMLInputElement>(null)
@@ -396,7 +399,57 @@ export default function ProjectPage() {
         <div className="sticky top-0 z-40 bg-[var(--c-black)]/80 backdrop-blur-xl">
           <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-3 flex items-center justify-between">
             <button onClick={() => router.push('/')} className="text-[12px] font-[400] text-white/30 hover:text-white/70 transition-colors duration-200">&larr; Back</button>
-            <button onClick={enterEdit} className="text-[11px] font-[450] tracking-[0.02em] px-4 py-1.5 rounded-[var(--radius-sm)] bg-white/10 text-white/60 hover:bg-white/15 hover:text-white transition-all duration-200">Edit</button>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <button
+                  onClick={() => setSharePopover(!sharePopover)}
+                  className="text-[11px] font-[400] tracking-[0.02em] px-3 py-1.5 text-white/40 hover:text-white/70 transition-colors duration-200"
+                >
+                  Share
+                </button>
+                {sharePopover && (
+                  <div className="absolute right-0 top-9 w-72 bg-[var(--c-white)] border border-[var(--c-gray-200)] rounded-[var(--radius-md)] shadow-lg p-4 z-50">
+                    {p.shareToken ? (
+                      <div>
+                        <p className="text-[11px] font-[450] text-[var(--c-gray-700)] mb-2">Shareable link</p>
+                        <div className="flex items-center gap-2 mb-3">
+                          <input
+                            readOnly
+                            value={`${window.location.origin}/share/${p.shareToken}`}
+                            className="flex-1 text-[11px] text-[var(--c-gray-500)] bg-[var(--c-gray-50)] border border-[var(--c-gray-200)] rounded-[var(--radius-sm)] px-2.5 py-1.5 outline-none"
+                          />
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/share/${p.shareToken}`); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+                            className="text-[10px] font-[500] px-2.5 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors"
+                          >
+                            {copied ? 'Copied!' : 'Copy'}
+                          </button>
+                        </div>
+                        <button
+                          onClick={async () => { setSharingLoading(true); await fetch(`/api/projects/${id}/share-token`, { method: 'DELETE' }); setProject((prev) => prev ? { ...prev, shareToken: null } : null); setSharingLoading(false) }}
+                          disabled={sharingLoading}
+                          className="text-[11px] text-[var(--c-error)] hover:text-[var(--c-error)]/80 transition-colors disabled:opacity-50"
+                        >
+                          Revoke link
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-[11px] text-[var(--c-gray-500)] mb-3">Generate a shareable link for this project.</p>
+                        <button
+                          onClick={async () => { setSharingLoading(true); const res = await fetch(`/api/projects/${id}/share-token`, { method: 'POST' }); const data = await res.json(); setProject((prev) => prev ? { ...prev, shareToken: data.token } : null); setSharingLoading(false) }}
+                          disabled={sharingLoading}
+                          className="text-[11px] font-[450] px-4 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors disabled:opacity-50"
+                        >
+                          {sharingLoading ? 'Generating...' : 'Generate link'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <button onClick={enterEdit} className="text-[11px] font-[450] tracking-[0.02em] px-4 py-1.5 rounded-[var(--radius-sm)] bg-white/10 text-white/60 hover:bg-white/15 hover:text-white transition-all duration-200">Edit</button>
+            </div>
           </div>
         </div>
         <HeroSection media={heroMedia} folderName={p.folderName} projectName={p.projectName} />

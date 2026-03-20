@@ -37,6 +37,7 @@ export interface Project {
   locationName?: string
   latitude?: number | null
   longitude?: number | null
+  shareToken?: string | null
 }
 
 export interface HistoryEntry {

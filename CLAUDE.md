@@ -47,10 +47,42 @@ Deployed on Vercel Pro at https://accurat-archive.vercel.app/
 - Env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Integration Plan
-See `.claude/plans/golden-jumping-balloon.md` for the 6-phase feature integration plan:
-Phase 1: Auth & Roles, Status Workflow, Activity Log
-Phase 2: Related Projects, Timeline, Collections, Map
-Phase 3: Engagements DB, Dashboard, Client Views, Capability Matrix
-Phase 4: AI Case Study Writer, Multi-Language (EN/IT), PPTX Export
-Phase 5: Public Portfolio, Shareable Links
-Phase 6: Backups, Video Thumbnails, Asset Tagging
+
+### ✅ Phase 1 — Complete
+- **1A** Auth & Roles: Login page, auth hook, middleware, profiles table, RLS
+- **1B** Project Status: draft/internal/public column with filter + edit support
+- **1C** Smart Search: Result count hint when filters are active
+- **1D** Activity Log: activity_log table, logActivity helper, feed page
+
+### ✅ Phase 2 — Complete
+- **2A** Related Projects: Similarity-scored related projects on project detail
+- **2B** Timeline: Horizontal scrollable timeline visualization
+- **2C** Collections: Full CRUD collections with picker modal in bulk actions
+- **2D** Map: MapLibre GL map with B&W CARTO tiles, clustered location markers
+
+### 🔲 Phase 3 — Shelved (awaiting user input)
+- **3A** Engagements DB — shelved, needs more exploration
+- **3B** Dashboard — shelved, needs more exploration
+- **3C** Client View & Capability Matrix — shelved, needs more exploration
+
+### 🔲 Phase 4 — Next Up
+- **4A** Public Portfolio
+- **4B** Shareable Project Links
+- **4C** Shared Collection Links
+
+### 🔲 Phase 5
+- **5A** AI Case Study Writer (Claude Sonnet)
+- **5B** Multi-Language (EN/IT)
+- **5C** PPTX Export
+
+### 🔲 Phase 6
+- **6A** Automated Backups
+- **6B** Video Thumbnails
+- **6C** Asset Tagging
+
+### SQL Migrations Applied
+- `002_auth_and_profiles.sql` — profiles, trigger, RLS
+- `003_project_status.sql` — status column
+- `004_activity_log.sql` — activity_log table
+- `005_collections.sql` — collections + collection_items
+- `006_project_location.sql` — location_name, latitude, longitude
