@@ -138,7 +138,9 @@ export default function MapPage() {
         </div>
       </div>
       <div className="flex-1 relative min-h-0">
-        <div ref={mapContainer} className="absolute inset-0" />
+        <div className="absolute inset-0">
+          <div ref={mapContainer} className="w-full h-full" />
+        </div>
       </div>
     </div>
   )
