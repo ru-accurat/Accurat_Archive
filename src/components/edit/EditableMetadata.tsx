@@ -8,6 +8,9 @@ interface Props {
   tier: number
   output: string
   status: 'draft' | 'internal' | 'public'
+  locationName: string
+  latitude: number | null
+  longitude: number | null
   onClientChange: (v: string) => void
   onStartChange: (v: number | null) => void
   onEndChange: (v: number | null) => void
@@ -15,6 +18,9 @@ interface Props {
   onTierChange: (v: number) => void
   onOutputChange: (v: string) => void
   onStatusChange: (v: 'draft' | 'internal' | 'public') => void
+  onLocationNameChange: (v: string) => void
+  onLatitudeChange: (v: number | null) => void
+  onLongitudeChange: (v: number | null) => void
   outputOptions: string[]
 }
 
@@ -30,6 +36,9 @@ export function EditableMetadata({
   tier,
   output,
   status,
+  locationName,
+  latitude,
+  longitude,
   onClientChange,
   onStartChange,
   onEndChange,
@@ -37,6 +46,9 @@ export function EditableMetadata({
   onTierChange,
   onOutputChange,
   onStatusChange,
+  onLocationNameChange,
+  onLatitudeChange,
+  onLongitudeChange,
   outputOptions
 }: Props) {
   return (
@@ -129,6 +141,42 @@ export function EditableMetadata({
           <option value="internal">Internal</option>
           <option value="public">Public</option>
         </select>
+      </div>
+
+      <div>
+        <label className={labelClass}>Location</label>
+        <input
+          type="text"
+          value={locationName}
+          onChange={(e) => onLocationNameChange(e.target.value)}
+          placeholder="e.g. Milan, Italy"
+          className={inputClass}
+        />
+      </div>
+
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <label className={labelClass}>Latitude</label>
+          <input
+            type="number"
+            step="any"
+            value={latitude ?? ''}
+            onChange={(e) => onLatitudeChange(e.target.value ? parseFloat(e.target.value) : null)}
+            placeholder="45.4642"
+            className={inputClass}
+          />
+        </div>
+        <div className="flex-1">
+          <label className={labelClass}>Longitude</label>
+          <input
+            type="number"
+            step="any"
+            value={longitude ?? ''}
+            onChange={(e) => onLongitudeChange(e.target.value ? parseFloat(e.target.value) : null)}
+            placeholder="9.1900"
+            className={inputClass}
+          />
+        </div>
       </div>
     </div>
   )

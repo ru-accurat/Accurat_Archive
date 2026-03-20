@@ -25,6 +25,7 @@ import { EditableMetadata } from '@/components/edit/EditableMetadata'
 import { MediaManager } from '@/components/edit/MediaManager'
 import { HistoryPanel } from '@/components/edit/HistoryPanel'
 import { AiDiffModal } from '@/components/edit/AiDiffModal'
+import { RelatedProjects } from '@/components/project/RelatedProjects'
 
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>()
@@ -328,9 +329,11 @@ export default function ProjectPage() {
           <EditableField title="Project Name" value={p.projectName} onChange={(v) => setField('projectName', v)} large multiline={false} />
           <EditableMetadata
             client={p.client} start={p.start} end={p.end} section={p.section} tier={p.tier} output={p.output} status={p.status}
+            locationName={p.locationName || ''} latitude={p.latitude ?? null} longitude={p.longitude ?? null}
             onClientChange={(v) => setField('client', v)} onStartChange={(v) => setField('start', v)} onEndChange={(v) => setField('end', v)}
             onSectionChange={(v) => setField('section', v)} onTierChange={(v) => setField('tier', v)} onOutputChange={(v) => setField('output', v)}
             onStatusChange={(v) => setField('status', v)}
+            onLocationNameChange={(v) => setField('locationName', v)} onLatitudeChange={(v) => setField('latitude', v)} onLongitudeChange={(v) => setField('longitude', v)}
             outputOptions={allTags.outputs}
           />
           <div className="mt-6">
@@ -501,6 +504,10 @@ export default function ProjectPage() {
           )}
 
           <GalleryGrid media={galleryMedia} folderName={p.folderName} />
+
+          <div className="mt-16">
+            <RelatedProjects projectId={p.id} />
+          </div>
         </div>
       </div>
 

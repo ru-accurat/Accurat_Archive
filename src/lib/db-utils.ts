@@ -29,6 +29,9 @@ export interface ProjectRow {
   client_logo: string | null
   pdf_files: string[] | null
   status: string
+  location_name: string | null
+  latitude: number | null
+  longitude: number | null
   created_at?: string
   updated_at?: string
 }
@@ -63,6 +66,9 @@ export function rowToProject(row: ProjectRow): Project {
     clientLogo: row.client_logo || undefined,
     pdfFiles: row.pdf_files || [],
     status: (row.status as 'draft' | 'internal' | 'public') || 'draft',
+    locationName: row.location_name || undefined,
+    latitude: row.latitude,
+    longitude: row.longitude,
   }
 }
 
@@ -97,6 +103,9 @@ export function projectToRow(project: Partial<Project>): Partial<ProjectRow> {
   if (project.clientLogo !== undefined) row.client_logo = project.clientLogo
   if (project.pdfFiles !== undefined) row.pdf_files = project.pdfFiles
   if (project.status !== undefined) row.status = project.status
+  if (project.locationName !== undefined) row.location_name = project.locationName
+  if (project.latitude !== undefined) row.latitude = project.latitude
+  if (project.longitude !== undefined) row.longitude = project.longitude
 
   return row as Partial<ProjectRow>
 }

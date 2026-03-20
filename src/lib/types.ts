@@ -34,6 +34,9 @@ export interface Project {
   clientLogo?: string
   pdfFiles?: string[]
   status: 'draft' | 'internal' | 'public'
+  locationName?: string
+  latitude?: number | null
+  longitude?: number | null
 }
 
 export interface HistoryEntry {

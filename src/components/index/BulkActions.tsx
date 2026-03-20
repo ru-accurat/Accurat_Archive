@@ -4,10 +4,12 @@ import { useState } from 'react'
 import { api } from '@/lib/api-client'
 import { useProjectStore } from '@/stores/project-store'
 import { BulkGenerateModal } from '@/components/shared/BulkGenerateModal'
+import { CollectionPicker } from '@/components/shared/CollectionPicker'
 
 export function BulkActions() {
   const { selectedIds, clearSelection, projects } = useProjectStore()
   const [showGenerate, setShowGenerate] = useState(false)
+  const [showCollections, setShowCollections] = useState(false)
   const [exporting, setExporting] = useState(false)
 
   if (selectedIds.length === 0) return null
@@ -56,6 +58,13 @@ export function BulkActions() {
         <div className="flex-1" />
 
         <button
+          onClick={() => setShowCollections(true)}
+          className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-white/10 text-white/70 hover:bg-white/15 transition-colors duration-200"
+        >
+          Add to Collection
+        </button>
+
+        <button
           onClick={() => setShowGenerate(true)}
           className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-ai)]/20 text-[var(--c-ai)] hover:bg-[var(--c-ai)]/30 transition-colors duration-200"
         >
@@ -89,6 +98,11 @@ export function BulkActions() {
       <BulkGenerateModal
         open={showGenerate}
         onClose={() => setShowGenerate(false)}
+        projectIds={selectedIds}
+      />
+      <CollectionPicker
+        open={showCollections}
+        onClose={() => setShowCollections(false)}
         projectIds={selectedIds}
       />
     </>
