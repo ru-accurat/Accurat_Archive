@@ -1,3 +1,10 @@
+export interface UserProfile {
+  id: string
+  email: string
+  displayName: string
+  role: 'admin' | 'editor' | 'viewer'
+}
+
 export interface Project {
   id: string
   fullName: string
