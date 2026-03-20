@@ -3,7 +3,6 @@
 import { useProjects } from '@/hooks/use-projects'
 import { useProjectStore } from '@/stores/project-store'
 import { useEffect, useRef, useMemo, useState } from 'react'
-import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -12,18 +11,33 @@ export default function MapPage() {
   const { loading } = useProjects()
   const projects = useProjectStore((s) => s.projects)
   const mapContainer = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<maplibregl.Map | null>(null)
-  const markersRef = useRef<maplibregl.Marker[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markersRef = useRef<any[]>([])
   const [mapReady, setMapReady] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [mgl, setMgl] = useState<any>(null)
 
   const geoProjects = useMemo(
     () => projects.filter((p) => p.latitude != null && p.longitude != null),
     [projects]
   )
 
-  // Initialize map
+  // Dynamically import maplibre-gl (browser only)
   useEffect(() => {
-    if (loading || !mapContainer.current) return
+    let cancelled = false
+    async function loadMapLibre() {
+      const mod = await import('maplibre-gl')
+      if (!cancelled) setMgl(mod.default || mod)
+    }
+    loadMapLibre()
+    return () => { cancelled = true }
+  }, [])
+
+  // Initialize map once library and container are ready
+  useEffect(() => {
+    if (!mgl || loading || !mapContainer.current) return
 
     // Clean up previous map if any
     if (mapRef.current) {
@@ -32,7 +46,7 @@ export default function MapPage() {
       setMapReady(false)
     }
 
-    const map = new maplibregl.Map({
+    const map = new mgl.Map({
       container: mapContainer.current,
       style: {
         version: 8,
@@ -50,7 +64,7 @@ export default function MapPage() {
       zoom: 3,
     })
 
-    map.addControl(new maplibregl.NavigationControl(), 'top-right')
+    map.addControl(new mgl.NavigationControl(), 'top-right')
     mapRef.current = map
 
     map.on('load', () => setMapReady(true))
@@ -60,12 +74,12 @@ export default function MapPage() {
       mapRef.current = null
       setMapReady(false)
     }
-  }, [loading])
+  }, [mgl, loading])
 
   // Add markers when map is ready and projects change
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !mapReady || geoProjects.length === 0) return
+    if (!mgl || !map || !mapReady || geoProjects.length === 0) return
 
     // Clear existing markers
     markersRef.current.forEach((m) => m.remove())
@@ -77,7 +91,7 @@ export default function MapPage() {
         ? `${SUPABASE_URL}/storage/v1/object/public/project-media/${p.folderName}/${thumb}`
         : null
 
-      const popup = new maplibregl.Popup({ offset: 25, maxWidth: '240px' }).setHTML(`
+      const popup = new mgl.Popup({ offset: 25, maxWidth: '240px' }).setHTML(`
         <div style="font-family: Inter, sans-serif; cursor: pointer;" onclick="window.location.href='/project/${p.id}'">
           ${imgUrl ? `<img src="${imgUrl}" style="width:100%;height:80px;object-fit:cover;border-radius:3px;margin-bottom:6px;" />` : ''}
           <div style="font-size:12px;font-weight:500;color:#1a1a1a;">${p.client}</div>
@@ -86,7 +100,7 @@ export default function MapPage() {
         </div>
       `)
 
-      const marker = new maplibregl.Marker({ color: '#3b82f6' })
+      const marker = new mgl.Marker({ color: '#3b82f6' })
         .setLngLat([p.longitude!, p.latitude!])
         .setPopup(popup)
         .addTo(map)
@@ -96,19 +110,19 @@ export default function MapPage() {
 
     // Fit bounds
     if (geoProjects.length > 1) {
-      const bounds = new maplibregl.LngLatBounds()
+      const bounds = new mgl.LngLatBounds()
       geoProjects.forEach((p) => bounds.extend([p.longitude!, p.latitude!]))
       map.fitBounds(bounds, { padding: 60 })
     } else if (geoProjects.length === 1) {
       map.setCenter([geoProjects[0].longitude!, geoProjects[0].latitude!])
       map.setZoom(10)
     }
-  }, [geoProjects, mapReady])
+  }, [mgl, geoProjects, mapReady])
 
-  if (loading) {
+  if (loading || !mgl) {
     return (
       <div className="flex items-center justify-center h-full bg-[var(--c-white)] text-[var(--c-gray-400)] text-[13px]">
-        Loading...
+        Loading map...
       </div>
     )
   }
