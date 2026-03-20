@@ -2,8 +2,7 @@
 
 import { useProjects } from '@/hooks/use-projects'
 import { useProjectStore } from '@/stores/project-store'
-import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -12,17 +11,26 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 export default function MapPage() {
   const { loading } = useProjects()
   const projects = useProjectStore((s) => s.projects)
-  const router = useRouter()
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
+  const markersRef = useRef<maplibregl.Marker[]>([])
+  const [mapReady, setMapReady] = useState(false)
 
   const geoProjects = useMemo(
     () => projects.filter((p) => p.latitude != null && p.longitude != null),
     [projects]
   )
 
+  // Initialize map
   useEffect(() => {
-    if (loading || !mapContainer.current || mapRef.current) return
+    if (loading || !mapContainer.current) return
+
+    // Clean up previous map if any
+    if (mapRef.current) {
+      mapRef.current.remove()
+      mapRef.current = null
+      setMapReady(false)
+    }
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
@@ -43,60 +51,59 @@ export default function MapPage() {
     })
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right')
-
     mapRef.current = map
+
+    map.on('load', () => setMapReady(true))
 
     return () => {
       map.remove()
       mapRef.current = null
+      setMapReady(false)
     }
   }, [loading])
 
-  // Add markers when projects change
+  // Add markers when map is ready and projects change
   useEffect(() => {
     const map = mapRef.current
-    if (!map || geoProjects.length === 0) return
+    if (!map || !mapReady || geoProjects.length === 0) return
 
-    // Wait for map to load
-    const addMarkers = () => {
-      geoProjects.forEach((p) => {
-        const thumb = p.thumbImage || p.heroImage
-        const imgUrl = thumb
-          ? `${SUPABASE_URL}/storage/v1/object/public/project-media/${p.folderName}/${thumb}`
-          : null
+    // Clear existing markers
+    markersRef.current.forEach((m) => m.remove())
+    markersRef.current = []
 
-        const popup = new maplibregl.Popup({ offset: 25, maxWidth: '240px' }).setHTML(`
-          <div style="font-family: Inter, sans-serif; cursor: pointer;" onclick="window.location.href='/project/${p.id}'">
-            ${imgUrl ? `<img src="${imgUrl}" style="width:100%;height:80px;object-fit:cover;border-radius:3px;margin-bottom:6px;" />` : ''}
-            <div style="font-size:12px;font-weight:500;color:#1a1a1a;">${p.client}</div>
-            <div style="font-size:11px;color:#666;">${p.projectName}</div>
-            ${p.locationName ? `<div style="font-size:10px;color:#999;margin-top:2px;">${p.locationName}</div>` : ''}
-          </div>
-        `)
+    geoProjects.forEach((p) => {
+      const thumb = p.thumbImage || p.heroImage
+      const imgUrl = thumb
+        ? `${SUPABASE_URL}/storage/v1/object/public/project-media/${p.folderName}/${thumb}`
+        : null
 
-        new maplibregl.Marker({ color: '#3b82f6' })
-          .setLngLat([p.longitude!, p.latitude!])
-          .setPopup(popup)
-          .addTo(map)
-      })
+      const popup = new maplibregl.Popup({ offset: 25, maxWidth: '240px' }).setHTML(`
+        <div style="font-family: Inter, sans-serif; cursor: pointer;" onclick="window.location.href='/project/${p.id}'">
+          ${imgUrl ? `<img src="${imgUrl}" style="width:100%;height:80px;object-fit:cover;border-radius:3px;margin-bottom:6px;" />` : ''}
+          <div style="font-size:12px;font-weight:500;color:#1a1a1a;">${p.client}</div>
+          <div style="font-size:11px;color:#666;">${p.projectName}</div>
+          ${p.locationName ? `<div style="font-size:10px;color:#999;margin-top:2px;">${p.locationName}</div>` : ''}
+        </div>
+      `)
 
-      // Fit bounds if there are markers
-      if (geoProjects.length > 1) {
-        const bounds = new maplibregl.LngLatBounds()
-        geoProjects.forEach((p) => bounds.extend([p.longitude!, p.latitude!]))
-        map.fitBounds(bounds, { padding: 60 })
-      } else if (geoProjects.length === 1) {
-        map.setCenter([geoProjects[0].longitude!, geoProjects[0].latitude!])
-        map.setZoom(10)
-      }
+      const marker = new maplibregl.Marker({ color: '#3b82f6' })
+        .setLngLat([p.longitude!, p.latitude!])
+        .setPopup(popup)
+        .addTo(map)
+
+      markersRef.current.push(marker)
+    })
+
+    // Fit bounds
+    if (geoProjects.length > 1) {
+      const bounds = new maplibregl.LngLatBounds()
+      geoProjects.forEach((p) => bounds.extend([p.longitude!, p.latitude!]))
+      map.fitBounds(bounds, { padding: 60 })
+    } else if (geoProjects.length === 1) {
+      map.setCenter([geoProjects[0].longitude!, geoProjects[0].latitude!])
+      map.setZoom(10)
     }
-
-    if (map.loaded()) {
-      addMarkers()
-    } else {
-      map.on('load', addMarkers)
-    }
-  }, [geoProjects])
+  }, [geoProjects, mapReady])
 
   if (loading) {
     return (
@@ -107,8 +114,8 @@ export default function MapPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--c-white)]">
-      <div className="px-4 sm:px-6 md:px-[48px] pt-5 pb-3 flex items-center justify-between">
+    <div className="flex flex-col h-[calc(100vh-var(--topbar-h))] bg-[var(--c-white)]">
+      <div className="px-4 sm:px-6 md:px-[48px] pt-5 pb-3 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-[1.1rem] font-[350] tracking-[-0.01em] text-[var(--c-gray-900)]">Map</h1>
           <p className="text-[12px] text-[var(--c-gray-400)] mt-1">
@@ -116,7 +123,7 @@ export default function MapPage() {
           </p>
         </div>
       </div>
-      <div className="flex-1 relative">
+      <div className="flex-1 relative min-h-0">
         <div ref={mapContainer} className="absolute inset-0" />
       </div>
     </div>
