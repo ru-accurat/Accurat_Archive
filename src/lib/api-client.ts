@@ -264,6 +264,13 @@ export const api = {
       body: JSON.stringify(data)
     }).then(r => json(r)),
 
+  mergeClients: (sourceId: string, targetId: string): Promise<{ success: boolean; movedEngagements: number; movedProjects: number; targetName: string }> =>
+    fetch('/api/clients/merge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceId, targetId })
+    }).then(r => json(r)),
+
   // Engagement Import
   parseEngagementImport: async (file: File): Promise<{
     rows: ParsedEngagementRow[]

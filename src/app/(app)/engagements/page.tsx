@@ -218,11 +218,12 @@ export default function EngagementsPage() {
                     </th>
                     <th className="text-right px-3 py-2.5 font-[450]">USD</th>
                     <th className="text-center px-3 py-2.5 font-[450]">Linked</th>
+                    <th className="px-3 py-2.5 w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((e) => (
-                    <tr key={e.id} className="border-t border-[var(--c-gray-50)] hover:bg-[var(--c-gray-50)]/50">
+                    <tr key={e.id} className="border-t border-[var(--c-gray-50)] hover:bg-[var(--c-gray-50)]/50 group">
                       <td className="px-3 py-1 w-16">
                         <InlineEditCell
                           value={e.year}
@@ -268,6 +269,21 @@ export default function EngagementsPage() {
                         ) : (
                           <span className="text-[10px] text-[var(--c-gray-300)]">—</span>
                         )}
+                      </td>
+                      <td className="px-3 py-1">
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Delete "${e.projectName}" (${e.year})?`)) return
+                            await api.deleteEngagement(e.id)
+                            setEngagements(prev => prev.filter(eng => eng.id !== e.id))
+                          }}
+                          className="text-[var(--c-gray-300)] hover:text-[var(--c-error)] transition-colors opacity-0 group-hover:opacity-100"
+                          title="Delete engagement"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                          </svg>
+                        </button>
                       </td>
                     </tr>
                   ))}
