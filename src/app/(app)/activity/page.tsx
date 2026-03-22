@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { EmptyState } from '@/components/shared/EmptyState'
 
 interface ActivityEntry {
   id: string
@@ -62,7 +63,10 @@ export default function ActivityPage() {
         {loading ? (
           <p className="text-[13px] text-[var(--c-gray-400)]">Loading...</p>
         ) : entries.length === 0 ? (
-          <p className="text-[13px] text-[var(--c-gray-400)]">No activity yet.</p>
+          <EmptyState
+            title="No activity yet"
+            description="Actions like editing and creating projects will appear here."
+          />
         ) : (
           <div className="flex flex-col">
             {entries.map((entry) => {

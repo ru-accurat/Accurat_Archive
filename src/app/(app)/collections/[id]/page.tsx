@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation'
 import type { Project } from '@/lib/types'
 import { useProjects } from '@/hooks/use-projects'
 import { ProjectSearchPicker } from '@/components/shared/ProjectSearchPicker'
+import { Breadcrumb } from '@/components/shared/Breadcrumb'
+import { SharePopover } from '@/components/shared/SharePopover'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
@@ -28,9 +30,6 @@ export default function CollectionDetailPage() {
   const [collection, setCollection] = useState<CollectionDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [sharePopover, setSharePopover] = useState(false)
-  const [sharingLoading, setSharingLoading] = useState(false)
-  const [copied, setCopied] = useState(false)
   const [deleteMode, setDeleteMode] = useState(false)
   const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set())
   const [batchRemoving, setBatchRemoving] = useState(false)
@@ -104,35 +103,15 @@ export default function CollectionDetailPage() {
   }, [])
 
   const handleGenerateShareLink = useCallback(async () => {
-    setSharingLoading(true)
-    try {
-      const res = await fetch(`/api/collections/${id}/share-token`, { method: 'POST' })
-      const data = await res.json()
-      setCollection((prev) => prev ? { ...prev, shareToken: data.token } : null)
-    } catch { /* ignore */ }
-    setSharingLoading(false)
+    const res = await fetch(`/api/collections/${id}/share-token`, { method: 'POST' })
+    const data = await res.json()
+    setCollection((prev) => prev ? { ...prev, shareToken: data.token } : null)
   }, [id])
 
   const handleRevokeShareLink = useCallback(async () => {
-    setSharingLoading(true)
-    try {
-      await fetch(`/api/collections/${id}/share-token`, { method: 'DELETE' })
-      setCollection((prev) => prev ? { ...prev, shareToken: null } : null)
-    } catch { /* ignore */ }
-    setSharingLoading(false)
+    await fetch(`/api/collections/${id}/share-token`, { method: 'DELETE' })
+    setCollection((prev) => prev ? { ...prev, shareToken: null } : null)
   }, [id])
-
-  const shareUrl = collection?.shareToken
-    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/collection/${collection.shareToken}`
-    : null
-
-  const handleCopy = useCallback(() => {
-    if (shareUrl) {
-      navigator.clipboard.writeText(shareUrl)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }, [shareUrl])
 
   if (loading) {
     return (
@@ -153,13 +132,11 @@ export default function CollectionDetailPage() {
   return (
     <div className="h-full overflow-y-auto bg-[var(--c-white)]">
       <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-10">
-        <div className="flex items-center gap-4 mb-2">
-          <button
-            onClick={() => router.push('/collections')}
-            className="text-[12px] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors"
-          >
-            &larr; Collections
-          </button>
+        <div className="mb-4">
+          <Breadcrumb items={[
+            { label: 'Collections', href: '/collections' },
+            { label: collection.name },
+          ]} />
         </div>
 
         <div className="flex items-start justify-between mb-8">
@@ -207,56 +184,12 @@ export default function CollectionDetailPage() {
                     Remove Projects
                   </button>
                 )}
-                <div className="relative">
-                  <button
-                    onClick={() => setSharePopover(!sharePopover)}
-                    className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors px-3 py-1.5"
-                  >
-                    Share
-                  </button>
-                  {sharePopover && (
-                    <div className="absolute right-0 top-9 w-72 bg-[var(--c-white)] border border-[var(--c-gray-200)] rounded-[var(--radius-md)] shadow-lg p-4 z-50">
-                      {collection.shareToken ? (
-                        <div>
-                          <p className="text-[11px] font-[450] text-[var(--c-gray-700)] mb-2">Shareable link</p>
-                          <div className="flex items-center gap-2 mb-3">
-                            <input
-                              readOnly
-                              value={shareUrl || ''}
-                              className="flex-1 text-[11px] text-[var(--c-gray-500)] bg-[var(--c-gray-50)] border border-[var(--c-gray-200)] rounded-[var(--radius-sm)] px-2.5 py-1.5 outline-none"
-                            />
-                            <button
-                              onClick={handleCopy}
-                              className="text-[10px] font-[500] px-2.5 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors"
-                            >
-                              {copied ? 'Copied!' : 'Copy'}
-                            </button>
-                          </div>
-                          <button
-                            onClick={handleRevokeShareLink}
-                            disabled={sharingLoading}
-                            className="text-[11px] text-[var(--c-error)] hover:text-[var(--c-error)]/80 transition-colors disabled:opacity-50"
-                          >
-                            Revoke link
-                          </button>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="text-[11px] text-[var(--c-gray-500)] mb-3">
-                            Generate a shareable link for this collection.
-                          </p>
-                          <button
-                            onClick={handleGenerateShareLink}
-                            disabled={sharingLoading}
-                            className="text-[11px] font-[450] px-4 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors disabled:opacity-50"
-                          >
-                            {sharingLoading ? 'Generating...' : 'Generate link'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <SharePopover
+                  shareToken={collection.shareToken}
+                  baseUrl="/collection"
+                  onCreateLink={handleGenerateShareLink}
+                  onDisableLink={handleRevokeShareLink}
+                />
                 <button
                   onClick={handleDelete}
                   className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-error)] transition-colors px-3 py-1.5"

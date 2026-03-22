@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api-client'
 import { useFilteredProjects } from '@/hooks/use-filters'
+import { useProjectStore } from '@/stores/project-store'
 
 type SpecialMediaMap = Record<string, { header: string | null; thumb: string | null; first: string | null }>
 
@@ -11,10 +12,24 @@ export function ProjectGrid() {
   const router = useRouter()
   const filteredProjects = useFilteredProjects()
   const [specialMedia, setSpecialMedia] = useState<SpecialMediaMap>({})
+  const { selectedIds } = useProjectStore()
+  const toggleSelection = useProjectStore((s) => s.toggleSelection)
+  const selectedSet = new Set(selectedIds)
+  const hasAnySelected = selectedIds.length > 0
 
   useEffect(() => {
     api.getAllSpecialMedia().then(setSpecialMedia).catch(() => {})
   }, [])
+
+  const handleClick = useCallback((projectId: string, e: React.MouseEvent) => {
+    if (hasAnySelected || e.metaKey || e.ctrlKey) {
+      // Selection mode: toggle this project
+      e.preventDefault()
+      toggleSelection(projectId)
+    } else {
+      router.push(`/project/${projectId}`)
+    }
+  }, [hasAnySelected, toggleSelection, router])
 
   return (
     <div className="h-full overflow-auto">
@@ -24,17 +39,35 @@ export function ProjectGrid() {
       >
         {filteredProjects.map((project) => {
           const special = specialMedia[project.folderName]
-          // Special media values are already full URLs from the API
           const heroSrc = special?.thumb || special?.header || special?.first || null
           const hasMedia = !!(special?.first || special?.header || special?.thumb)
           const hasDescription = !!project.description
+          const isSelected = selectedSet.has(project.id)
 
           return (
             <div
               key={project.id}
-              onClick={() => router.push(`/project/${project.id}`)}
-              className="group cursor-pointer"
+              onClick={(e) => handleClick(project.id, e)}
+              className={`group cursor-pointer relative ${isSelected ? 'ring-2 ring-[var(--c-accent)] rounded-[var(--radius-sm)]' : ''}`}
             >
+              {/* Selection checkbox */}
+              <div
+                className={`absolute top-2 left-2 z-10 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                  isSelected
+                    ? 'bg-[var(--c-accent)] text-white opacity-100'
+                    : hasAnySelected
+                      ? 'bg-black/40 text-white/60 opacity-100'
+                      : 'bg-black/40 text-white/60 opacity-0 group-hover:opacity-100'
+                }`}
+                onClick={(e) => { e.stopPropagation(); toggleSelection(project.id) }}
+              >
+                {isSelected && (
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                    <path d="M3 6l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
+
               {/* Thumbnail */}
               <div className="aspect-[16/10] bg-[var(--c-gray-100)] overflow-hidden mb-3">
                 {heroSrc ? (

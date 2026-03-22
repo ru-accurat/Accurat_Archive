@@ -3,11 +3,52 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
+
+interface NavItem {
+  label: string
+  path: string
+}
+
+interface NavGroup {
+  name: string
+  items: NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    name: 'Browse',
+    items: [
+      { label: 'Projects', path: '/' },
+      { label: 'Timeline', path: '/timeline' },
+      { label: 'Map', path: '/map' },
+    ],
+  },
+  {
+    name: 'Organize',
+    items: [
+      { label: 'Collections', path: '/collections' },
+    ],
+  },
+  {
+    name: 'Admin',
+    items: [
+      { label: 'Tags', path: '/tags' },
+      { label: 'Activity', path: '/activity' },
+    ],
+  },
+]
+
+function isActive(pathname: string, path: string) {
+  if (path === '/') return pathname === '/'
+  return pathname.startsWith(path)
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const { profile, loading, signOut } = useAuth()
+  useKeyboardShortcuts()
   const [menuOpen, setMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -51,41 +92,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </button>
           <div className="flex-1" />
 
-          {/* Desktop nav */}
-          <div className="hidden sm:flex items-center gap-6">
-            <button
-              onClick={() => navigate('/tags')}
-              className="text-[11px] font-[400] tracking-[0.02em] text-white/40 hover:text-white/80 transition-colors duration-200"
-            >
-              Tags
-            </button>
-            <button
-              onClick={() => navigate('/timeline')}
-              className="text-[11px] font-[400] tracking-[0.02em] text-white/40 hover:text-white/80 transition-colors duration-200"
-            >
-              Timeline
-            </button>
-            <button
-              onClick={() => navigate('/collections')}
-              className="text-[11px] font-[400] tracking-[0.02em] text-white/40 hover:text-white/80 transition-colors duration-200"
-            >
-              Collections
-            </button>
-            <button
-              onClick={() => navigate('/map')}
-              className="text-[11px] font-[400] tracking-[0.02em] text-white/40 hover:text-white/80 transition-colors duration-200"
-            >
-              Map
-            </button>
-            <button
-              onClick={() => navigate('/activity')}
-              className="text-[11px] font-[400] tracking-[0.02em] text-white/40 hover:text-white/80 transition-colors duration-200"
-            >
-              Activity
-            </button>
+          {/* Desktop nav — grouped */}
+          <div className="hidden sm:flex items-center gap-1">
+            {NAV_GROUPS.map((group, gi) => (
+              <div key={group.name} className="flex items-center">
+                {gi > 0 && (
+                  <div className="w-px h-3.5 bg-white/10 mx-3" />
+                )}
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] font-[500] tracking-[0.1em] uppercase text-white/20 mr-1.5 select-none">
+                    {group.name}
+                  </span>
+                  {group.items.map((item) => (
+                    <button
+                      key={item.path}
+                      onClick={() => navigate(item.path)}
+                      className={`text-[11px] font-[400] tracking-[0.02em] px-2 py-1 rounded-[var(--radius-sm)] transition-colors duration-200 ${
+                        isActive(pathname, item.path)
+                          ? 'text-white/90 bg-white/8'
+                          : 'text-white/40 hover:text-white/80'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <div className="w-px h-3.5 bg-white/10 mx-3" />
+
             <button
               onClick={() => navigate('/settings')}
-              className="text-white/40 hover:text-white/80 transition-colors duration-200"
+              className={`p-1.5 rounded-[var(--radius-sm)] transition-colors duration-200 ${
+                isActive(pathname, '/settings')
+                  ? 'text-white/90 bg-white/8'
+                  : 'text-white/40 hover:text-white/80'
+              }`}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M7 9a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" strokeWidth="1.2" />
@@ -101,7 +144,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             {/* User menu */}
             {!loading && profile && (
-              <div className="relative" ref={userMenuRef}>
+              <div className="relative ml-1" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="w-7 h-7 rounded-full bg-white/10 text-[10px] font-[500] text-white/60 hover:bg-white/15 hover:text-white/80 transition-all duration-200 flex items-center justify-center"
@@ -149,32 +192,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* Mobile dropdown menu */}
+      {/* Mobile dropdown menu — grouped */}
       {menuOpen && (
-        <div className="sm:hidden bg-[var(--c-black)] border-t border-white/10 px-4 py-3 flex flex-col gap-3 z-40">
-          <button onClick={() => navigate('/tags')} className="text-left text-[12px] font-[400] text-white/50 hover:text-white/80 py-1.5">
-            Tags
-          </button>
-          <button onClick={() => navigate('/timeline')} className="text-left text-[12px] font-[400] text-white/50 hover:text-white/80 py-1.5">
-            Timeline
-          </button>
-          <button onClick={() => navigate('/collections')} className="text-left text-[12px] font-[400] text-white/50 hover:text-white/80 py-1.5">
-            Collections
-          </button>
-          <button onClick={() => navigate('/map')} className="text-left text-[12px] font-[400] text-white/50 hover:text-white/80 py-1.5">
-            Map
-          </button>
-          <button onClick={() => navigate('/activity')} className="text-left text-[12px] font-[400] text-white/50 hover:text-white/80 py-1.5">
-            Activity
-          </button>
-          <button onClick={() => navigate('/settings')} className="text-left text-[12px] font-[400] text-white/50 hover:text-white/80 py-1.5">
+        <div className="sm:hidden bg-[var(--c-black)] border-t border-white/10 px-4 py-3 flex flex-col z-40">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={group.name}>
+              {gi > 0 && <div className="border-t border-white/10 my-2" />}
+              <span className="text-[9px] font-[500] tracking-[0.1em] uppercase text-white/20 mb-1 block">
+                {group.name}
+              </span>
+              {group.items.map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`text-left text-[12px] font-[400] py-1.5 block w-full transition-colors ${
+                    isActive(pathname, item.path)
+                      ? 'text-white/90'
+                      : 'text-white/50 hover:text-white/80'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          ))}
+
+          <div className="border-t border-white/10 my-2" />
+          <button onClick={() => navigate('/settings')} className={`text-left text-[12px] font-[400] py-1.5 transition-colors ${isActive(pathname, '/settings') ? 'text-white/90' : 'text-white/50 hover:text-white/80'}`}>
             Settings
           </button>
           <button onClick={() => navigate('/new')} className="text-left text-[12px] font-[450] text-white/70 hover:text-white py-1.5">
             + New Project
           </button>
           {!loading && profile && (
-            <div className="border-t border-white/10 pt-3 mt-1">
+            <div className="border-t border-white/10 pt-3 mt-2">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-[12px] text-white/50">{profile.displayName || profile.email}</span>
                 <span className={`text-[9px] font-[500] px-1.5 py-0.5 rounded-[var(--radius-sm)] ${roleBadgeColor}`}>

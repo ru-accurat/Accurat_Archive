@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { EmptyState } from '@/components/shared/EmptyState'
 
 interface CollectionSummary {
   id: string
@@ -71,7 +72,11 @@ export default function CollectionsPage() {
         {loading ? (
           <p className="text-[13px] text-[var(--c-gray-400)]">Loading...</p>
         ) : collections.length === 0 ? (
-          <p className="text-[13px] text-[var(--c-gray-400)]">No collections yet. Create one above.</p>
+          <EmptyState
+            title="No collections yet"
+            description="Group projects into collections for easy sharing and organization."
+            action={{ label: 'Create a collection', onClick: () => document.querySelector<HTMLInputElement>('input[placeholder*="collection"]')?.focus() }}
+          />
         ) : (
           <div className="flex flex-col gap-2">
             {collections.map((c) => (

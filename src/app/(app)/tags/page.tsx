@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import { useProjectStore } from '@/stores/project-store'
 import { api } from '@/lib/api-client'
+import { EmptyState } from '@/components/shared/EmptyState'
 
 type TagType = 'domains' | 'services' | 'output'
 
@@ -13,7 +13,6 @@ interface TagInfo {
 }
 
 export default function TagsPage() {
-  const router = useRouter()
   const { projects } = useProjectStore()
   const [activeTab, setActiveTab] = useState<TagType>('domains')
   const [editingTag, setEditingTag] = useState<string | null>(null)
@@ -70,9 +69,8 @@ export default function TagsPage() {
 
   return (
     <div className="h-full overflow-y-auto bg-[var(--c-white)]">
-      <div className="max-w-[800px] mx-auto" style={{ padding: '48px 80px' }}>
-        <button onClick={() => router.push('/')} className="text-[12px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-900)] transition-colors duration-200 mb-10 block">&larr; Back</button>
-        <h1 className="text-[2rem] font-[250] tracking-[-0.03em] text-[var(--c-gray-900)] mb-8">Tags Management</h1>
+      <div className="max-w-[800px] mx-auto px-4 sm:px-6 md:px-[48px] py-10">
+        <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)] mb-8">Tags</h1>
 
         <div className="flex gap-1 mb-8 border-b border-[var(--c-gray-200)]">
           {tabs.map((tab) => (
@@ -109,7 +107,12 @@ export default function TagsPage() {
               </div>
             </div>
           ))}
-          {tags.length === 0 && <div className="text-[13px] font-[350] text-[var(--c-gray-400)] py-8 text-center">No tags found</div>}
+          {tags.length === 0 && (
+            <EmptyState
+              title="No tags found"
+              description="Tags are created when you add them to projects."
+            />
+          )}
         </div>
       </div>
     </div>

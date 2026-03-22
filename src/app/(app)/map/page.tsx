@@ -2,6 +2,8 @@
 
 import { useProjects } from '@/hooks/use-projects'
 import { useProjectStore } from '@/stores/project-store'
+import { useSharedFilters } from '@/hooks/use-shared-filters'
+import { CompactFilterBar } from '@/components/shared/CompactFilterBar'
 import { useEffect, useRef, useMemo, useState } from 'react'
 import type { Project } from '@/lib/types'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -25,7 +27,7 @@ function escapeHtml(str: string) {
 
 export default function MapPage() {
   const { loading } = useProjects()
-  const projects = useProjectStore((s) => s.projects)
+  const allProjects = useProjectStore((s) => s.projects)
   const mapContainer = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null)
@@ -35,10 +37,14 @@ export default function MapPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [mgl, setMgl] = useState<any>(null)
 
-  const geoProjects = useMemo(
-    () => projects.filter((p) => p.latitude != null && p.longitude != null),
-    [projects]
+  const geoAllProjects = useMemo(
+    () => allProjects.filter((p) => p.latitude != null && p.longitude != null),
+    [allProjects]
   )
+
+  const { filters, filtered: geoFiltered, options, toggleFilter, setSearch, clearFilters, hasActiveFilters } = useSharedFilters(geoAllProjects)
+
+  const geoProjects = geoFiltered
 
   const clusters = useMemo(() => clusterByLocation(geoProjects), [geoProjects])
 
@@ -221,10 +227,20 @@ export default function MapPage() {
         <div>
           <h1 className="text-[1.1rem] font-[350] tracking-[-0.01em] text-[var(--c-gray-900)]">Map</h1>
           <p className="text-[12px] text-[var(--c-gray-400)] mt-1">
-            {geoProjects.length} project{geoProjects.length !== 1 ? 's' : ''} across {clusters.length} location{clusters.length !== 1 ? 's' : ''}
+            {hasActiveFilters ? `${geoProjects.length} of ${geoAllProjects.length}` : geoProjects.length} project{geoProjects.length !== 1 ? 's' : ''} across {clusters.length} location{clusters.length !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
+      <CompactFilterBar
+        filters={filters}
+        options={options}
+        onToggle={toggleFilter}
+        onSearchChange={setSearch}
+        onClear={clearFilters}
+        hasActiveFilters={hasActiveFilters}
+        totalCount={geoAllProjects.length}
+        filteredCount={geoProjects.length}
+      />
       <div className="flex-1 relative min-h-0">
         <div className="absolute inset-0">
           <div ref={mapContainer} className="w-full h-full" />
