@@ -97,6 +97,7 @@ export async function POST(request: Request) {
     : new Set(Object.keys(mapping))
 
   let updated = 0
+  let created = 0
   let errors = 0
 
   if (matches && matches.length > 0) {
@@ -169,9 +170,41 @@ export async function POST(request: Request) {
         const { error } = await supabase.from('projects').update(dbUpdates).eq('id', id)
         if (error) { errors++; continue }
         updated++
+      } else {
+        // Create new project
+        const client = (mapped.client || '').trim()
+        const projectName = (mapped.projectName || '').trim()
+        const folderName = (mapped.folderName || fullName.replace(/\s+/g, '_')).trim()
+
+        const insertData: Record<string, unknown> = {
+          id,
+          full_name: fullName,
+          client: client || fullName.split(' — ')[0] || fullName,
+          project_name: projectName || fullName.split(' — ')[1] || fullName,
+          folder_name: folderName,
+          tier: 3,
+          section: '',
+          domains: [],
+          services: [],
+          tagline: '',
+          description: '',
+          challenge: '',
+          solution: '',
+          deliverables: '',
+          client_quotes: '',
+          team: [],
+          urls: [],
+          output: '',
+          status: 'draft',
+          ...dbUpdates,
+        }
+
+        const { error } = await supabase.from('projects').insert(insertData)
+        if (error) { errors++; console.error('Insert error:', error.message); continue }
+        created++
       }
     }
   }
 
-  return NextResponse.json({ success: true, updated, errors })
+  return NextResponse.json({ success: true, updated, created, errors })
 }
