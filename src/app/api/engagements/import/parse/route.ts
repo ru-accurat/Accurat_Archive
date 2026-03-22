@@ -20,78 +20,63 @@ export async function POST(request: Request) {
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
 
-  // Extract engagement rows, skipping year-separator and empty rows
+  // Detect column names — support both Italian and English
+  const firstRow = rawRows[0] || {}
+  const keys = Object.keys(firstRow)
+
+  // Map columns by matching patterns
+  let yearCol = '', nameCol = '', clientCol = '', eurCol = '', usdCol = ''
+  for (const key of keys) {
+    const lk = key.toLowerCase()
+    if (lk.includes('anno') || lk.includes('year')) yearCol = key
+    else if (lk.includes('progetto') || lk.includes('project') || lk.includes('nome')) nameCol = key
+    else if (lk.includes('cliente') || lk.includes('client')) clientCol = key
+    else if (lk.includes('euro') || lk.includes('eur') || lk.includes('€')) eurCol = key
+    else if (lk.includes('dollar') || lk.includes('usd') || lk.includes('$')) usdCol = key
+  }
+
+  // Fallback to positional if headers didn't match
+  if (!yearCol && keys.length >= 3) {
+    yearCol = keys[0]
+    nameCol = keys[1]
+    clientCol = keys[2]
+    eurCol = keys[3] || ''
+    usdCol = keys[4] || ''
+  }
+
+  // Extract engagement rows
   const rows: { year: number; projectName: string; clientName: string; amountEur: number | null; amountUsd: number | null }[] = []
-  let currentYear: number | null = null
 
   for (const raw of rawRows) {
-    const values = Object.values(raw)
+    const yearVal = raw[yearCol]
+    const nameVal = raw[nameCol]
+    const clientVal = raw[clientCol]
+    const eurVal = raw[eurCol]
+    const usdVal = raw[usdCol]
 
-    // Detect year header rows: a row where the first non-empty cell is a 4-digit number
-    const firstVal = values.find(v => v !== '' && v != null)
-    if (typeof firstVal === 'number' && firstVal >= 2000 && firstVal <= 2100) {
-      // Check if this looks like a year separator (other cells mostly empty)
-      const nonEmptyCount = values.filter(v => v !== '' && v != null).length
-      if (nonEmptyCount <= 2) {
-        currentYear = firstVal
-        continue
-      }
-    }
+    // Parse year
+    const year = typeof yearVal === 'number' ? yearVal : parseInt(String(yearVal))
+    if (isNaN(year) || year < 2000 || year > 2100) continue
 
-    // Try to extract columns by position or common header names
-    const keys = Object.keys(raw)
+    // Parse name and client
+    const projectName = String(nameVal || '').trim()
+    const clientName = String(clientVal || '').trim()
 
-    // Try to find year, project name, client, EUR, USD from the row
-    let year = currentYear
-    let projectName = ''
-    let clientName = ''
+    // Skip separator rows (year only, no project name or client)
+    if (!projectName && !clientName) continue
+
+    // Parse amounts
     let amountEur: number | null = null
     let amountUsd: number | null = null
 
-    // Match by header name patterns
-    for (const key of keys) {
-      const val = raw[key]
-      const lk = key.toLowerCase()
-
-      if (lk.includes('year') || lk.includes('anno')) {
-        const n = Number(val)
-        if (n >= 2000 && n <= 2100) year = n
-      } else if (lk.includes('project') || lk.includes('progetto') || lk.includes('nome')) {
-        if (typeof val === 'string' && val.trim()) projectName = val.trim()
-      } else if (lk.includes('client') || lk.includes('cliente')) {
-        if (typeof val === 'string' && val.trim()) clientName = val.trim()
-      } else if (lk.includes('eur') || lk.includes('€')) {
-        const n = Number(val)
-        if (!isNaN(n) && val !== '') amountEur = n
-      } else if (lk.includes('usd') || lk.includes('$')) {
-        const n = Number(val)
-        if (!isNaN(n) && val !== '') amountUsd = n
-      }
+    if (eurVal !== '' && eurVal != null) {
+      const n = typeof eurVal === 'number' ? eurVal : parseFloat(String(eurVal).replace(/[,\s]/g, ''))
+      if (!isNaN(n)) amountEur = Math.round(n * 100) / 100
     }
-
-    // Fallback: try positional mapping if headers didn't match
-    if (!projectName && !clientName && keys.length >= 3) {
-      const v0 = raw[keys[0]]
-      const v1 = raw[keys[1]]
-      const v2 = raw[keys[2]]
-      const v3 = keys[3] ? raw[keys[3]] : null
-      const v4 = keys[4] ? raw[keys[4]] : null
-
-      // Pattern: Project Name | Client | EUR | USD (with year from separator)
-      if (typeof v0 === 'string' && v0.trim()) projectName = v0.trim()
-      if (typeof v1 === 'string' && v1.trim()) clientName = v1.trim()
-      if (v2 !== '' && !isNaN(Number(v2))) amountEur = Number(v2)
-      if (v3 !== '' && v3 != null && !isNaN(Number(v3))) amountUsd = Number(v3)
-      // If there's a 5th column and no year yet, check if v4 could be something else
-      if (!year && v4 !== '' && v4 != null) {
-        const n = Number(v4)
-        if (n >= 2000 && n <= 2100) year = n
-      }
+    if (usdVal !== '' && usdVal != null) {
+      const n = typeof usdVal === 'number' ? usdVal : parseFloat(String(usdVal).replace(/[,\s]/g, ''))
+      if (!isNaN(n)) amountUsd = Math.round(n * 100) / 100
     }
-
-    // Skip rows without essential data
-    if (!projectName && !clientName) continue
-    if (!year) continue
 
     rows.push({
       year,
