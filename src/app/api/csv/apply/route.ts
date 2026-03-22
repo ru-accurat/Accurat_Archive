@@ -100,40 +100,80 @@ export async function POST(request: Request) {
   let created = 0
   let errors = 0
 
-  if (matches && matches.length > 0) {
-    // Modal flow: update only matched rows by their projectId
+  // Helper: build DB updates from a row
+  function buildDbUpdates(row: Record<string, string>) {
+    const dbUpdates: Record<string, unknown> = {}
+    const urlValues: string[] = []
+    for (const csvCol of activeColumns) {
+      const field = mapping[csvCol]
+      if (!field || row[csvCol] === undefined) continue
+      if (field === 'urls') {
+        const v = row[csvCol]?.trim()
+        if (v) urlValues.push(v)
+      } else {
+        Object.assign(dbUpdates, fieldToDbUpdate(field, row[csvCol]))
+      }
+    }
+    if (urlValues.length > 0) dbUpdates.urls = urlValues
+    return dbUpdates
+  }
+
+  if (matches) {
+    // Modal flow: update matched rows, create unmatched rows
+    const matchedIndices = new Set(matches.map(m => m.rowIndex))
+
+    // Update matched
     for (const match of matches) {
       const row = rows[match.rowIndex]
       if (!row) continue
-
-      const dbUpdates: Record<string, unknown> = {}
-      const urlValues: string[] = []
-
-      for (const csvCol of activeColumns) {
-        const field = mapping[csvCol]
-        if (!field || row[csvCol] === undefined) continue
-
-        if (field === 'urls') {
-          const v = row[csvCol]?.trim()
-          if (v) urlValues.push(v)
-        } else {
-          Object.assign(dbUpdates, fieldToDbUpdate(field, row[csvCol]))
-        }
-      }
-
-      if (urlValues.length > 0) {
-        dbUpdates.urls = urlValues
-      }
-
+      const dbUpdates = buildDbUpdates(row)
       if (Object.keys(dbUpdates).length === 0) continue
-
-      const { error } = await supabase
-        .from('projects')
-        .update(dbUpdates)
-        .eq('id', match.projectId)
-
+      const { error } = await supabase.from('projects').update(dbUpdates).eq('id', match.projectId)
       if (error) { errors++; continue }
       updated++
+    }
+
+    // Create unmatched
+    for (let i = 0; i < rows.length; i++) {
+      if (matchedIndices.has(i)) continue
+      const row = rows[i]
+      const dbUpdates = buildDbUpdates(row)
+      if (Object.keys(dbUpdates).length === 0) continue
+
+      const fullName = ((dbUpdates.full_name as string) || row['Full Name'] || '').trim()
+      if (!fullName) continue
+
+      const id = fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      const client = ((dbUpdates.client as string) || fullName.split(' — ')[0] || fullName).trim()
+      const projectName = ((dbUpdates.project_name as string) || fullName.split(' — ')[1] || fullName).trim()
+      const folderName = ((dbUpdates.folder_name as string) || fullName.replace(/\s+/g, '_')).trim()
+
+      const insertData: Record<string, unknown> = {
+        id,
+        full_name: fullName,
+        client,
+        project_name: projectName,
+        folder_name: folderName,
+        tier: 3,
+        section: '',
+        domains: [],
+        services: [],
+        tagline: '',
+        description: '',
+        challenge: '',
+        solution: '',
+        deliverables: '',
+        client_quotes: '',
+        team: [],
+        urls: [],
+        output: '',
+        status: 'draft',
+        ...dbUpdates,
+      }
+
+      const { error } = await supabase.from('projects').insert(insertData)
+      if (error) { errors++; continue }
+      created++
     }
   } else {
     // Direct/fallback flow: match by slug

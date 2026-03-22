@@ -140,9 +140,12 @@ export function CsvImportModal({ open, onClose, onImported, data }: Props) {
         matches: data.matches.map((m) => ({ rowIndex: m.rowIndex, projectId: m.projectId })),
         columnMap,
         selectedColumns
-      }) as { success: boolean; updated: number; message?: string }
+      }) as { success: boolean; updated: number; created?: number; message?: string }
       if (res.success) {
-        setResult({ success: true, message: `Updated ${res.updated} project${res.updated !== 1 ? 's' : ''}.` })
+        const parts = []
+        if (res.updated > 0) parts.push(`Updated ${res.updated}`)
+        if (res.created && res.created > 0) parts.push(`Created ${res.created}`)
+        setResult({ success: true, message: (parts.join(', ') || 'No changes') + ' projects.' })
         onImported()
       } else {
         setResult({ success: false, message: res.message || 'Import failed.' })
@@ -248,7 +251,7 @@ export function CsvImportModal({ open, onClose, onImported, data }: Props) {
           {unmatchedCount > 0 && (
             <div className="mt-5 text-[11px] text-[var(--c-gray-400)] bg-[var(--c-gray-50)] rounded-[var(--radius-sm)] px-4 py-3">
               <span className="font-[500] text-[var(--c-warning)]">{unmatchedCount} unmatched row{unmatchedCount !== 1 ? 's' : ''}</span>{' '}
-              will be skipped. Matching uses Full Name, Client + Project Name, or fuzzy name comparison.
+              will be created as new projects.
             </div>
           )}
         </div>
@@ -272,12 +275,12 @@ export function CsvImportModal({ open, onClose, onImported, data }: Props) {
             {!result?.success && (
               <button
                 onClick={handleImport}
-                disabled={importing || selectedColumns.length === 0 || matchedCount === 0}
+                disabled={importing || selectedColumns.length === 0 || data.rows.length === 0}
                 className="text-[12px] font-[500] px-6 py-2 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors duration-200 disabled:opacity-30"
               >
                 {importing
                   ? 'Importing...'
-                  : `Import ${selectedColumns.length} column${selectedColumns.length !== 1 ? 's' : ''} into ${matchedCount} project${matchedCount !== 1 ? 's' : ''}`}
+                  : `Import ${data.rows.length} row${data.rows.length !== 1 ? 's' : ''} (${matchedCount} update, ${unmatchedCount} create)`}
               </button>
             )}
           </div>
