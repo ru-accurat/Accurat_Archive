@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 
 interface InlineEditCellProps {
   value: string | number | null
@@ -25,13 +25,12 @@ export function InlineEditCell({
   const [draft, setDraft] = useState(String(value ?? ''))
   const [saving, setSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null)
-  const originalValueRef = useRef(String(value ?? ''))
+  const savedRef = useRef(false)
 
-  // Sync draft when value changes externally (e.g., after save)
+  // Sync draft when value changes externally
   useEffect(() => {
     if (!editing) {
       setDraft(String(value ?? ''))
-      originalValueRef.current = String(value ?? '')
     }
   }, [value, editing])
 
@@ -41,6 +40,7 @@ export function InlineEditCell({
       if (inputRef.current instanceof HTMLInputElement) {
         inputRef.current.select()
       }
+      savedRef.current = false
     }
   }, [editing])
 
@@ -50,30 +50,40 @@ export function InlineEditCell({
       ? String(value)
       : placeholder
 
-  const handleSave = async () => {
-    if (draft === originalValueRef.current) {
+  const doSave = useCallback(async (newValue: string) => {
+    // Prevent double-save (blur + enter can fire both)
+    if (savedRef.current) return
+    savedRef.current = true
+
+    const original = String(value ?? '')
+    if (newValue === original) {
       setEditing(false)
       return
     }
     setSaving(true)
     try {
-      await onSave(draft)
-      originalValueRef.current = draft
+      await onSave(newValue)
     } catch (err) {
       console.error('InlineEditCell save failed:', err)
     } finally {
       setSaving(false)
       setEditing(false)
     }
-  }
+  }, [value, onSave])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleSave()
+      e.preventDefault()
+      doSave(draft)
     } else if (e.key === 'Escape') {
+      savedRef.current = true // prevent blur from saving
       setDraft(String(value ?? ''))
       setEditing(false)
     }
+  }
+
+  const handleBlur = () => {
+    doSave(draft)
   }
 
   if (editing) {
@@ -83,7 +93,7 @@ export function InlineEditCell({
           ref={inputRef as React.RefObject<HTMLSelectElement>}
           value={draft}
           onChange={(e) => { setDraft(e.target.value); }}
-          onBlur={handleSave}
+          onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           disabled={saving}
           className={`text-[12px] bg-white border border-[var(--c-gray-300)] rounded-[var(--radius-sm)] px-2 py-1 outline-none focus:border-[var(--c-gray-900)] cursor-pointer ${className}`}
@@ -101,7 +111,7 @@ export function InlineEditCell({
         type={type === 'number' ? 'number' : 'text'}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        onBlur={handleSave}
+        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         disabled={saving}
         step={type === 'number' ? 'any' : undefined}
