@@ -25,6 +25,15 @@ export function InlineEditCell({
   const [draft, setDraft] = useState(String(value ?? ''))
   const [saving, setSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null)
+  const originalValueRef = useRef(String(value ?? ''))
+
+  // Sync draft when value changes externally (e.g., after save)
+  useEffect(() => {
+    if (!editing) {
+      setDraft(String(value ?? ''))
+      originalValueRef.current = String(value ?? '')
+    }
+  }, [value, editing])
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -42,13 +51,16 @@ export function InlineEditCell({
       : placeholder
 
   const handleSave = async () => {
-    if (draft === String(value ?? '')) {
+    if (draft === originalValueRef.current) {
       setEditing(false)
       return
     }
     setSaving(true)
     try {
       await onSave(draft)
+      originalValueRef.current = draft
+    } catch (err) {
+      console.error('InlineEditCell save failed:', err)
     } finally {
       setSaving(false)
       setEditing(false)
