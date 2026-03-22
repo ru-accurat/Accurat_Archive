@@ -66,3 +66,48 @@ export const SCORED_FIELDS = [
 ] as const
 
 export type ScoredField = (typeof SCORED_FIELDS)[number]
+
+export interface Client {
+  id: string
+  name: string
+  aliases: string[]
+  notes: string
+  engagementCount?: number
+  projectCount?: number
+  totalRevenue?: number
+}
+
+export interface Engagement {
+  id: string
+  year: number
+  projectName: string
+  clientId: string
+  clientName?: string
+  originalClientName: string
+  amountEur: number | null
+  amountUsd: number | null
+  importBatchId?: string
+  notes: string
+  linkedProjectCount?: number
+}
+
+export interface ImportBatch {
+  id: string
+  filename: string
+  rowCount: number
+  createdAt: string
+}
+
+export interface ClientMatch {
+  original: string
+  matchedClient: Client | null
+  confidence: 'exact' | 'fuzzy' | 'none'
+}
+
+export interface ParsedEngagementRow {
+  year: number
+  projectName: string
+  clientName: string
+  amountEur: number | null
+  amountUsd: number | null
+}

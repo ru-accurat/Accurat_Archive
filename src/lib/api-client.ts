@@ -1,4 +1,4 @@
-import type { Project, HistoryEntry, MediaFile } from './types'
+import type { Project, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow } from './types'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -216,4 +216,83 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type, source, target })
     }).then(r => json(r)),
+
+  // Engagements
+  getEngagements: (params?: { year?: number; clientId?: string; linked?: boolean }): Promise<Engagement[]> => {
+    const sp = new URLSearchParams()
+    if (params?.year) sp.set('year', String(params.year))
+    if (params?.clientId) sp.set('clientId', params.clientId)
+    if (params?.linked !== undefined) sp.set('linked', String(params.linked))
+    return fetch(`/api/engagements?${sp}`).then(r => json(r))
+  },
+
+  updateEngagement: (id: string, data: Record<string, unknown>): Promise<{ success: boolean }> =>
+    fetch(`/api/engagements/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(r => json(r)),
+
+  deleteEngagement: (id: string): Promise<{ success: boolean }> =>
+    fetch(`/api/engagements/${id}`, { method: 'DELETE' }).then(r => json(r)),
+
+  linkEngagementProjects: (id: string, projectIds: string[]): Promise<{ success: boolean }> =>
+    fetch(`/api/engagements/${id}/link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectIds })
+    }).then(r => json(r)),
+
+  unlinkEngagementProjects: (id: string, projectIds: string[]): Promise<{ success: boolean }> =>
+    fetch(`/api/engagements/${id}/link`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectIds })
+    }).then(r => json(r)),
+
+  // Clients
+  getClients: (): Promise<Client[]> =>
+    fetch('/api/clients').then(r => json(r)),
+
+  getClient: (id: string): Promise<Client & { revenueByYear: Record<number, number>; engagements: Engagement[]; projects: Project[] }> =>
+    fetch(`/api/clients/${id}`).then(r => json(r)),
+
+  updateClient: (id: string, data: Record<string, unknown>): Promise<{ success: boolean }> =>
+    fetch(`/api/clients/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(r => json(r)),
+
+  // Engagement Import
+  parseEngagementImport: async (file: File): Promise<{
+    rows: ParsedEngagementRow[]
+    clientMatches: ClientMatch[]
+    autoLinks: { rowIndex: number; suggestedProjectIds: string[] }[]
+    totalParsed: number
+    validRows: number
+  }> => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return fetch('/api/engagements/import/parse', { method: 'POST', body: fd }).then(r => json(r))
+  },
+
+  applyEngagementImport: (payload: Record<string, unknown>): Promise<{
+    inserted: number
+    skipped: number
+    clientsCreated: number
+    linksCreated: number
+    batchId: string
+  }> =>
+    fetch('/api/engagements/import/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(r => json(r)),
+
+  getImportBatches: (): Promise<ImportBatch[]> =>
+    fetch('/api/engagements/import/batches').then(r => json(r)),
+
+  deleteImportBatch: (batchId: string): Promise<{ deleted: number }> =>
+    fetch(`/api/engagements/import/${batchId}`, { method: 'DELETE' }).then(r => json(r)),
 }

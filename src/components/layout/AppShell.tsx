@@ -31,6 +31,13 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    name: 'Business',
+    items: [
+      { label: 'Engagements', path: '/engagements' },
+      { label: 'Clients', path: '/clients' },
+    ],
+  },
+  {
     name: 'Admin',
     items: [
       { label: 'Tags', path: '/tags' },

@@ -1,4 +1,4 @@
-import type { Project } from './types'
+import type { Project, Client, Engagement, ImportBatch } from './types'
 
 // Database row type (snake_case columns)
 export interface ProjectRow {
@@ -110,4 +110,82 @@ export function projectToRow(project: Partial<Project>): Partial<ProjectRow> {
   if (project.longitude !== undefined) row.longitude = project.longitude
 
   return row as Partial<ProjectRow>
+}
+
+// --- Client row mapping ---
+
+export interface ClientRow {
+  id: string
+  name: string
+  aliases: string[]
+  notes: string
+  created_at?: string
+  updated_at?: string
+  engagement_count?: number
+  project_count?: number
+  total_revenue?: number
+}
+
+export function rowToClient(row: ClientRow): Client {
+  return {
+    id: row.id,
+    name: row.name,
+    aliases: row.aliases || [],
+    notes: row.notes || '',
+    engagementCount: row.engagement_count,
+    projectCount: row.project_count,
+    totalRevenue: row.total_revenue != null ? Number(row.total_revenue) : undefined,
+  }
+}
+
+// --- Engagement row mapping ---
+
+export interface EngagementRow {
+  id: string
+  year: number
+  project_name: string
+  client_id: string
+  original_client_name: string
+  amount_eur: number | null
+  amount_usd: number | null
+  import_batch_id: string | null
+  notes: string
+  created_at?: string
+  updated_at?: string
+  client_name?: string
+  linked_project_count?: number
+}
+
+export function rowToEngagement(row: EngagementRow): Engagement {
+  return {
+    id: row.id,
+    year: row.year,
+    projectName: row.project_name,
+    clientId: row.client_id,
+    clientName: row.client_name,
+    originalClientName: row.original_client_name,
+    amountEur: row.amount_eur != null ? Number(row.amount_eur) : null,
+    amountUsd: row.amount_usd != null ? Number(row.amount_usd) : null,
+    importBatchId: row.import_batch_id || undefined,
+    notes: row.notes || '',
+    linkedProjectCount: row.linked_project_count,
+  }
+}
+
+// --- Import batch row mapping ---
+
+export interface ImportBatchRow {
+  id: string
+  filename: string
+  row_count: number
+  created_at: string
+}
+
+export function rowToImportBatch(row: ImportBatchRow): ImportBatch {
+  return {
+    id: row.id,
+    filename: row.filename,
+    rowCount: row.row_count,
+    createdAt: row.created_at,
+  }
 }
