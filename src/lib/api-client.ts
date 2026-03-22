@@ -271,6 +271,24 @@ export const api = {
       body: JSON.stringify({ sourceId, targetId })
     }).then(r => json(r)),
 
+  // Project ↔ Engagement linking (from project side)
+  getProjectEngagements: (projectId: string): Promise<Engagement[]> =>
+    fetch(`/api/projects/${projectId}/engagements`).then(r => json(r)),
+
+  linkProjectEngagements: (projectId: string, engagementIds: string[]): Promise<{ success: boolean }> =>
+    fetch(`/api/projects/${projectId}/engagements`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ engagementIds })
+    }).then(r => json(r)),
+
+  unlinkProjectEngagement: (projectId: string, engagementId: string): Promise<{ success: boolean }> =>
+    fetch(`/api/projects/${projectId}/engagements`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ engagementId })
+    }).then(r => json(r)),
+
   // Engagement Import
   parseEngagementImport: async (file: File): Promise<{
     rows: ParsedEngagementRow[]

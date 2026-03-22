@@ -5,6 +5,7 @@ import { api } from '@/lib/api-client'
 import { InlineEditCell } from '@/components/shared/InlineEditCell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ImportModal } from '@/components/engagements/ImportModal'
+import { ProjectLinker } from '@/components/engagements/ProjectLinker'
 import type { Engagement, Client } from '@/lib/types'
 
 function formatEur(val: number | null): string {
@@ -25,6 +26,7 @@ export default function EngagementsPage() {
   const [yearFilter, setYearFilter] = useState<number | null>(null)
   const [clientFilter, setClientFilter] = useState<string | null>(null)
   const [linkedFilter, setLinkedFilter] = useState<'all' | 'linked' | 'unlinked'>('all')
+  const [linkerEngagement, setLinkerEngagement] = useState<Engagement | null>(null)
   const [sortField, setSortField] = useState<'year' | 'clientName' | 'amountEur'>('year')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
@@ -262,13 +264,19 @@ export default function EngagementsPage() {
                         />
                       </td>
                       <td className="px-3 py-1 text-center">
-                        {(e.linkedProjectCount || 0) > 0 ? (
-                          <span className="text-[10px] font-[500] px-1.5 py-0.5 rounded bg-green-100 text-green-700">
-                            {e.linkedProjectCount}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-[var(--c-gray-300)]">—</span>
-                        )}
+                        <button
+                          onClick={() => setLinkerEngagement(e)}
+                          className="hover:bg-[var(--c-gray-100)] px-2 py-1 rounded transition-colors"
+                          title="Link projects"
+                        >
+                          {(e.linkedProjectCount || 0) > 0 ? (
+                            <span className="text-[10px] font-[500] px-1.5 py-0.5 rounded bg-green-100 text-green-700">
+                              {e.linkedProjectCount}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-[var(--c-gray-300)] hover:text-[var(--c-gray-500)]">+ link</span>
+                          )}
+                        </button>
                       </td>
                       <td className="px-3 py-1">
                         <button
@@ -299,6 +307,17 @@ export default function EngagementsPage() {
         onClose={() => setImportOpen(false)}
         onImported={loadData}
       />
+
+      {linkerEngagement && (
+        <ProjectLinker
+          open={!!linkerEngagement}
+          engagementId={linkerEngagement.id}
+          clientName={linkerEngagement.clientName || ''}
+          linkedProjectIds={[]}
+          onClose={() => setLinkerEngagement(null)}
+          onChanged={loadData}
+        />
+      )}
     </div>
   )
 }

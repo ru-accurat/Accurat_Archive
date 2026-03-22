@@ -26,6 +26,7 @@ import { MediaManager } from '@/components/edit/MediaManager'
 import { HistoryPanel } from '@/components/edit/HistoryPanel'
 import { AiDiffModal } from '@/components/edit/AiDiffModal'
 import { RelatedProjects } from '@/components/project/RelatedProjects'
+import { LinkedEngagements } from '@/components/project/LinkedEngagements'
 
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>()
@@ -557,6 +558,8 @@ export default function ProjectPage() {
           )}
 
           <GalleryGrid media={galleryMedia} folderName={p.folderName} />
+
+          <LinkedEngagements projectId={p.id} clientName={p.client} />
 
           <div className="mt-16">
             <RelatedProjects projectId={p.id} />
