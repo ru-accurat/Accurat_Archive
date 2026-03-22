@@ -27,6 +27,7 @@ import { HistoryPanel } from '@/components/edit/HistoryPanel'
 import { AiDiffModal } from '@/components/edit/AiDiffModal'
 import { RelatedProjects } from '@/components/project/RelatedProjects'
 import { LinkedEngagements } from '@/components/project/LinkedEngagements'
+import { CaseStudyWriter } from '@/components/edit/CaseStudyWriter'
 
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>()
@@ -46,6 +47,7 @@ export default function ProjectPage() {
   const [aiResult, setAiResult] = useState<{ field: string; text: string } | null>(null)
   const [allTags, setAllTags] = useState<{ domains: string[]; services: string[]; outputs: string[] }>({ domains: [], services: [], outputs: [] })
   const [uploadProgress, setUploadProgress] = useState<{ active: boolean; message: string; done: boolean }>({ active: false, message: '', done: false })
+  const [caseStudyWriterOpen, setCaseStudyWriterOpen] = useState(false)
   const [sharePopover, setSharePopover] = useState(false)
   const [sharingLoading, setSharingLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -323,7 +325,15 @@ export default function ProjectPage() {
         <div className="sticky top-0 z-40 bg-[var(--c-white)] border-b border-[var(--c-gray-200)]">
           <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-3 flex items-center justify-between">
             <button onClick={cancelEdit} className="text-[12px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-900)] transition-colors duration-200">Cancel</button>
-            <div className="text-[11px] font-[500] uppercase tracking-[0.08em] text-[var(--c-gray-400)]">Editing</div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCaseStudyWriterOpen(true)}
+                className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-ai)]/10 text-[var(--c-ai)] hover:bg-[var(--c-ai)]/20 transition-colors"
+              >
+                Write Case Study
+              </button>
+              <div className="text-[11px] font-[500] uppercase tracking-[0.08em] text-[var(--c-gray-400)]">Editing</div>
+            </div>
             <button onClick={saveEdit} disabled={saving} className="text-[12px] font-[500] px-5 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors duration-200 disabled:opacity-40">
               {saving ? 'Saving...' : 'Save'}
             </button>
@@ -390,6 +400,24 @@ export default function ProjectPage() {
             </div>
           </div>
         )}
+
+        <CaseStudyWriter
+          open={caseStudyWriterOpen}
+          projectId={p.id}
+          currentValues={{
+            tagline: p.tagline,
+            description: p.description,
+            challenge: p.challenge,
+            solution: p.solution,
+            deliverables: p.deliverables,
+          }}
+          onClose={() => setCaseStudyWriterOpen(false)}
+          onAccept={(fields) => {
+            for (const [key, value] of Object.entries(fields)) {
+              setField(key as keyof Project, value as never)
+            }
+          }}
+        />
       </div>
     )
   }

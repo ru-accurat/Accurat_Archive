@@ -6,6 +6,8 @@ import { InlineEditCell } from '@/components/shared/InlineEditCell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ImportModal } from '@/components/engagements/ImportModal'
 import { ProjectLinker } from '@/components/engagements/ProjectLinker'
+import { RevenueBreakdown } from '@/components/engagements/RevenueBreakdown'
+import { GapAnalysis } from '@/components/engagements/GapAnalysis'
 import type { Engagement, Client } from '@/lib/types'
 
 function formatEur(val: number | null): string {
@@ -298,6 +300,8 @@ export default function EngagementsPage() {
                 </tbody>
               </table>
             </div>
+            <RevenueBreakdown />
+            <GapAnalysis />
           </>
         )}
       </div>

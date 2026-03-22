@@ -29,6 +29,17 @@ function similarity(a: string, b: string): number {
   return 1 - levenshtein(a, b) / maxLen
 }
 
+/** Score how similar two projects are (for finding related projects / few-shot examples) */
+export function scoreSimilarity(a: Project, b: Project): number {
+  let score = 0
+  if (a.client === b.client) score += 4
+  for (const d of a.domains) { if (b.domains.includes(d)) score += 3 }
+  for (const s of a.services) { if (b.services.includes(s)) score += 2 }
+  if (a.output === b.output && a.output) score += 1
+  if (a.section === b.section && a.section) score += 1
+  return score
+}
+
 export interface DuplicatePair {
   a: Project
   b: Project
