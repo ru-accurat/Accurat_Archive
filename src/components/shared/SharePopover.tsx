@@ -58,7 +58,7 @@ export function SharePopover({ shareToken, onCreateLink, onDisableLink, baseUrl 
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="text-[11px] font-[400] tracking-[0.02em] px-3 py-1.5 text-white/40 hover:text-white/70 transition-colors duration-200"
+        className="text-[11px] font-[400] tracking-[0.02em] px-3 py-1.5 text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors duration-200"
       >
         Share
       </button>
