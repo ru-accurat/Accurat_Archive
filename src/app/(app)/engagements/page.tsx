@@ -31,6 +31,7 @@ export default function EngagementsPage() {
   const [linkerEngagement, setLinkerEngagement] = useState<Engagement | null>(null)
   const [sortField, setSortField] = useState<'year' | 'clientName' | 'amountEur'>('year')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [editMode, setEditMode] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -89,7 +90,6 @@ export default function EngagementsPage() {
     else if (field === 'clientName') data.clientName = value
 
     await api.updateEngagement(id, data)
-    // Refresh
     const eng = await api.getEngagements()
     setEngagements(eng)
   }, [])
@@ -108,12 +108,26 @@ export default function EngagementsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)]">Engagements</h1>
-          <button
-            onClick={() => setImportOpen(true)}
-            className="text-[11px] font-[450] px-4 py-2 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors"
-          >
-            Import XLSX
-          </button>
+          <div className="flex items-center gap-2">
+            {engagements.length > 0 && (
+              <button
+                onClick={() => setEditMode(!editMode)}
+                className={`text-[11px] font-[450] px-4 py-2 rounded-[var(--radius-sm)] transition-colors ${
+                  editMode
+                    ? 'bg-[var(--c-gray-900)] text-white'
+                    : 'border border-[var(--c-gray-200)] text-[var(--c-gray-600)] hover:bg-[var(--c-gray-50)]'
+                }`}
+              >
+                {editMode ? 'Done' : 'Edit'}
+              </button>
+            )}
+            <button
+              onClick={() => setImportOpen(true)}
+              className="text-[11px] font-[450] px-4 py-2 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors"
+            >
+              Import XLSX
+            </button>
+          </div>
         </div>
 
         {engagements.length === 0 ? (
@@ -222,48 +236,68 @@ export default function EngagementsPage() {
                     </th>
                     <th className="text-right px-3 py-2.5 font-[450]">USD</th>
                     <th className="text-center px-3 py-2.5 font-[450]">Linked</th>
-                    <th className="px-3 py-2.5 w-8"></th>
+                    {editMode && <th className="px-3 py-2.5 w-8"></th>}
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((e) => (
                     <tr key={e.id} className="border-t border-[var(--c-gray-50)] hover:bg-[var(--c-gray-50)]/50 group">
                       <td className="px-3 py-1 w-16">
-                        <InlineEditCell
-                          value={e.year}
-                          type="number"
-                          onSave={(v) => handleUpdate(e.id, 'year', v)}
-                        />
+                        {editMode ? (
+                          <InlineEditCell
+                            value={e.year}
+                            type="number"
+                            onSave={(v) => handleUpdate(e.id, 'year', v)}
+                          />
+                        ) : (
+                          <span className="text-[var(--c-gray-600)]">{e.year}</span>
+                        )}
                       </td>
                       <td className="px-3 py-1">
-                        <InlineEditCell
-                          value={e.projectName}
-                          onSave={(v) => handleUpdate(e.id, 'projectName', v)}
-                        />
+                        {editMode ? (
+                          <InlineEditCell
+                            value={e.projectName}
+                            onSave={(v) => handleUpdate(e.id, 'projectName', v)}
+                          />
+                        ) : (
+                          <span className="text-[var(--c-gray-800)]">{e.projectName}</span>
+                        )}
                       </td>
                       <td className="px-3 py-1">
-                        <InlineEditCell
-                          value={e.clientName || ''}
-                          onSave={(v) => handleUpdate(e.id, 'clientName', v)}
-                        />
+                        {editMode ? (
+                          <InlineEditCell
+                            value={e.clientName || ''}
+                            onSave={(v) => handleUpdate(e.id, 'clientName', v)}
+                          />
+                        ) : (
+                          <span className="text-[var(--c-gray-600)]">{e.clientName || '—'}</span>
+                        )}
                       </td>
                       <td className="px-3 py-1 text-right">
-                        <InlineEditCell
-                          value={e.amountEur}
-                          type="number"
-                          formatDisplay={(v) => formatEur(v as number | null)}
-                          onSave={(v) => handleUpdate(e.id, 'amountEur', v)}
-                          className="text-right"
-                        />
+                        {editMode ? (
+                          <InlineEditCell
+                            value={e.amountEur}
+                            type="number"
+                            formatDisplay={(v) => formatEur(v as number | null)}
+                            onSave={(v) => handleUpdate(e.id, 'amountEur', v)}
+                            className="text-right"
+                          />
+                        ) : (
+                          <span className="text-[var(--c-gray-600)] tabular-nums">{formatEur(e.amountEur)}</span>
+                        )}
                       </td>
                       <td className="px-3 py-1 text-right">
-                        <InlineEditCell
-                          value={e.amountUsd}
-                          type="number"
-                          formatDisplay={(v) => formatUsd(v as number | null)}
-                          onSave={(v) => handleUpdate(e.id, 'amountUsd', v)}
-                          className="text-right"
-                        />
+                        {editMode ? (
+                          <InlineEditCell
+                            value={e.amountUsd}
+                            type="number"
+                            formatDisplay={(v) => formatUsd(v as number | null)}
+                            onSave={(v) => handleUpdate(e.id, 'amountUsd', v)}
+                            className="text-right"
+                          />
+                        ) : (
+                          <span className="text-[var(--c-gray-500)] tabular-nums">{formatUsd(e.amountUsd)}</span>
+                        )}
                       </td>
                       <td className="px-3 py-1 text-center">
                         <button
@@ -280,21 +314,23 @@ export default function EngagementsPage() {
                           )}
                         </button>
                       </td>
-                      <td className="px-3 py-1">
-                        <button
-                          onClick={async () => {
-                            if (!confirm(`Delete "${e.projectName}" (${e.year})?`)) return
-                            await api.deleteEngagement(e.id)
-                            setEngagements(prev => prev.filter(eng => eng.id !== e.id))
-                          }}
-                          className="text-[var(--c-gray-300)] hover:text-[var(--c-error)] transition-colors opacity-0 group-hover:opacity-100"
-                          title="Delete engagement"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                          </svg>
-                        </button>
-                      </td>
+                      {editMode && (
+                        <td className="px-3 py-1">
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Delete "${e.projectName}" (${e.year})?`)) return
+                              await api.deleteEngagement(e.id)
+                              setEngagements(prev => prev.filter(eng => eng.id !== e.id))
+                            }}
+                            className="text-[var(--c-gray-300)] hover:text-[var(--c-error)] transition-colors"
+                            title="Delete engagement"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                            </svg>
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

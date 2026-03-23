@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/api-client'
 import { Breadcrumb } from '@/components/shared/Breadcrumb'
@@ -14,6 +14,11 @@ function formatEur(val: number | null | undefined): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val)
 }
 
+function formatUsd(val: number | null | undefined): string {
+  if (val == null || val === 0) return '—'
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val)
+}
+
 interface ClientDetail extends Client {
   revenueByYear: Record<number, number>
   engagements: Engagement[]
@@ -25,13 +30,28 @@ export default function ClientDetailPage() {
   const router = useRouter()
   const [client, setClient] = useState<ClientDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [editMode, setEditMode] = useState(false)
 
-  useEffect(() => {
+  const loadClient = useCallback(() => {
+    setLoading(true)
     api.getClient(id)
       .then((data) => setClient(data as unknown as ClientDetail))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [id])
+
+  useEffect(() => { loadClient() }, [loadClient])
+
+  const handleUpdateEngagement = useCallback(async (engId: string, field: string, value: string) => {
+    const data: Record<string, unknown> = {}
+    if (field === 'projectName') data.projectName = value
+    else if (field === 'amountEur') data.amountEur = value ? parseFloat(value) : null
+    else if (field === 'amountUsd') data.amountUsd = value ? parseFloat(value) : null
+    else if (field === 'year') data.year = parseInt(value)
+
+    await api.updateEngagement(engId, data)
+    loadClient()
+  }, [loadClient])
 
   if (loading) {
     return <div className="flex items-center justify-center h-full bg-[var(--c-white)] text-[var(--c-gray-400)] text-[13px]">Loading...</div>
@@ -55,23 +75,37 @@ export default function ClientDetailPage() {
   return (
     <div className="h-full overflow-y-auto bg-[var(--c-white)]">
       <div className="max-w-[1000px] px-4 sm:px-6 md:px-[48px] py-10">
-        <div className="mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <Breadcrumb items={[
             { label: 'Clients', href: '/clients' },
             { label: client.name },
           ]} />
+          <button
+            onClick={() => setEditMode(!editMode)}
+            className={`text-[11px] font-[450] px-4 py-2 rounded-[var(--radius-sm)] transition-colors ${
+              editMode
+                ? 'bg-[var(--c-gray-900)] text-white'
+                : 'border border-[var(--c-gray-200)] text-[var(--c-gray-600)] hover:bg-[var(--c-gray-50)]'
+            }`}
+          >
+            {editMode ? 'Done' : 'Edit'}
+          </button>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <InlineEditCell
-            value={client.name}
-            onSave={async (v) => {
-              await api.updateClient(id, { name: v })
-              setClient(prev => prev ? { ...prev, name: v } : null)
-            }}
-            className="text-[1.4rem] font-[300] tracking-[-0.02em] !text-[var(--c-gray-900)]"
-          />
+          {editMode ? (
+            <InlineEditCell
+              value={client.name}
+              onSave={async (v) => {
+                await api.updateClient(id, { name: v })
+                setClient(prev => prev ? { ...prev, name: v } : null)
+              }}
+              className="text-[1.4rem] font-[300] tracking-[-0.02em] !text-[var(--c-gray-900)]"
+            />
+          ) : (
+            <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)]">{client.name}</h1>
+          )}
           {client.aliases.length > 0 && (
             <div className="flex gap-1.5 mt-2">
               {client.aliases.map(a => (
@@ -141,15 +175,76 @@ export default function ClientDetailPage() {
                     <th className="text-left px-3 py-2 font-[450]">Project</th>
                     <th className="text-right px-3 py-2 font-[450]">EUR</th>
                     <th className="text-right px-3 py-2 font-[450]">USD</th>
+                    {editMode && <th className="px-3 py-2 w-8"></th>}
                   </tr>
                 </thead>
                 <tbody>
                   {client.engagements.map((e) => (
-                    <tr key={e.id} className="border-t border-[var(--c-gray-50)]">
-                      <td className="px-3 py-2 text-[var(--c-gray-600)]">{e.year}</td>
-                      <td className="px-3 py-2 text-[var(--c-gray-800)]">{e.projectName}</td>
-                      <td className="px-3 py-2 text-right text-[var(--c-gray-600)] tabular-nums">{formatEur(e.amountEur)}</td>
-                      <td className="px-3 py-2 text-right text-[var(--c-gray-500)] tabular-nums">{e.amountUsd != null ? formatEur(e.amountUsd).replace('€', '$') : '—'}</td>
+                    <tr key={e.id} className="border-t border-[var(--c-gray-50)] group">
+                      <td className="px-3 py-2">
+                        {editMode ? (
+                          <InlineEditCell
+                            value={e.year}
+                            type="number"
+                            onSave={(v) => handleUpdateEngagement(e.id, 'year', v)}
+                          />
+                        ) : (
+                          <span className="text-[var(--c-gray-600)]">{e.year}</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        {editMode ? (
+                          <InlineEditCell
+                            value={e.projectName}
+                            onSave={(v) => handleUpdateEngagement(e.id, 'projectName', v)}
+                          />
+                        ) : (
+                          <span className="text-[var(--c-gray-800)]">{e.projectName}</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        {editMode ? (
+                          <InlineEditCell
+                            value={e.amountEur}
+                            type="number"
+                            formatDisplay={(v) => formatEur(v as number | null)}
+                            onSave={(v) => handleUpdateEngagement(e.id, 'amountEur', v)}
+                            className="text-right"
+                          />
+                        ) : (
+                          <span className="text-[var(--c-gray-600)] tabular-nums">{formatEur(e.amountEur)}</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        {editMode ? (
+                          <InlineEditCell
+                            value={e.amountUsd}
+                            type="number"
+                            formatDisplay={(v) => formatUsd(v as number | null)}
+                            onSave={(v) => handleUpdateEngagement(e.id, 'amountUsd', v)}
+                            className="text-right"
+                          />
+                        ) : (
+                          <span className="text-[var(--c-gray-500)] tabular-nums">{formatUsd(e.amountUsd)}</span>
+                        )}
+                      </td>
+                      {editMode && (
+                        <td className="px-3 py-2">
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Delete "${e.projectName}" (${e.year})?`)) return
+                              await api.deleteEngagement(e.id)
+                              loadClient()
+                            }}
+                            className="text-[var(--c-gray-300)] hover:text-[var(--c-error)] transition-colors"
+                            title="Delete engagement"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                            </svg>
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
