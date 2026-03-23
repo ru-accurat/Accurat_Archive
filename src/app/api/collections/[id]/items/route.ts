@@ -43,25 +43,38 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   return NextResponse.json({ success: true, added: projectIds.length })
 }
 
-// PATCH /api/collections/[id]/items — move items to a group
+// PATCH /api/collections/[id]/items — move items to a group or update caption
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = createServiceClient()
   const body = await request.json()
 
+  // Single item caption update
+  if (body.projectId && body.caption !== undefined) {
+    const { error } = await supabase
+      .from('collection_items')
+      .update({ caption: body.caption })
+      .eq('collection_id', id)
+      .eq('project_id', body.projectId)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+    return NextResponse.json({ success: true })
+  }
+
+  // Batch move to group
   const { projectIds, groupId } = body
   if (!projectIds?.length) {
     return NextResponse.json({ error: 'projectIds required' }, { status: 400 })
   }
 
-  // Update group_id for all specified items
-  let query = supabase
+  const { error } = await supabase
     .from('collection_items')
     .update({ group_id: groupId || null })
     .eq('collection_id', id)
     .in('project_id', projectIds)
 
-  const { error } = await query
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

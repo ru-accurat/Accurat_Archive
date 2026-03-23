@@ -9,6 +9,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const update: Record<string, unknown> = {}
   if (body.name !== undefined) update.name = body.name
+  if (body.subtitle !== undefined) update.subtitle = body.subtitle
   if (body.sortOrder !== undefined) update.sort_order = body.sortOrder
 
   const { error } = await supabase

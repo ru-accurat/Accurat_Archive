@@ -23,6 +23,7 @@ import {
   SortableContext,
   useSortable,
   rectSortingStrategy,
+  verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -36,6 +37,7 @@ function thumbUrl(folderName: string, image?: string) {
 interface CollectionGroup {
   id: string
   name: string
+  subtitle: string
   sortOrder: number
 }
 
@@ -47,11 +49,13 @@ interface CollectionDetail {
   projects: Project[]
   groups: CollectionGroup[]
   itemGroups: Record<string, string | null>
+  itemCaptions: Record<string, string>
 }
 
 // ── Sortable project card ──────────────────────────────────────
 function SortableProjectCard({
   project,
+  caption,
   isDeleteMode,
   isEditMode,
   isSelected,
@@ -61,8 +65,10 @@ function SortableProjectCard({
   onNavigate,
   onRemove,
   onMoveToGroup,
+  onCaptionSave,
 }: {
   project: Project
+  caption: string
   isDeleteMode: boolean
   isEditMode: boolean
   isSelected: boolean
@@ -72,6 +78,7 @@ function SortableProjectCard({
   onNavigate: (id: string) => void
   onRemove: (id: string) => void
   onMoveToGroup: (projectIds: string[], groupId: string | null) => void
+  onCaptionSave: (projectId: string, caption: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: project.id,
@@ -92,17 +99,33 @@ function SortableProjectCard({
       {isEditMode && !isDeleteMode && (
         <div
           {...listeners}
-          className="absolute top-2 left-2 z-10 w-6 h-6 rounded-full bg-black/40 text-white/80 flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-2 left-2 z-10 w-5 h-5 rounded bg-black/50 text-white/80 flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
           title="Drag to reorder"
         >
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <circle cx="3" cy="2" r="0.8" fill="currentColor" />
-            <circle cx="7" cy="2" r="0.8" fill="currentColor" />
-            <circle cx="3" cy="5" r="0.8" fill="currentColor" />
-            <circle cx="7" cy="5" r="0.8" fill="currentColor" />
-            <circle cx="3" cy="8" r="0.8" fill="currentColor" />
-            <circle cx="7" cy="8" r="0.8" fill="currentColor" />
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+            <circle cx="2.5" cy="1.5" r="0.7" fill="currentColor" />
+            <circle cx="5.5" cy="1.5" r="0.7" fill="currentColor" />
+            <circle cx="2.5" cy="4" r="0.7" fill="currentColor" />
+            <circle cx="5.5" cy="4" r="0.7" fill="currentColor" />
+            <circle cx="2.5" cy="6.5" r="0.7" fill="currentColor" />
+            <circle cx="5.5" cy="6.5" r="0.7" fill="currentColor" />
           </svg>
+        </div>
+      )}
+      {/* Move-to-group dropdown in edit mode — positioned below thumbnail */}
+      {isEditMode && !isDeleteMode && groups.length > 0 && (
+        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+          <select
+            value={currentGroupId || ''}
+            onChange={(e) => onMoveToGroup([project.id], e.target.value || null)}
+            className="text-[9px] bg-white/90 backdrop-blur-sm border border-[var(--c-gray-200)] rounded px-1.5 py-0.5 cursor-pointer shadow-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <option value="">Ungrouped</option>
+            {groups.map(g => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
         </div>
       )}
       <button
@@ -119,6 +142,19 @@ function SortableProjectCard({
         <p className="text-[12px] font-[500] text-[var(--c-gray-800)] truncate">{project.client}</p>
         <p className="text-[11px] font-[350] text-[var(--c-gray-500)] truncate">{project.projectName}</p>
       </button>
+      {/* Caption: editable in edit mode, visible in view mode */}
+      {isEditMode && !isDeleteMode ? (
+        <div className="mt-1">
+          <InlineEditCell
+            value={caption}
+            onSave={(v) => onCaptionSave(project.id, v)}
+            className="text-[10px] !text-[var(--c-gray-400)] italic"
+            placeholder="Add caption..."
+          />
+        </div>
+      ) : caption ? (
+        <p className="text-[10px] text-[var(--c-gray-400)] italic mt-1">{caption}</p>
+      ) : null}
       {isDeleteMode && (
         <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all ${isSelected ? 'bg-[var(--c-error)] text-white' : 'bg-black/40 text-white/60'}`}>
           {isSelected && (
@@ -139,20 +175,89 @@ function SortableProjectCard({
           </svg>
         </button>
       )}
-      {isEditMode && !isDeleteMode && groups.length > 0 && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <select
-            value={currentGroupId || ''}
-            onChange={(e) => onMoveToGroup([project.id], e.target.value || null)}
-            className="text-[9px] bg-white/90 border border-[var(--c-gray-200)] rounded px-1 py-0.5 cursor-pointer"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <option value="">Ungrouped</option>
-            {groups.map(g => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </select>
+    </div>
+  )
+}
+
+// ── Sortable group header (for reordering groups) ──────────────
+function SortableGroupHeader({
+  group,
+  projectCount,
+  editMode,
+  onRename,
+  onSubtitleSave,
+  onAddToGroup,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
+}: {
+  group: CollectionGroup
+  projectCount: number
+  editMode: boolean
+  onRename: (name: string) => void
+  onSubtitleSave: (subtitle: string) => void
+  onAddToGroup: () => void
+  onDelete: () => void
+  onMoveUp: () => void
+  onMoveDown: () => void
+  isFirst: boolean
+  isLast: boolean
+}) {
+  if (editMode) {
+    return (
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-0.5 mr-1">
+              <button
+                onClick={onMoveUp}
+                disabled={isFirst}
+                className="text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] disabled:opacity-20 transition-colors"
+                title="Move group up"
+              >
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 5l4-4 4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+              <button
+                onClick={onMoveDown}
+                disabled={isLast}
+                className="text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] disabled:opacity-20 transition-colors"
+                title="Move group down"
+              >
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+            </div>
+            <InlineEditCell
+              value={group.name}
+              onSave={onRename}
+              className="text-[15px] font-[450] !text-[var(--c-gray-800)]"
+            />
+            <span className="text-[10px] text-[var(--c-gray-400)]">{projectCount}</span>
+            <button onClick={onAddToGroup} className="text-[10px] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors ml-2">+ add</button>
+            <button onClick={onDelete} className="text-[10px] text-[var(--c-gray-400)] hover:text-[var(--c-error)] transition-colors">delete group</button>
+          </div>
+          <div className="ml-6 mt-1">
+            <InlineEditCell
+              value={group.subtitle}
+              onSave={onSubtitleSave}
+              className="text-[12px] !text-[var(--c-gray-400)]"
+              placeholder="Add subtitle..."
+            />
+          </div>
         </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center gap-2">
+        <h2 className="text-[15px] font-[450] text-[var(--c-gray-800)]">{group.name}</h2>
+        <span className="text-[10px] text-[var(--c-gray-400)]">{projectCount}</span>
+      </div>
+      {group.subtitle && (
+        <p className="text-[12px] text-[var(--c-gray-400)] mt-0.5">{group.subtitle}</p>
       )}
     </div>
   )
@@ -171,16 +276,18 @@ function DroppableGroup({ id, children }: { id: string; children: React.ReactNod
   )
 }
 
-// ── Drag overlay card ──────────────────────────────────────────
+// ── Drag overlay card (matches grid card sizing) ───────────────
 function DragOverlayCard({ project }: { project: Project }) {
   const img = thumbUrl(project.folderName, project.thumbImage || project.heroImage)
   return (
-    <div className="w-[180px] opacity-80 rotate-2 shadow-lg rounded-[var(--radius-sm)] bg-[var(--c-white)] p-1">
-      <div className="aspect-[4/3] rounded-[3px] overflow-hidden bg-[var(--c-gray-100)] mb-1">
+    <div className="w-[200px] opacity-90 rotate-1 shadow-xl rounded-[var(--radius-sm)] bg-[var(--c-white)] overflow-hidden">
+      <div className="aspect-[4/3] overflow-hidden bg-[var(--c-gray-100)]">
         {img ? <img src={img} alt="" className="w-full h-full object-cover" /> : null}
       </div>
-      <p className="text-[10px] font-[500] text-[var(--c-gray-800)] truncate px-1">{project.client}</p>
-      <p className="text-[9px] text-[var(--c-gray-500)] truncate px-1">{project.projectName}</p>
+      <div className="px-2 py-1.5">
+        <p className="text-[11px] font-[500] text-[var(--c-gray-800)] truncate">{project.client}</p>
+        <p className="text-[10px] text-[var(--c-gray-500)] truncate">{project.projectName}</p>
+      </div>
     </div>
   )
 }
@@ -341,7 +448,7 @@ export default function CollectionDetailPage() {
     const group = await res.json()
     setCollection((prev) => prev ? {
       ...prev,
-      groups: [...(prev.groups || []), { id: group.id, name: group.name, sortOrder: group.sort_order }],
+      groups: [...(prev.groups || []), { id: group.id, name: group.name, subtitle: '', sortOrder: group.sort_order }],
     } : null)
   }, [id])
 
@@ -354,6 +461,18 @@ export default function CollectionDetailPage() {
     setCollection((prev) => prev ? {
       ...prev,
       groups: prev.groups.map(g => g.id === groupId ? { ...g, name } : g),
+    } : null)
+  }, [id])
+
+  const handleSubtitleGroup = useCallback(async (groupId: string, subtitle: string) => {
+    await fetch(`/api/collections/${id}/groups/${groupId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subtitle }),
+    })
+    setCollection((prev) => prev ? {
+      ...prev,
+      groups: prev.groups.map(g => g.id === groupId ? { ...g, subtitle } : g),
     } : null)
   }, [id])
 
@@ -373,6 +492,34 @@ export default function CollectionDetailPage() {
     })
   }, [id])
 
+  const handleMoveGroupUp = useCallback(async (groupId: string) => {
+    if (!collection) return
+    const groups = [...collection.groups]
+    const idx = groups.findIndex(g => g.id === groupId)
+    if (idx <= 0) return
+    ;[groups[idx - 1], groups[idx]] = [groups[idx], groups[idx - 1]]
+    setCollection(prev => prev ? { ...prev, groups } : null)
+    await fetch(`/api/collections/${id}/groups`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order: groups.map(g => g.id) }),
+    })
+  }, [id, collection])
+
+  const handleMoveGroupDown = useCallback(async (groupId: string) => {
+    if (!collection) return
+    const groups = [...collection.groups]
+    const idx = groups.findIndex(g => g.id === groupId)
+    if (idx < 0 || idx >= groups.length - 1) return
+    ;[groups[idx], groups[idx + 1]] = [groups[idx + 1], groups[idx]]
+    setCollection(prev => prev ? { ...prev, groups } : null)
+    await fetch(`/api/collections/${id}/groups`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order: groups.map(g => g.id) }),
+    })
+  }, [id, collection])
+
   const handleMoveToGroup = useCallback(async (projectIds: string[], groupId: string | null) => {
     await fetch(`/api/collections/${id}/items`, {
       method: 'PATCH',
@@ -389,6 +536,21 @@ export default function CollectionDetailPage() {
     })
   }, [id])
 
+  const handleCaptionSave = useCallback(async (projectId: string, caption: string) => {
+    await fetch(`/api/collections/${id}/items`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId, caption }),
+    })
+    setCollection((prev) => {
+      if (!prev) return null
+      const newCaptions = { ...prev.itemCaptions }
+      if (caption) newCaptions[projectId] = caption
+      else delete newCaptions[projectId]
+      return { ...prev, itemCaptions: newCaptions }
+    })
+  }, [id])
+
   // DnD handlers
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string)
@@ -402,9 +564,6 @@ export default function CollectionDetailPage() {
     const draggedProjectId = active.id as string
     const overId = over.id as string
 
-    // Determine target group
-    // If dropped on a group container, overId is the group id (or 'ungrouped')
-    // If dropped on another project, find that project's group
     let targetGroupId: string | null = null
 
     if (overId === 'ungrouped') {
@@ -412,7 +571,6 @@ export default function CollectionDetailPage() {
     } else if (collection.groups.some(g => g.id === overId)) {
       targetGroupId = overId
     } else {
-      // Dropped on a project — use that project's group
       targetGroupId = collection.itemGroups[overId] ?? null
     }
 
@@ -441,6 +599,7 @@ export default function CollectionDetailPage() {
               <SortableProjectCard
                 key={p.id}
                 project={p}
+                caption={collection.itemCaptions?.[p.id] || ''}
                 isDeleteMode={deleteMode}
                 isEditMode={editMode}
                 isSelected={selectedForDelete.has(p.id)}
@@ -450,6 +609,7 @@ export default function CollectionDetailPage() {
                 onNavigate={(pid) => router.push(`/project/${pid}`)}
                 onRemove={handleRemove}
                 onMoveToGroup={handleMoveToGroup}
+                onCaptionSave={handleCaptionSave}
               />
             ))}
           </div>
@@ -472,37 +632,21 @@ export default function CollectionDetailPage() {
         </div>
       ) : (
         <>
-          {groupedProjects.groups.map((group) => (
+          {groupedProjects.groups.map((group, idx) => (
             <div key={group.id} className="mb-10">
-              <div className="flex items-center justify-between mb-4">
-                {editMode ? (
-                  <div className="flex items-center gap-2">
-                    <InlineEditCell
-                      value={group.name}
-                      onSave={(v) => handleRenameGroup(group.id, v)}
-                      className="text-[15px] font-[450] !text-[var(--c-gray-800)]"
-                    />
-                    <span className="text-[10px] text-[var(--c-gray-400)]">{group.projects.length}</span>
-                    <button
-                      onClick={() => { setPickerGroupId(group.id); setPickerOpen(true) }}
-                      className="text-[10px] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors ml-2"
-                    >
-                      + add
-                    </button>
-                    <button
-                      onClick={() => handleDeleteGroup(group.id)}
-                      className="text-[10px] text-[var(--c-gray-400)] hover:text-[var(--c-error)] transition-colors"
-                    >
-                      delete group
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-[15px] font-[450] text-[var(--c-gray-800)]">{group.name}</h2>
-                    <span className="text-[10px] text-[var(--c-gray-400)]">{group.projects.length}</span>
-                  </div>
-                )}
-              </div>
+              <SortableGroupHeader
+                group={group}
+                projectCount={group.projects.length}
+                editMode={editMode}
+                onRename={(name) => handleRenameGroup(group.id, name)}
+                onSubtitleSave={(sub) => handleSubtitleGroup(group.id, sub)}
+                onAddToGroup={() => { setPickerGroupId(group.id); setPickerOpen(true) }}
+                onDelete={() => handleDeleteGroup(group.id)}
+                onMoveUp={() => handleMoveGroupUp(group.id)}
+                onMoveDown={() => handleMoveGroupDown(group.id)}
+                isFirst={idx === 0}
+                isLast={idx === groupedProjects.groups.length - 1}
+              />
               {group.projects.length > 0 ? (
                 renderProjectGrid(group.projects, group.id)
               ) : (
@@ -527,7 +671,6 @@ export default function CollectionDetailPage() {
             </div>
           )}
 
-          {/* Empty ungrouped drop zone when all items are grouped */}
           {groupedProjects.ungrouped.length === 0 && groupedProjects.groups.length > 0 && editMode && (
             <div className="mt-10">
               <div className="flex items-center gap-2 mb-4">
@@ -626,7 +769,6 @@ export default function CollectionDetailPage() {
           </div>
         </div>
 
-        {/* Edit mode: add group button */}
         {editMode && (
           <div className="mb-6">
             <button
