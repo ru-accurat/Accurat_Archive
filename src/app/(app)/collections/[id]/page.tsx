@@ -114,11 +114,11 @@ function SortableProjectCard({
       )}
       {/* Move-to-group dropdown in edit mode — positioned below thumbnail */}
       {isEditMode && !isDeleteMode && groups.length > 0 && (
-        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity max-w-[calc(100%-24px)]">
           <select
             value={currentGroupId || ''}
             onChange={(e) => onMoveToGroup([project.id], e.target.value || null)}
-            className="text-[9px] bg-white/90 backdrop-blur-sm border border-[var(--c-gray-200)] rounded px-1.5 py-0.5 cursor-pointer shadow-sm"
+            className="text-[9px] bg-white/90 backdrop-blur-sm border border-[var(--c-gray-200)] rounded px-1.5 py-0.5 cursor-pointer shadow-sm max-w-full truncate"
             onClick={(e) => e.stopPropagation()}
           >
             <option value="">Ungrouped</option>
