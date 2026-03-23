@@ -8,6 +8,23 @@ import { ProjectSearchPicker } from '@/components/shared/ProjectSearchPicker'
 import { Breadcrumb } from '@/components/shared/Breadcrumb'
 import { SharePopover } from '@/components/shared/SharePopover'
 import { InlineEditCell } from '@/components/shared/InlineEditCell'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  type DragStartEvent,
+  type DragEndEvent,
+  useDroppable,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  useSortable,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
@@ -32,6 +49,143 @@ interface CollectionDetail {
   itemGroups: Record<string, string | null>
 }
 
+// ── Sortable project card ──────────────────────────────────────
+function SortableProjectCard({
+  project,
+  isDeleteMode,
+  isEditMode,
+  isSelected,
+  groups,
+  currentGroupId,
+  onToggleSelect,
+  onNavigate,
+  onRemove,
+  onMoveToGroup,
+}: {
+  project: Project
+  isDeleteMode: boolean
+  isEditMode: boolean
+  isSelected: boolean
+  groups: CollectionGroup[]
+  currentGroupId: string | null
+  onToggleSelect: (id: string) => void
+  onNavigate: (id: string) => void
+  onRemove: (id: string) => void
+  onMoveToGroup: (projectIds: string[], groupId: string | null) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: project.id,
+    disabled: !isEditMode || isDeleteMode,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+  }
+
+  const img = thumbUrl(project.folderName, project.thumbImage || project.heroImage)
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} className="group relative">
+      {/* Drag handle in edit mode */}
+      {isEditMode && !isDeleteMode && (
+        <div
+          {...listeners}
+          className="absolute top-2 left-2 z-10 w-6 h-6 rounded-full bg-black/40 text-white/80 flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Drag to reorder"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <circle cx="3" cy="2" r="0.8" fill="currentColor" />
+            <circle cx="7" cy="2" r="0.8" fill="currentColor" />
+            <circle cx="3" cy="5" r="0.8" fill="currentColor" />
+            <circle cx="7" cy="5" r="0.8" fill="currentColor" />
+            <circle cx="3" cy="8" r="0.8" fill="currentColor" />
+            <circle cx="7" cy="8" r="0.8" fill="currentColor" />
+          </svg>
+        </div>
+      )}
+      <button
+        onClick={() => isDeleteMode ? onToggleSelect(project.id) : onNavigate(project.id)}
+        className={`text-left w-full transition-opacity duration-150 ${isDeleteMode && !isSelected ? 'opacity-60' : ''}`}
+      >
+        <div className={`aspect-[4/3] rounded-[var(--radius-sm)] overflow-hidden bg-[var(--c-gray-100)] mb-2 ${isDeleteMode ? 'cursor-pointer' : ''} ${isSelected ? 'ring-2 ring-[var(--c-error)]' : ''}`}>
+          {img ? (
+            <img src={img} alt={project.projectName} className={`w-full h-full object-cover transition-transform duration-300 ${!isDeleteMode ? 'group-hover:scale-105' : ''}`} />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[var(--c-gray-300)] text-[10px]">No image</div>
+          )}
+        </div>
+        <p className="text-[12px] font-[500] text-[var(--c-gray-800)] truncate">{project.client}</p>
+        <p className="text-[11px] font-[350] text-[var(--c-gray-500)] truncate">{project.projectName}</p>
+      </button>
+      {isDeleteMode && (
+        <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all ${isSelected ? 'bg-[var(--c-error)] text-white' : 'bg-black/40 text-white/60'}`}>
+          {isSelected && (
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 6l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </div>
+      )}
+      {!isDeleteMode && !isEditMode && (
+        <button
+          onClick={() => onRemove(project.id)}
+          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 text-white/80 hover:bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Remove from collection"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M2.5 2.5l5 5M7.5 2.5l-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
+      {isEditMode && !isDeleteMode && groups.length > 0 && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <select
+            value={currentGroupId || ''}
+            onChange={(e) => onMoveToGroup([project.id], e.target.value || null)}
+            className="text-[9px] bg-white/90 border border-[var(--c-gray-200)] rounded px-1 py-0.5 cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <option value="">Ungrouped</option>
+            {groups.map(g => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Droppable group container ──────────────────────────────────
+function DroppableGroup({ id, children }: { id: string; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`min-h-[80px] rounded-[var(--radius-sm)] transition-colors ${isOver ? 'bg-[var(--c-gray-50)] ring-2 ring-[var(--c-gray-300)] ring-dashed' : ''}`}
+    >
+      {children}
+    </div>
+  )
+}
+
+// ── Drag overlay card ──────────────────────────────────────────
+function DragOverlayCard({ project }: { project: Project }) {
+  const img = thumbUrl(project.folderName, project.thumbImage || project.heroImage)
+  return (
+    <div className="w-[180px] opacity-80 rotate-2 shadow-lg rounded-[var(--radius-sm)] bg-[var(--c-white)] p-1">
+      <div className="aspect-[4/3] rounded-[3px] overflow-hidden bg-[var(--c-gray-100)] mb-1">
+        {img ? <img src={img} alt="" className="w-full h-full object-cover" /> : null}
+      </div>
+      <p className="text-[10px] font-[500] text-[var(--c-gray-800)] truncate px-1">{project.client}</p>
+      <p className="text-[9px] text-[var(--c-gray-500)] truncate px-1">{project.projectName}</p>
+    </div>
+  )
+}
+
+// ── Main page ──────────────────────────────────────────────────
 export default function CollectionDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
@@ -44,6 +198,11 @@ export default function CollectionDetailPage() {
   const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set())
   const [batchRemoving, setBatchRemoving] = useState(false)
   const [editMode, setEditMode] = useState(false)
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  )
 
   const loadCollection = useCallback(() => {
     fetch(`/api/collections/${id}`)
@@ -89,6 +248,11 @@ export default function CollectionDetailPage() {
       })),
     }
   }, [collection])
+
+  const activeProject = useMemo(
+    () => collection?.projects.find(p => p.id === activeId) || null,
+    [collection, activeId]
+  )
 
   const handleRemove = useCallback(async (projectId: string) => {
     await fetch(`/api/collections/${id}/items`, {
@@ -197,7 +361,6 @@ export default function CollectionDetailPage() {
     await fetch(`/api/collections/${id}/groups/${groupId}`, { method: 'DELETE' })
     setCollection((prev) => {
       if (!prev) return null
-      // Move items from deleted group to ungrouped
       const newItemGroups = { ...prev.itemGroups }
       for (const [pid, gid] of Object.entries(newItemGroups)) {
         if (gid === groupId) newItemGroups[pid] = null
@@ -226,6 +389,40 @@ export default function CollectionDetailPage() {
     })
   }, [id])
 
+  // DnD handlers
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+  }, [])
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    setActiveId(null)
+    const { active, over } = event
+    if (!over || !collection) return
+
+    const draggedProjectId = active.id as string
+    const overId = over.id as string
+
+    // Determine target group
+    // If dropped on a group container, overId is the group id (or 'ungrouped')
+    // If dropped on another project, find that project's group
+    let targetGroupId: string | null = null
+
+    if (overId === 'ungrouped') {
+      targetGroupId = null
+    } else if (collection.groups.some(g => g.id === overId)) {
+      targetGroupId = overId
+    } else {
+      // Dropped on a project — use that project's group
+      targetGroupId = collection.itemGroups[overId] ?? null
+    }
+
+    const currentGroupId = collection.itemGroups[draggedProjectId] ?? null
+
+    if (currentGroupId !== targetGroupId) {
+      handleMoveToGroup([draggedProjectId], targetGroupId)
+    }
+  }, [collection, handleMoveToGroup])
+
   if (loading) {
     return <div className="flex items-center justify-center h-full bg-[var(--c-white)] text-[var(--c-gray-400)] text-[13px]">Loading...</div>
   }
@@ -234,69 +431,116 @@ export default function CollectionDetailPage() {
     return <div className="flex items-center justify-center h-full bg-[var(--c-white)] text-[var(--c-gray-400)] text-[13px]">Collection not found</div>
   }
 
-  const renderProjectCard = (p: Project) => {
-    const img = thumbUrl(p.folderName, p.thumbImage || p.heroImage)
-    const isSelected = selectedForDelete.has(p.id)
+  const renderProjectGrid = (projects: Project[], containerId: string) => {
+    const projectIds = projects.map(p => p.id)
     return (
-      <div key={p.id} className="group relative">
-        <button
-          onClick={() => deleteMode ? toggleDeleteSelection(p.id) : router.push(`/project/${p.id}`)}
-          className={`text-left w-full transition-opacity duration-150 ${deleteMode && !isSelected ? 'opacity-60' : ''}`}
-        >
-          <div className={`aspect-[4/3] rounded-[var(--radius-sm)] overflow-hidden bg-[var(--c-gray-100)] mb-2 ${deleteMode ? 'cursor-pointer' : ''} ${isSelected ? 'ring-2 ring-[var(--c-error)]' : ''}`}>
-            {img ? (
-              <img src={img} alt={p.projectName} className={`w-full h-full object-cover transition-transform duration-300 ${!deleteMode ? 'group-hover:scale-105' : ''}`} />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-[var(--c-gray-300)] text-[10px]">No image</div>
-            )}
+      <DroppableGroup id={containerId}>
+        <SortableContext items={projectIds} strategy={rectSortingStrategy}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
+            {projects.map((p) => (
+              <SortableProjectCard
+                key={p.id}
+                project={p}
+                isDeleteMode={deleteMode}
+                isEditMode={editMode}
+                isSelected={selectedForDelete.has(p.id)}
+                groups={collection.groups}
+                currentGroupId={collection.itemGroups[p.id] ?? null}
+                onToggleSelect={toggleDeleteSelection}
+                onNavigate={(pid) => router.push(`/project/${pid}`)}
+                onRemove={handleRemove}
+                onMoveToGroup={handleMoveToGroup}
+              />
+            ))}
           </div>
-          <p className="text-[12px] font-[500] text-[var(--c-gray-800)] truncate">{p.client}</p>
-          <p className="text-[11px] font-[350] text-[var(--c-gray-500)] truncate">{p.projectName}</p>
-        </button>
-        {deleteMode && (
-          <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all ${isSelected ? 'bg-[var(--c-error)] text-white' : 'bg-black/40 text-white/60'}`}>
-            {isSelected && (
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M3 6l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </div>
-        )}
-        {!deleteMode && !editMode && (
-          <button
-            onClick={() => handleRemove(p.id)}
-            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 text-white/80 hover:bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-            title="Remove from collection"
-          >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <path d="M2.5 2.5l5 5M7.5 2.5l-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </button>
-        )}
-        {/* Move-to-group dropdown in edit mode */}
-        {editMode && !deleteMode && collection.groups.length > 0 && (
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <select
-              value={collection.itemGroups[p.id] || ''}
-              onChange={(e) => handleMoveToGroup([p.id], e.target.value || null)}
-              className="text-[9px] bg-white/90 border border-[var(--c-gray-200)] rounded px-1 py-0.5 cursor-pointer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <option value="">Ungrouped</option>
-              {collection.groups.map(g => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
+        </SortableContext>
+      </DroppableGroup>
     )
   }
 
-  const renderProjectGrid = (projects: Project[]) => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
-      {projects.map(renderProjectCard)}
-    </div>
+  const content = (
+    <>
+      {collection.projects.length === 0 ? (
+        <div className="text-center py-16">
+          <p className="text-[13px] text-[var(--c-gray-400)] mb-3">No projects in this collection yet.</p>
+          <button
+            onClick={() => { setPickerGroupId(null); setPickerOpen(true) }}
+            className="text-[12px] font-[450] text-[var(--c-gray-600)] hover:text-[var(--c-gray-900)] transition-colors px-4 py-2 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] hover:border-[var(--c-gray-400)]"
+          >
+            + Add Projects
+          </button>
+        </div>
+      ) : (
+        <>
+          {groupedProjects.groups.map((group) => (
+            <div key={group.id} className="mb-10">
+              <div className="flex items-center justify-between mb-4">
+                {editMode ? (
+                  <div className="flex items-center gap-2">
+                    <InlineEditCell
+                      value={group.name}
+                      onSave={(v) => handleRenameGroup(group.id, v)}
+                      className="text-[15px] font-[450] !text-[var(--c-gray-800)]"
+                    />
+                    <span className="text-[10px] text-[var(--c-gray-400)]">{group.projects.length}</span>
+                    <button
+                      onClick={() => { setPickerGroupId(group.id); setPickerOpen(true) }}
+                      className="text-[10px] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors ml-2"
+                    >
+                      + add
+                    </button>
+                    <button
+                      onClick={() => handleDeleteGroup(group.id)}
+                      className="text-[10px] text-[var(--c-gray-400)] hover:text-[var(--c-error)] transition-colors"
+                    >
+                      delete group
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-[15px] font-[450] text-[var(--c-gray-800)]">{group.name}</h2>
+                    <span className="text-[10px] text-[var(--c-gray-400)]">{group.projects.length}</span>
+                  </div>
+                )}
+              </div>
+              {group.projects.length > 0 ? (
+                renderProjectGrid(group.projects, group.id)
+              ) : (
+                <DroppableGroup id={group.id}>
+                  <p className="text-[12px] text-[var(--c-gray-300)] italic py-4">
+                    {editMode ? 'Drop projects here' : 'No projects in this group yet.'}
+                  </p>
+                </DroppableGroup>
+              )}
+            </div>
+          ))}
+
+          {groupedProjects.ungrouped.length > 0 && (
+            <div className={groupedProjects.groups.length > 0 ? 'mt-10' : ''}>
+              {groupedProjects.groups.length > 0 && (
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="text-[15px] font-[450] text-[var(--c-gray-500)]">Ungrouped</h2>
+                  <span className="text-[10px] text-[var(--c-gray-400)]">{groupedProjects.ungrouped.length}</span>
+                </div>
+              )}
+              {renderProjectGrid(groupedProjects.ungrouped, 'ungrouped')}
+            </div>
+          )}
+
+          {/* Empty ungrouped drop zone when all items are grouped */}
+          {groupedProjects.ungrouped.length === 0 && groupedProjects.groups.length > 0 && editMode && (
+            <div className="mt-10">
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-[15px] font-[450] text-[var(--c-gray-500)]">Ungrouped</h2>
+              </div>
+              <DroppableGroup id="ungrouped">
+                <p className="text-[12px] text-[var(--c-gray-300)] italic py-4">Drop projects here to ungroup</p>
+              </DroppableGroup>
+            </div>
+          )}
+        </>
+      )}
+    </>
   )
 
   return (
@@ -394,71 +638,20 @@ export default function CollectionDetailPage() {
           </div>
         )}
 
-        {collection.projects.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-[13px] text-[var(--c-gray-400)] mb-3">No projects in this collection yet.</p>
-            <button
-              onClick={() => { setPickerGroupId(null); setPickerOpen(true) }}
-              className="text-[12px] font-[450] text-[var(--c-gray-600)] hover:text-[var(--c-gray-900)] transition-colors px-4 py-2 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] hover:border-[var(--c-gray-400)]"
-            >
-              + Add Projects
-            </button>
-          </div>
+        {editMode ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            {content}
+            <DragOverlay>
+              {activeProject ? <DragOverlayCard project={activeProject} /> : null}
+            </DragOverlay>
+          </DndContext>
         ) : (
-          <>
-            {/* Render groups */}
-            {groupedProjects.groups.map((group) => (
-              <div key={group.id} className="mb-10">
-                <div className="flex items-center justify-between mb-4">
-                  {editMode ? (
-                    <div className="flex items-center gap-2">
-                      <InlineEditCell
-                        value={group.name}
-                        onSave={(v) => handleRenameGroup(group.id, v)}
-                        className="text-[15px] font-[450] !text-[var(--c-gray-800)]"
-                      />
-                      <span className="text-[10px] text-[var(--c-gray-400)]">{group.projects.length}</span>
-                      <button
-                        onClick={() => { setPickerGroupId(group.id); setPickerOpen(true) }}
-                        className="text-[10px] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors ml-2"
-                      >
-                        + add
-                      </button>
-                      <button
-                        onClick={() => handleDeleteGroup(group.id)}
-                        className="text-[10px] text-[var(--c-gray-400)] hover:text-[var(--c-error)] transition-colors"
-                      >
-                        delete group
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-[15px] font-[450] text-[var(--c-gray-800)]">{group.name}</h2>
-                      <span className="text-[10px] text-[var(--c-gray-400)]">{group.projects.length}</span>
-                    </div>
-                  )}
-                </div>
-                {group.projects.length > 0 ? (
-                  renderProjectGrid(group.projects)
-                ) : (
-                  <p className="text-[12px] text-[var(--c-gray-300)] italic py-4">No projects in this group yet.</p>
-                )}
-              </div>
-            ))}
-
-            {/* Ungrouped projects */}
-            {groupedProjects.ungrouped.length > 0 && (
-              <div className={groupedProjects.groups.length > 0 ? 'mt-10' : ''}>
-                {groupedProjects.groups.length > 0 && (
-                  <div className="flex items-center gap-2 mb-4">
-                    <h2 className="text-[15px] font-[450] text-[var(--c-gray-500)]">Ungrouped</h2>
-                    <span className="text-[10px] text-[var(--c-gray-400)]">{groupedProjects.ungrouped.length}</span>
-                  </div>
-                )}
-                {renderProjectGrid(groupedProjects.ungrouped)}
-              </div>
-            )}
-          </>
+          content
         )}
       </div>
 
