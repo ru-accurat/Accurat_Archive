@@ -184,6 +184,23 @@ export const api = {
       body: JSON.stringify({ projectId, fieldName })
     }).then(r => json(r)),
 
+  generateCaseStudy: (projectId: string, opts: { notes?: string; quality?: string }): Promise<{ success: boolean; fields?: Record<string, string>; tokensUsed?: number; message?: string }> =>
+    fetch('/api/ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId, mode: 'full', ...opts })
+    }).then(r => json(r)),
+
+  getAiSettings: (): Promise<Record<string, { value: string; updatedAt: string }>> =>
+    fetch('/api/ai/settings').then(r => json(r)),
+
+  updateAiSettings: (updates: Record<string, string>): Promise<{ success: boolean }> =>
+    fetch('/api/ai/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    }).then(r => json(r)),
+
   // Export
   exportCsv: (projectIds: string[]): Promise<Blob> =>
     fetch('/api/csv/export', {

@@ -94,6 +94,18 @@ export default function SettingsPage() {
 
         <div className="border-t border-[var(--c-gray-100)] mb-10" />
 
+        <div className="mb-10">
+          <label className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] block mb-3">AI Writing Guidelines</label>
+          <p className="text-[12px] font-[400] text-[var(--c-gray-500)] mb-4 leading-[1.6]">
+            Edit the voice, tone, and style guidelines the AI uses when writing case studies.
+          </p>
+          <button onClick={() => router.push('/settings/ai')} className="text-[12px] font-[500] px-5 py-2 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] text-[var(--c-gray-700)] hover:bg-[var(--c-gray-50)] transition-colors duration-200">
+            Edit AI Guidelines
+          </button>
+        </div>
+
+        <div className="border-t border-[var(--c-gray-100)] mb-10" />
+
         <div className="mb-8">
           <label className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] block mb-3">Anthropic API Key</label>
           <p className="text-[12px] font-[400] text-[var(--c-gray-500)] mb-4 leading-[1.6]">

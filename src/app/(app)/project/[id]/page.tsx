@@ -43,7 +43,6 @@ export default function ProjectPage() {
   const [saving, setSaving] = useState(false)
   const [heroIndex, setHeroIndex] = useState(0)
   const [thumbIndex, setThumbIndex] = useState(-1)
-  const [generatingField, setGeneratingField] = useState<string | null>(null)
   const [aiResult, setAiResult] = useState<{ field: string; text: string } | null>(null)
   const [allTags, setAllTags] = useState<{ domains: string[]; services: string[]; outputs: string[] }>({ domains: [], services: [], outputs: [] })
   const [uploadProgress, setUploadProgress] = useState<{ active: boolean; message: string; done: boolean }>({ active: false, message: '', done: false })
@@ -272,17 +271,6 @@ export default function ProjectPage() {
     }
   }, [id, project, router, removeProjectFromStore])
 
-  const handleGenerate = useCallback(async (fieldName: string) => {
-    if (!id) return
-    setGeneratingField(fieldName)
-    try {
-      const result = await api.generateField(id, fieldName)
-      if (result.success) setAiResult({ field: fieldName, text: result.text })
-      else alert(result.message || 'Generation failed')
-    } catch (err) { alert(String(err)) }
-    setGeneratingField(null)
-  }, [id])
-
   const handleAiAccept = useCallback(() => {
     if (!aiResult || !draft) return
     setDraft((prev) => prev ? {
@@ -355,13 +343,13 @@ export default function ProjectPage() {
             <ChecklistTagField title="Services" tags={p.services} onChange={(v) => setField('services', v)} allTags={allTags.services} />
           </div>
           <div className="mt-8">
-            <EditableField title="Tagline" value={p.tagline} onChange={(v) => setField('tagline', v)} large isAiGenerated={isAi('tagline')} onGenerate={() => handleGenerate('tagline')} generating={generatingField === 'tagline'} />
+            <EditableField title="Tagline" value={p.tagline} onChange={(v) => setField('tagline', v)} large isAiGenerated={isAi('tagline')} />
           </div>
-          <EditableField title="Description" value={p.description} onChange={(v) => setField('description', v)} isAiGenerated={isAi('description')} onGenerate={() => handleGenerate('description')} generating={generatingField === 'description'} />
-          <EditableField title="Challenge" value={p.challenge} onChange={(v) => setField('challenge', v)} isAiGenerated={isAi('challenge')} onGenerate={() => handleGenerate('challenge')} generating={generatingField === 'challenge'} />
-          <EditableField title="Solution" value={p.solution} onChange={(v) => setField('solution', v)} isAiGenerated={isAi('solution')} onGenerate={() => handleGenerate('solution')} generating={generatingField === 'solution'} />
-          <EditableField title="Deliverables" value={p.deliverables} onChange={(v) => setField('deliverables', v)} isAiGenerated={isAi('deliverables')} onGenerate={() => handleGenerate('deliverables')} generating={generatingField === 'deliverables'} />
-          <EditableField title="Client Quotes" value={p.clientQuotes} onChange={(v) => setField('clientQuotes', v)} isAiGenerated={isAi('clientQuotes')} onGenerate={() => handleGenerate('clientQuotes')} generating={generatingField === 'clientQuotes'} />
+          <EditableField title="Description" value={p.description} onChange={(v) => setField('description', v)} isAiGenerated={isAi('description')} />
+          <EditableField title="Challenge" value={p.challenge} onChange={(v) => setField('challenge', v)} isAiGenerated={isAi('challenge')} />
+          <EditableField title="Solution" value={p.solution} onChange={(v) => setField('solution', v)} isAiGenerated={isAi('solution')} />
+          <EditableField title="Deliverables" value={p.deliverables} onChange={(v) => setField('deliverables', v)} isAiGenerated={isAi('deliverables')} />
+          <EditableField title="Client Quotes" value={p.clientQuotes} onChange={(v) => setField('clientQuotes', v)} isAiGenerated={isAi('clientQuotes')} />
           <EditableUrlsField urls={p.urls} onChange={(v) => setField('urls', v)} />
           <EditableTagsField title="Team" tags={p.team} onChange={(v) => setField('team', v)} placeholder="Add team member..." />
           <MediaManager

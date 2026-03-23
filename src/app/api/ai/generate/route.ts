@@ -6,7 +6,8 @@ import type { Project } from '@/lib/types'
 import Anthropic from '@anthropic-ai/sdk'
 import { scoreSimilarity } from '@/lib/similarity'
 
-const GUIDELINES = `# Accurat Case Study Writing Guidelines
+// Fallback guidelines used when ai_settings table is empty
+const FALLBACK_GUIDELINES = `# Accurat Case Study Writing Guidelines
 
 ## General Principles
 - Write for a prospective client, not a portfolio browser
@@ -71,6 +72,45 @@ ${p.solution ? `Solution: ${p.solution}` : ''}
 ${p.deliverables ? `Deliverables: ${p.deliverables}` : ''}`
 }
 
+// Load guidelines from Supabase ai_settings table
+async function loadGuidelines(supabase: ReturnType<typeof createServiceClient>): Promise<string> {
+  const { data } = await supabase
+    .from('ai_settings')
+    .select('key, value')
+
+  if (!data || data.length === 0) return FALLBACK_GUIDELINES
+
+  const settings: Record<string, string> = {}
+  for (const row of data) {
+    if (row.value) settings[row.key] = row.value
+  }
+
+  // If guidelines key has content, use it as the primary instruction
+  // Append other reference docs as additional context
+  const parts: string[] = []
+
+  if (settings.guidelines) {
+    parts.push(settings.guidelines)
+  } else {
+    parts.push(FALLBACK_GUIDELINES)
+  }
+
+  if (settings.voice) {
+    parts.push('\n\n# Voice & Tone Reference\n' + settings.voice)
+  }
+  if (settings.company) {
+    parts.push('\n\n# Company Background\n' + settings.company)
+  }
+  if (settings.market) {
+    parts.push('\n\n# Market Positioning\n' + settings.market)
+  }
+  if (settings.projects) {
+    parts.push('\n\n# Key Projects Reference\n' + settings.projects)
+  }
+
+  return parts.join('\n')
+}
+
 // POST /api/ai/generate
 export async function POST(request: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY
@@ -108,6 +148,9 @@ export async function POST(request: Request) {
   const project = rowToProject(data as ProjectRow)
   const context = formatProjectContext(project)
 
+  // Load guidelines from Supabase
+  const systemPrompt = await loadGuidelines(supabase)
+
   // Get similar projects for few-shot examples
   const { data: allProjectsData } = await supabase.from('projects').select('*')
   const allProjects = (allProjectsData as ProjectRow[] || []).map(rowToProject)
@@ -131,18 +174,33 @@ export async function POST(request: Request) {
   const model = quality === 'premium' ? 'claude-opus-4-20250514' : 'claude-sonnet-4-20250514'
   const notesSection = notes ? `\n\nAdditional notes/context from the team (may be in Italian — translate and incorporate):\n${notes}` : ''
 
+  // Detect if project already has content (iterative mode)
+  const hasExistingContent = !!(project.description || project.challenge || project.solution || project.tagline)
+
   try {
     const anthropic = new Anthropic({ apiKey })
 
     if (mode === 'full') {
-      // Full case study mode — generate all fields at once
-      const response = await anthropic.messages.create({
-        model,
-        max_tokens: 2048,
-        system: GUIDELINES,
-        messages: [{
-          role: 'user',
-          content: `Write a complete case study for the following Accurat project. Generate all five fields.${examplesText}
+      let userPrompt: string
+
+      if (hasExistingContent && notes) {
+        // Iterative mode: refine existing content with new notes/feedback
+        userPrompt = `You are editing an existing case study for an Accurat project. The current version is below. The user has provided feedback, corrections, or additional information. Integrate this new input into the existing case study, improving and restructuring as needed. You may significantly rewrite sections if the new information changes the narrative.${examplesText}
+
+Current case study:
+${context}${notesSection}
+
+Return the COMPLETE updated version of all five fields (even if some didn't change), each on its own line with the label prefix:
+TAGLINE: (one sentence)
+DESCRIPTION: (100-200 words)
+CHALLENGE: (15-35 words)
+SOLUTION: (15-35 words)
+DELIVERABLES: (comma-separated list)
+
+Write only the content. No preamble, no explanation, no markdown formatting.`
+      } else {
+        // Fresh generation mode
+        userPrompt = `Write a complete case study for the following Accurat project. Generate all five fields.${examplesText}
 
 Project to write about:
 ${context}${notesSection}
@@ -154,8 +212,14 @@ CHALLENGE: (15-35 words)
 SOLUTION: (15-35 words)
 DELIVERABLES: (comma-separated list)
 
-Write only the content. No preamble, no explanation, no markdown formatting.`,
-        }],
+Write only the content. No preamble, no explanation, no markdown formatting.`
+      }
+
+      const response = await anthropic.messages.create({
+        model,
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
       })
 
       const text = response.content[0].type === 'text' ? response.content[0].text : ''
@@ -172,6 +236,7 @@ Write only the content. No preamble, no explanation, no markdown formatting.`,
       return NextResponse.json({
         success: true,
         fields,
+        isIterative: hasExistingContent && !!notes,
         tokensUsed: response.usage?.input_tokens + response.usage?.output_tokens,
       })
     } else {
@@ -179,7 +244,7 @@ Write only the content. No preamble, no explanation, no markdown formatting.`,
       const response = await anthropic.messages.create({
         model,
         max_tokens: 1024,
-        system: GUIDELINES,
+        system: systemPrompt,
         messages: [{
           role: 'user',
           content: `Based on the following project context, ${FIELD_PROMPTS[fieldName]}${examplesText}
