@@ -17,9 +17,10 @@ interface Props {
   collectionId: string
   existingProjectIds: Set<string>
   onAdded: (projects: Project[]) => void
+  groupId?: string | null
 }
 
-export function ProjectSearchPicker({ open, onClose, collectionId, existingProjectIds, onAdded }: Props) {
+export function ProjectSearchPicker({ open, onClose, collectionId, existingProjectIds, onAdded, groupId }: Props) {
   const allProjects = useProjectStore((s) => s.projects)
   const [search, setSearch] = useState('')
   const [adding, setAdding] = useState<Set<string>>(new Set())
@@ -43,7 +44,7 @@ export function ProjectSearchPicker({ open, onClose, collectionId, existingProje
       await fetch(`/api/collections/${collectionId}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectIds: [project.id] }),
+        body: JSON.stringify({ projectIds: [project.id], groupId: groupId || undefined }),
       })
       onAdded([project])
     } catch {
