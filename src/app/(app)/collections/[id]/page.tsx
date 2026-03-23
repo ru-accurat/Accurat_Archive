@@ -44,6 +44,7 @@ interface CollectionGroup {
 interface CollectionDetail {
   id: string
   name: string
+  subtitle: string
   description: string
   shareToken: string | null
   projects: Project[]
@@ -427,6 +428,15 @@ export default function CollectionDetailPage() {
     })
   }, [pickerGroupId])
 
+  const handleSubtitleSave = useCallback(async (subtitle: string) => {
+    await fetch(`/api/collections/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subtitle }),
+    })
+    setCollection((prev) => prev ? { ...prev, subtitle } : null)
+  }, [id])
+
   const handleGenerateShareLink = useCallback(async () => {
     const res = await fetch(`/api/collections/${id}/share-token`, { method: 'POST' })
     const data = await res.json()
@@ -701,8 +711,20 @@ export default function CollectionDetailPage() {
             <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)]">
               {collection.name}
             </h1>
+            {editMode ? (
+              <div className="mt-1">
+                <InlineEditCell
+                  value={collection.subtitle || ''}
+                  onSave={handleSubtitleSave}
+                  className="text-[13px] !text-[var(--c-gray-500)]"
+                  placeholder="Add subtitle..."
+                />
+              </div>
+            ) : collection.subtitle ? (
+              <p className="text-[13px] text-[var(--c-gray-500)] mt-1">{collection.subtitle}</p>
+            ) : null}
             {collection.description && (
-              <p className="text-[13px] text-[var(--c-gray-400)] mt-1">{collection.description}</p>
+              <p className="text-[12px] text-[var(--c-gray-400)] mt-1">{collection.description}</p>
             )}
             <p className="text-[12px] text-[var(--c-gray-400)] mt-2">
               {collection.projects.length} project{collection.projects.length !== 1 ? 's' : ''}

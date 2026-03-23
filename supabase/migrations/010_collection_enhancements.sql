@@ -1,3 +1,6 @@
+-- Add subtitle to collections (collection-level subtitle)
+ALTER TABLE collections ADD COLUMN IF NOT EXISTS subtitle TEXT DEFAULT '';
+
 -- Add subtitle to collection_groups
 ALTER TABLE collection_groups ADD COLUMN IF NOT EXISTS subtitle TEXT DEFAULT '';
 

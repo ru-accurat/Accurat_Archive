@@ -27,7 +27,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
 
   const { data: items } = await supabase
     .from('collection_items')
-    .select('project_id, position, group_id')
+    .select('project_id, position, group_id, caption')
     .eq('collection_id', collection.id)
     .order('position')
 
@@ -46,21 +46,26 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     }
   }
 
-  // Build item-to-group map
+  // Build item-to-group map and captions
   const itemGroupMap: Record<string, string | null> = {}
+  const itemCaptionMap: Record<string, string> = {}
   for (const item of items || []) {
     itemGroupMap[item.project_id] = item.group_id
+    if (item.caption) itemCaptionMap[item.project_id] = item.caption
   }
 
   return NextResponse.json({
     name: collection.name,
+    subtitle: collection.subtitle || '',
     description: collection.description,
     projects,
     groups: (groups || []).map(g => ({
       id: g.id,
       name: g.name,
+      subtitle: g.subtitle || '',
       sortOrder: g.sort_order,
     })),
     itemGroups: itemGroupMap,
+    itemCaptions: itemCaptionMap,
   })
 }

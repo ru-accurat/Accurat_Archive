@@ -58,6 +58,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     id: collection.id,
     name: collection.name,
     description: collection.description,
+    subtitle: collection.subtitle || '',
     isPublic: collection.is_public,
     shareToken: collection.share_token,
     projects,
@@ -80,6 +81,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const update: Record<string, unknown> = {}
   if (body.name !== undefined) update.name = body.name
+  if (body.subtitle !== undefined) update.subtitle = body.subtitle
   if (body.description !== undefined) update.description = body.description
 
   const { error } = await supabase
