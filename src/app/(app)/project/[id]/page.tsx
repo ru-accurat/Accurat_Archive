@@ -93,7 +93,9 @@ export default function ProjectPage() {
     setSaving(true)
     try {
       const fullName = `${draft.client} - ${draft.projectName}`
-      const updated = await api.updateProject(id, { ...draft, fullName })
+      // Exclude media-managed fields from save payload — these are updated by media upload routes
+      const { mediaOrder: _mo, ...saveDraft } = draft
+      const updated = await api.updateProject(id, { ...saveDraft, fullName })
       setProject(updated)
       updateProjectInStore(id, updated)
       setEditMode(false)
