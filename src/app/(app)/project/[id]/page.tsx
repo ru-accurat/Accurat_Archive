@@ -425,7 +425,12 @@ export default function ProjectPage() {
           folderName={p.folderName}
           media={media}
           onClose={() => setInUseGeneratorOpen(false)}
-          onImageSaved={refreshMedia}
+          onImageSaved={(filename, asThumbnail) => {
+            refreshMedia()
+            if (asThumbnail && filename) {
+              setField('thumbImage', filename)
+            }
+          }}
         />
       </div>
     )

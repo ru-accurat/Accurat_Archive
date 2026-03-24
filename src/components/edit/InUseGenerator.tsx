@@ -10,7 +10,7 @@ interface InUseGeneratorProps {
   folderName: string
   media: MediaFile[]
   onClose: () => void
-  onImageSaved: () => void
+  onImageSaved: (filename: string, setAsThumbnail: boolean) => void
 }
 
 type Step = 'pick-image' | 'notes' | 'generating' | 'results'
@@ -92,7 +92,7 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
       })
       const data = await res.json()
       if (data.success) {
-        onImageSaved()
+        onImageSaved(data.filename, !!setAsThumbnail)
         handleClose()
       } else {
         setError(data.error || 'Save failed')
