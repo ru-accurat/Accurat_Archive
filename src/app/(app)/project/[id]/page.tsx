@@ -28,6 +28,7 @@ import { AiDiffModal } from '@/components/edit/AiDiffModal'
 import { RelatedProjects } from '@/components/project/RelatedProjects'
 import { LinkedEngagements } from '@/components/project/LinkedEngagements'
 import { CaseStudyWriter } from '@/components/edit/CaseStudyWriter'
+import { InUseGenerator } from '@/components/edit/InUseGenerator'
 
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>()
@@ -47,6 +48,7 @@ export default function ProjectPage() {
   const [allTags, setAllTags] = useState<{ domains: string[]; services: string[]; outputs: string[] }>({ domains: [], services: [], outputs: [] })
   const [uploadProgress, setUploadProgress] = useState<{ active: boolean; message: string; done: boolean }>({ active: false, message: '', done: false })
   const [caseStudyWriterOpen, setCaseStudyWriterOpen] = useState(false)
+  const [inUseGeneratorOpen, setInUseGeneratorOpen] = useState(false)
   const [sharePopover, setSharePopover] = useState(false)
   const [sharingLoading, setSharingLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -363,6 +365,16 @@ export default function ProjectPage() {
             onUploadLogo={handleUploadLogo} onDeleteLogo={handleDeleteLogo}
             onAddPdfs={handleAddPdfs} onDeletePdfs={handleDeletePdfs} onRenamePdf={handleRenamePdf}
           />
+          {media.length > 0 && (
+            <div className="mt-4">
+              <button
+                onClick={() => setInUseGeneratorOpen(true)}
+                className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+              >
+                Generate In-Use Image
+              </button>
+            </div>
+          )}
           <HistoryPanel projectId={p.id} onRestore={handleRestore} />
           <div className="mt-12 pt-8 border-t border-[var(--c-gray-200)]">
             <button onClick={handleDelete} className="text-[11px] font-[450] px-4 py-2 rounded-[var(--radius-sm)] text-red-500 hover:bg-red-50 transition-colors duration-200">Delete Project</button>
@@ -405,6 +417,15 @@ export default function ProjectPage() {
               setField(key as keyof Project, value as never)
             }
           }}
+        />
+
+        <InUseGenerator
+          open={inUseGeneratorOpen}
+          projectId={p.id}
+          folderName={p.folderName}
+          media={media}
+          onClose={() => setInUseGeneratorOpen(false)}
+          onImageSaved={refreshMedia}
         />
       </div>
     )

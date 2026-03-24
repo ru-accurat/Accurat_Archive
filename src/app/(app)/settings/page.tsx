@@ -10,7 +10,9 @@ export default function SettingsPage() {
   const router = useRouter()
   const { setProjects } = useProjectStore()
   const [apiKey, setApiKey] = useState('')
+  const [googleKey, setGoogleKey] = useState('')
   const [showKey, setShowKey] = useState(false)
+  const [showGoogleKey, setShowGoogleKey] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -28,13 +30,14 @@ export default function SettingsPage() {
   useEffect(() => {
     api.getConfig().then((config) => {
       if (config.anthropicApiKey) setApiKey(config.anthropicApiKey as string)
+      if (config.googleApiKey) setGoogleKey(config.googleApiKey as string)
       setLoading(false)
     })
   }, [])
 
   const handleSave = async () => {
     setSaving(true)
-    await api.setConfig({ anthropicApiKey: apiKey.trim() })
+    await api.setConfig({ anthropicApiKey: apiKey.trim(), googleApiKey: googleKey.trim() })
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -120,6 +123,24 @@ export default function SettingsPage() {
             />
             <button onClick={() => setShowKey(!showKey)} className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors duration-200">
               {showKey ? 'Hide' : 'Show'}
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <label className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] block mb-3">Google AI Studio API Key</label>
+          <p className="text-[12px] font-[400] text-[var(--c-gray-500)] mb-4 leading-[1.6]">
+            Required for in-use image generation (Gemini). Get your key from{' '}
+            <span className="text-[var(--c-gray-700)] font-[450]">aistudio.google.com/apikey</span>
+          </p>
+          <div className="flex items-center gap-3">
+            <input
+              type={showGoogleKey ? 'text' : 'password'} value={googleKey} onChange={(e) => setGoogleKey(e.target.value)}
+              placeholder="AIza..."
+              className="flex-1 px-0 py-2 text-[14px] font-[350] bg-transparent border-b border-[var(--c-gray-200)] focus:border-[var(--c-gray-900)] focus:outline-none transition-colors duration-200 text-[var(--c-gray-800)] placeholder:text-[var(--c-gray-300)] font-mono"
+            />
+            <button onClick={() => setShowGoogleKey(!showGoogleKey)} className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors duration-200">
+              {showGoogleKey ? 'Hide' : 'Show'}
             </button>
           </div>
         </div>
