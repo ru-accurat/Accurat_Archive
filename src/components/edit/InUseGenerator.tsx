@@ -256,7 +256,7 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
           <div>
             {step === 'results' && (
               <button
-                onClick={() => { setStep('notes'); setImages([]) }}
+                onClick={handleGenerate}
                 className="text-[12px] text-[var(--c-gray-500)] hover:text-[var(--c-gray-700)] transition-colors"
               >
                 Regenerate
