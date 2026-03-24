@@ -50,13 +50,21 @@ export default function TimelinePage() {
 
   return (
     <div className="flex flex-col h-full bg-[var(--c-white)]">
-      <div className="px-4 sm:px-6 md:px-[48px] pt-5 pb-3">
-        <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)]">
-          Timeline
-        </h1>
-        <p className="text-[12px] text-[var(--c-gray-400)] mt-1">
-          {hasActiveFilters ? `${sorted.length} of ${projectsWithDates.length}` : sorted.length} projects with dates
-        </p>
+      <div className="px-4 sm:px-6 md:px-[48px] pt-5 pb-3 flex items-start justify-between">
+        <div>
+          <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)]">
+            Timeline
+          </h1>
+          <p className="text-[12px] text-[var(--c-gray-400)] mt-1">
+            {hasActiveFilters ? `${sorted.length} of ${projectsWithDates.length}` : sorted.length} projects with dates
+          </p>
+        </div>
+        <button
+          onClick={() => router.push('/new')}
+          className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors shrink-0 mt-1"
+        >
+          + New Project
+        </button>
       </div>
 
       <CompactFilterBar

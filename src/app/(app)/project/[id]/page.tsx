@@ -29,6 +29,7 @@ import { RelatedProjects } from '@/components/project/RelatedProjects'
 import { LinkedEngagements } from '@/components/project/LinkedEngagements'
 import { CaseStudyWriter } from '@/components/edit/CaseStudyWriter'
 import { InUseGenerator } from '@/components/edit/InUseGenerator'
+import { Breadcrumb } from '@/components/shared/Breadcrumb'
 
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>()
@@ -314,7 +315,13 @@ export default function ProjectPage() {
         {fileInput}
         <div className="sticky top-0 z-40 bg-[var(--c-white)] border-b border-[var(--c-gray-200)]">
           <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-3 flex items-center justify-between">
-            <button onClick={cancelEdit} className="text-[12px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-900)] transition-colors duration-200">Cancel</button>
+            <div className="flex items-center gap-4">
+              <Breadcrumb items={[
+                { label: 'Projects', href: '/' },
+                { label: `${p.client} — ${p.projectName}` },
+              ]} />
+              <button onClick={cancelEdit} className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-900)] transition-colors duration-200">Cancel</button>
+            </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setCaseStudyWriterOpen(true)}
@@ -441,7 +448,10 @@ export default function ProjectPage() {
       <div className="bg-[var(--c-black)] text-white">
         <div className="sticky top-0 z-40 bg-[var(--c-black)]/80 backdrop-blur-xl">
           <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-3 flex items-center justify-between">
-            <button onClick={() => router.push('/')} className="text-[12px] font-[400] text-white/30 hover:text-white/70 transition-colors duration-200">&larr; Back</button>
+            <Breadcrumb dark items={[
+              { label: 'Projects', href: '/' },
+              { label: `${p.client} — ${p.projectName}` },
+            ]} />
             <div className="flex items-center gap-3">
               <div className="relative">
                 <button

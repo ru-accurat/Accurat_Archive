@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useProjects } from '@/hooks/use-projects'
 import { useProjectStore } from '@/stores/project-store'
 import { useUiStore } from '@/stores/ui-store'
@@ -10,6 +11,7 @@ import { FilterAccordion } from '@/components/index/FilterAccordion'
 import { FilterBar } from '@/components/index/FilterBar'
 import { BulkActions } from '@/components/index/BulkActions'
 export default function IndexPage() {
+  const router = useRouter()
   const { loading } = useProjects()
   const { viewMode, setViewMode, editMode, setEditMode } = useUiStore()
   const { setSearch, filters, projects } = useProjectStore()
@@ -75,6 +77,12 @@ export default function IndexPage() {
               <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" />
               <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" />
             </svg>
+          </button>
+          <button
+            onClick={() => router.push('/new')}
+            className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors ml-1"
+          >
+            + New Project
           </button>
         </div>
       </div>

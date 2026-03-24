@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useProjects } from '@/hooks/use-projects'
 import { useProjectStore } from '@/stores/project-store'
 import { useSharedFilters } from '@/hooks/use-shared-filters'
@@ -26,6 +27,7 @@ function escapeHtml(str: string) {
 }
 
 export default function MapPage() {
+  const router = useRouter()
   const { loading } = useProjects()
   const allProjects = useProjectStore((s) => s.projects)
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -230,6 +232,12 @@ export default function MapPage() {
             {hasActiveFilters ? `${geoProjects.length} of ${geoAllProjects.length}` : geoProjects.length} project{geoProjects.length !== 1 ? 's' : ''} across {clusters.length} location{clusters.length !== 1 ? 's' : ''}
           </p>
         </div>
+        <button
+          onClick={() => router.push('/new')}
+          className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors shrink-0"
+        >
+          + New Project
+        </button>
       </div>
       <CompactFilterBar
         filters={filters}
