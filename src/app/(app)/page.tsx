@@ -16,7 +16,9 @@ export default function IndexPage() {
   const { viewMode, setViewMode, editMode, setEditMode } = useUiStore()
   const { setSearch, filters, projects } = useProjectStore()
   const filtered = useFilteredProjects()
-  const hasActiveFilters = !!(filters.search || filters.domains.length || filters.services.length || filters.output.length || filters.section.length || filters.tier.length || filters.missing.length || filters.status.length)
+  // Status default is ['internal', 'public'] — only count as active filter if different from default
+  const isStatusNonDefault = filters.status.length !== 2 || !filters.status.includes('internal') || !filters.status.includes('public')
+  const hasActiveFilters = !!(filters.search || filters.domains.length || filters.services.length || filters.output.length || filters.section.length || filters.tier.length || filters.missing.length || isStatusNonDefault)
 
   if (loading) {
     return (

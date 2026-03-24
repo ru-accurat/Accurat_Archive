@@ -44,7 +44,7 @@ const defaultFilters: Filters = {
   yearRange: [null, null],
   tier: [],
   missing: [],
-  status: []
+  status: ['internal', 'public']
 }
 
 export const useProjectStore = create<ProjectStore>((set) => ({
