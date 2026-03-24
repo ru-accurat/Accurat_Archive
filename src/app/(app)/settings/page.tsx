@@ -75,15 +75,14 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-full bg-[var(--c-white)] text-[var(--c-gray-400)] text-[13px] font-[350]">Loading...</div>
+    return <div className="flex items-center justify-center h-full bg-[var(--c-white)] text-[var(--c-gray-400)] text-[13px]">Loading...</div>
   }
 
   return (
     <div className="h-full overflow-y-auto bg-[var(--c-white)]">
       <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={handleCsvFile} />
-      <div className="max-w-[600px] mx-auto" style={{ padding: '48px 80px' }}>
-        <button onClick={() => router.push('/')} className="text-[12px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-900)] transition-colors duration-200 mb-10 block">&larr; Back</button>
-        <h1 className="text-[2rem] font-[250] tracking-[-0.03em] text-[var(--c-gray-900)] mb-10">Settings</h1>
+      <div className="max-w-[720px] mx-auto px-4 sm:px-6 md:px-[48px] py-10">
+        <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)] mb-8">Settings</h1>
 
         <div className="mb-10">
           <label className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] block mb-3">Data Import</label>

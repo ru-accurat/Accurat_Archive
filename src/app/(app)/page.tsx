@@ -44,10 +44,10 @@ export default function IndexPage() {
           {viewMode === 'table' && (
             <button
               onClick={() => setEditMode(!editMode)}
-              className={`px-2.5 py-1 rounded-[var(--radius-sm)] text-[10px] font-[450] uppercase tracking-[0.06em] transition-all duration-150 mr-1 ${
+              className={`text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] transition-colors mr-1 ${
                 editMode
                   ? 'bg-[var(--c-gray-900)] text-white'
-                  : 'text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] hover:bg-[var(--c-gray-50)]'
+                  : 'border border-[var(--c-gray-200)] text-[var(--c-gray-600)] hover:bg-[var(--c-gray-50)]'
               }`}
             >
               {editMode ? 'Done' : 'Edit'}

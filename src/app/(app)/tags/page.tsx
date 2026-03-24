@@ -69,7 +69,7 @@ export default function TagsPage() {
 
   return (
     <div className="h-full overflow-y-auto bg-[var(--c-white)]">
-      <div className="max-w-[800px] mx-auto px-4 sm:px-6 md:px-[48px] py-10">
+      <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-10">
         <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)] mb-8">Tags</h1>
 
         <div className="flex gap-1 mb-8 border-b border-[var(--c-gray-200)]">

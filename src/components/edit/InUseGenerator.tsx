@@ -121,7 +121,7 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
             <h2 className="text-[16px] font-[450] text-[var(--c-gray-900)]">
               Generate In-Use Image
             </h2>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Gemini</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--c-ai)]/10 text-[var(--c-ai)]">Gemini</span>
           </div>
           <button onClick={handleClose} className="text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)]">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>

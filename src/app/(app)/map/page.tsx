@@ -225,7 +225,7 @@ export default function MapPage() {
     <div className="flex flex-col h-[calc(100vh-var(--topbar-h))] bg-[var(--c-white)]">
       <div className="px-4 sm:px-6 md:px-[48px] pt-5 pb-3 flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-[1.1rem] font-[350] tracking-[-0.01em] text-[var(--c-gray-900)]">Map</h1>
+          <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)]">Map</h1>
           <p className="text-[12px] text-[var(--c-gray-400)] mt-1">
             {hasActiveFilters ? `${geoProjects.length} of ${geoAllProjects.length}` : geoProjects.length} project{geoProjects.length !== 1 ? 's' : ''} across {clusters.length} location{clusters.length !== 1 ? 's' : ''}
           </p>

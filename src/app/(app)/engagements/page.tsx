@@ -241,8 +241,8 @@ export default function EngagementsPage() {
                 </thead>
                 <tbody>
                   {filtered.map((e) => (
-                    <tr key={e.id} className="border-t border-[var(--c-gray-50)] hover:bg-[var(--c-gray-50)]/50 group">
-                      <td className="px-3 py-1 w-16">
+                    <tr key={e.id} className="border-t border-[var(--c-gray-50)] hover:bg-[var(--c-gray-50)] group">
+                      <td className="px-3 py-2 w-16">
                         {editMode ? (
                           <InlineEditCell
                             value={e.year}
@@ -253,7 +253,7 @@ export default function EngagementsPage() {
                           <span className="text-[var(--c-gray-600)]">{e.year}</span>
                         )}
                       </td>
-                      <td className="px-3 py-1">
+                      <td className="px-3 py-2">
                         {editMode ? (
                           <InlineEditCell
                             value={e.projectName}
@@ -263,7 +263,7 @@ export default function EngagementsPage() {
                           <span className="text-[var(--c-gray-800)]">{e.projectName}</span>
                         )}
                       </td>
-                      <td className="px-3 py-1">
+                      <td className="px-3 py-2">
                         {editMode ? (
                           <InlineEditCell
                             value={e.clientName || ''}
@@ -273,7 +273,7 @@ export default function EngagementsPage() {
                           <span className="text-[var(--c-gray-600)]">{e.clientName || '—'}</span>
                         )}
                       </td>
-                      <td className="px-3 py-1 text-right">
+                      <td className="px-3 py-2 text-right">
                         {editMode ? (
                           <InlineEditCell
                             value={e.amountEur}
@@ -286,7 +286,7 @@ export default function EngagementsPage() {
                           <span className="text-[var(--c-gray-600)] tabular-nums">{formatEur(e.amountEur)}</span>
                         )}
                       </td>
-                      <td className="px-3 py-1 text-right">
+                      <td className="px-3 py-2 text-right">
                         {editMode ? (
                           <InlineEditCell
                             value={e.amountUsd}
@@ -299,14 +299,14 @@ export default function EngagementsPage() {
                           <span className="text-[var(--c-gray-500)] tabular-nums">{formatUsd(e.amountUsd)}</span>
                         )}
                       </td>
-                      <td className="px-3 py-1 text-center">
+                      <td className="px-3 py-2 text-center">
                         <button
                           onClick={() => setLinkerEngagement(e)}
                           className="hover:bg-[var(--c-gray-100)] px-2 py-1 rounded transition-colors"
                           title="Link projects"
                         >
                           {(e.linkedProjectCount || 0) > 0 ? (
-                            <span className="text-[10px] font-[500] px-1.5 py-0.5 rounded bg-green-100 text-green-700">
+                            <span className="text-[10px] font-[500] px-1.5 py-0.5 rounded bg-[var(--c-success)]/20 text-[var(--c-success)]">
                               {e.linkedProjectCount}
                             </span>
                           ) : (
@@ -315,7 +315,7 @@ export default function EngagementsPage() {
                         </button>
                       </td>
                       {editMode && (
-                        <td className="px-3 py-1">
+                        <td className="px-3 py-2">
                           <button
                             onClick={async () => {
                               if (!confirm(`Delete "${e.projectName}" (${e.year})?`)) return

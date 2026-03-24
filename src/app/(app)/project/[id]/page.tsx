@@ -369,7 +369,7 @@ export default function ProjectPage() {
             <div className="mt-4">
               <button
                 onClick={() => setInUseGeneratorOpen(true)}
-                className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+                className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-ai)]/10 text-[var(--c-ai)] hover:bg-[var(--c-ai)]/20 transition-colors"
               >
                 Generate In-Use Image
               </button>

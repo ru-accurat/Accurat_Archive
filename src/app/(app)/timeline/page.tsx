@@ -51,7 +51,7 @@ export default function TimelinePage() {
   return (
     <div className="flex flex-col h-full bg-[var(--c-white)]">
       <div className="px-4 sm:px-6 md:px-[48px] pt-5 pb-3">
-        <h1 className="text-[1.1rem] font-[350] tracking-[-0.01em] text-[var(--c-gray-900)]">
+        <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)]">
           Timeline
         </h1>
         <p className="text-[12px] text-[var(--c-gray-400)] mt-1">

@@ -51,6 +51,11 @@ function isActive(pathname: string, path: string) {
   return pathname.startsWith(path)
 }
 
+const BROWSE_PATHS = ['/', '/timeline', '/map']
+function isBrowsePage(pathname: string) {
+  return BROWSE_PATHS.some(p => p === '/' ? pathname === '/' : pathname.startsWith(p))
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -142,12 +147,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <path d="M5.7 1.3l-.4 1.2a4.5 4.5 0 00-1 .6L3.1 2.7l-1.3.8.3 1.3a4.5 4.5 0 000 1.2l-.3 1.3 1.3.8 1.2-.4a4.5 4.5 0 001 .6l.4 1.2h1.6l.4-1.2a4.5 4.5 0 001-.6l1.2.4 1.3-.8-.3-1.3a4.5 4.5 0 000-1.2l.3-1.3-1.3-.8-1.2.4a4.5 4.5 0 00-1-.6L8.3 1.3H5.7z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
               </svg>
             </button>
-            <button
-              onClick={() => navigate('/new')}
-              className="text-[11px] font-[450] tracking-[0.02em] px-4 py-1.5 rounded-[var(--radius-sm)] bg-white/10 text-white/70 hover:bg-white/15 hover:text-white transition-all duration-200"
-            >
-              + New Project
-            </button>
+            {isBrowsePage(pathname) && (
+              <button
+                onClick={() => navigate('/new')}
+                className="text-[11px] font-[450] tracking-[0.02em] px-4 py-1.5 rounded-[var(--radius-sm)] bg-white/10 text-white/70 hover:bg-white/15 hover:text-white transition-all duration-200"
+              >
+                + New Project
+              </button>
+            )}
 
             {/* User menu */}
             {!loading && profile && (
@@ -228,9 +235,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button onClick={() => navigate('/settings')} className={`text-left text-[12px] font-[400] py-1.5 transition-colors ${isActive(pathname, '/settings') ? 'text-white/90' : 'text-white/50 hover:text-white/80'}`}>
             Settings
           </button>
-          <button onClick={() => navigate('/new')} className="text-left text-[12px] font-[450] text-white/70 hover:text-white py-1.5">
-            + New Project
-          </button>
+          {isBrowsePage(pathname) && (
+            <button onClick={() => navigate('/new')} className="text-left text-[12px] font-[450] text-white/70 hover:text-white py-1.5">
+              + New Project
+            </button>
+          )}
           {!loading && profile && (
             <div className="border-t border-white/10 pt-3 mt-2">
               <div className="flex items-center gap-2 mb-2">
