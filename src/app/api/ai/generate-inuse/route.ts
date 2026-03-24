@@ -157,7 +157,7 @@ export async function POST(request: Request) {
   const prompt2 = buildPrompt(project.client, notes, customGuidelines, 1)
 
   const genai = new GoogleGenerativeAI(googleApiKey)
-  const model = genai.getGenerativeModel({ model: 'gemini-2.0-flash-exp-image-generation' })
+  const model = genai.getGenerativeModel({ model: 'gemini-2.5-flash-image' })
 
   // Generate two images in parallel
   const generateOne = async (prompt: string) => {
