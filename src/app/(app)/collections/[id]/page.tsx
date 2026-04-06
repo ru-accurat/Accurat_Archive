@@ -2,7 +2,15 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import type { Project } from '@/lib/types'
+// Minimal project shape used on this page (satisfied by both Project and ProjectSummary)
+type CollectionProject = {
+  id: string
+  client: string
+  projectName: string
+  folderName: string
+  heroImage?: string
+  thumbImage?: string
+}
 import { useProjects } from '@/hooks/use-projects'
 import { ProjectSearchPicker } from '@/components/shared/ProjectSearchPicker'
 import { Breadcrumb } from '@/components/shared/Breadcrumb'
@@ -47,7 +55,7 @@ interface CollectionDetail {
   subtitle: string
   description: string
   shareToken: string | null
-  projects: Project[]
+  projects: CollectionProject[]
   groups: CollectionGroup[]
   itemGroups: Record<string, string | null>
   itemCaptions: Record<string, string>
@@ -68,7 +76,7 @@ function SortableProjectCard({
   onMoveToGroup,
   onCaptionSave,
 }: {
-  project: Project
+  project: CollectionProject
   caption: string
   isDeleteMode: boolean
   isEditMode: boolean
@@ -278,7 +286,7 @@ function DroppableGroup({ id, children }: { id: string; children: React.ReactNod
 }
 
 // ── Drag overlay card (matches grid card sizing) ───────────────
-function DragOverlayCard({ project }: { project: Project }) {
+function DragOverlayCard({ project }: { project: CollectionProject }) {
   const img = thumbUrl(project.folderName, project.thumbImage || project.heroImage)
   return (
     <div className="w-[200px] opacity-90 rotate-1 shadow-xl rounded-[var(--radius-sm)] bg-[var(--c-white)] overflow-hidden">
@@ -335,8 +343,8 @@ export default function CollectionDetailPage() {
     const groups = collection.groups || []
     const itemGroups = collection.itemGroups || {}
 
-    const byGroup: Record<string, Project[]> = {}
-    const ungrouped: Project[] = []
+    const byGroup: Record<string, CollectionProject[]> = {}
+    const ungrouped: CollectionProject[] = []
 
     for (const p of collection.projects) {
       const gid = itemGroups[p.id]
@@ -417,7 +425,7 @@ export default function CollectionDetailPage() {
     setBatchRemoving(false)
   }, [id, selectedForDelete])
 
-  const handleProjectsAdded = useCallback((added: Project[]) => {
+  const handleProjectsAdded = useCallback((added: CollectionProject[]) => {
     setCollection((prev) => {
       if (!prev) return null
       const newItemGroups = { ...prev.itemGroups }
@@ -599,7 +607,7 @@ export default function CollectionDetailPage() {
     return <div className="flex items-center justify-center h-full bg-[var(--c-white)] text-[var(--c-gray-400)] text-[13px]">Collection not found</div>
   }
 
-  const renderProjectGrid = (projects: Project[], containerId: string) => {
+  const renderProjectGrid = (projects: CollectionProject[], containerId: string) => {
     const projectIds = projects.map(p => p.id)
     return (
       <DroppableGroup id={containerId}>

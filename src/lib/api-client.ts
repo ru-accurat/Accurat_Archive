@@ -1,4 +1,4 @@
-import type { Project, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow } from './types'
+import type { Project, ProjectSummary, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow } from './types'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -10,7 +10,11 @@ async function json<T>(res: Response): Promise<T> {
 
 export const api = {
   // Projects
-  getProjects: (): Promise<Project[]> =>
+  getProjects: (): Promise<ProjectSummary[]> =>
+    fetch('/api/projects/summaries').then(r => json(r)),
+
+  // Full projects list (heavy — avoid on list pages)
+  getFullProjects: (): Promise<Project[]> =>
     fetch('/api/projects').then(r => json(r)),
 
   getProject: (id: string): Promise<Project> =>

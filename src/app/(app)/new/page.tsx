@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProjectStore } from '@/stores/project-store'
 import { api } from '@/lib/api-client'
+import { projectToSummary } from '@/lib/db-utils'
 
 export default function NewProjectPage() {
   const router = useRouter()
@@ -24,7 +25,7 @@ export default function NewProjectPage() {
     setError('')
     try {
       const newProject = await api.createProject(client.trim(), projectName.trim())
-      addProject(newProject)
+      addProject(projectToSummary(newProject))
       router.push(`/project/${newProject.id}`)
     } catch (err) {
       setError(String(err))

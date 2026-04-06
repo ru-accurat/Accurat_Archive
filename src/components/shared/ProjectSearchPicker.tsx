@@ -2,7 +2,10 @@
 
 import { useState, useMemo } from 'react'
 import { useProjectStore } from '@/stores/project-store'
-import type { Project } from '@/lib/types'
+import type { ProjectSummary } from '@/lib/types'
+
+// Minimal shape needed by this picker
+type PickerProject = Pick<ProjectSummary, 'id' | 'client' | 'projectName' | 'fullName' | 'folderName' | 'heroImage' | 'thumbImage'>
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
@@ -16,7 +19,7 @@ interface Props {
   onClose: () => void
   collectionId: string
   existingProjectIds: Set<string>
-  onAdded: (projects: Project[]) => void
+  onAdded: (projects: PickerProject[]) => void
   groupId?: string | null
 }
 
@@ -38,7 +41,7 @@ export function ProjectSearchPicker({ open, onClose, collectionId, existingProje
       .slice(0, 20)
   }, [allProjects, search, existingProjectIds])
 
-  const handleAdd = async (project: Project) => {
+  const handleAdd = async (project: PickerProject) => {
     setAdding((prev) => new Set(prev).add(project.id))
     try {
       await fetch(`/api/collections/${collectionId}/items`, {

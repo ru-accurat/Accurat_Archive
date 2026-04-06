@@ -6,14 +6,14 @@ import { useProjectStore } from '@/stores/project-store'
 import { useSharedFilters } from '@/hooks/use-shared-filters'
 import { CompactFilterBar } from '@/components/shared/CompactFilterBar'
 import { useEffect, useRef, useMemo, useState } from 'react'
-import type { Project } from '@/lib/types'
+import type { ProjectSummary } from '@/lib/types'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
 /** Group projects by identical lat/lng into location clusters */
-function clusterByLocation(projects: Project[]) {
-  const map = new Map<string, Project[]>()
+function clusterByLocation(projects: ProjectSummary[]) {
+  const map = new Map<string, ProjectSummary[]>()
   for (const p of projects) {
     const key = `${p.latitude},${p.longitude}`
     if (!map.has(key)) map.set(key, [])

@@ -2,9 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Project } from '@/lib/types'
-
-export function useKeyboardNav(projects: Project[], currentId?: string) {
+export function useKeyboardNav(projects: { id: string }[], currentId?: string) {
   const router = useRouter()
 
   useEffect(() => {

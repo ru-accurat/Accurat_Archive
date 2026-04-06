@@ -40,6 +40,42 @@ export interface Project {
   shareToken?: string | null
 }
 
+/**
+ * Lightweight Project shape used in list views (home/timeline/map).
+ * Excludes heavy text fields (challenge, solution, deliverables, clientQuotes)
+ * and other fields only needed on the detail page (pdfFiles, sectionImages, shareToken, urls).
+ * `completeness` is precomputed server-side so we don't need the heavy fields for sorting.
+ * `hasMedia` is precomputed for the "missing media" filter.
+ */
+export interface ProjectSummary {
+  id: string
+  fullName: string
+  client: string
+  projectName: string
+  tier: number
+  section: string
+  start: number | null
+  end: number | null
+  domains: string[]
+  services: string[]
+  tagline: string
+  description: string
+  team: string[]
+  output: string
+  heroImage?: string
+  thumbImage?: string
+  aiGenerated?: string[]
+  folderName: string
+  clientLogo?: string
+  status: 'draft' | 'internal' | 'public'
+  locationName?: string
+  latitude?: number | null
+  longitude?: number | null
+  completeness: number
+  hasMedia: boolean
+  urls: string[]
+}
+
 export interface HistoryEntry {
   timestamp: string
   project: Project

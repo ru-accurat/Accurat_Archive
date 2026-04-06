@@ -6,7 +6,7 @@ import { api } from '@/lib/api-client'
 import { useProjectStore } from '@/stores/project-store'
 import { useUiStore } from '@/stores/ui-store'
 import { useFilteredProjects, useFilterOptions } from '@/hooks/use-filters'
-import { getCompleteness } from '@/lib/completeness'
+import { getCompletenessFromSummary } from '@/lib/completeness'
 import { CompletenessIndicator } from './CompletenessIndicator'
 import { formatYearRange } from '@/lib/format'
 
@@ -104,7 +104,7 @@ export function ProjectTable() {
         </thead>
         <tbody>
           {filteredProjects.map((project) => {
-            const completeness = getCompleteness(project)
+            const completeness = getCompletenessFromSummary(project)
             const isSelected = selectedIds.includes(project.id)
             const isSaving = saving === project.id
             const special = mediaMap[project.folderName]

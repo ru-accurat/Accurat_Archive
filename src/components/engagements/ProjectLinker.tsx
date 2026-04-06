@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { api } from '@/lib/api-client'
-import type { Project } from '@/lib/types'
+import type { ProjectSummary } from '@/lib/types'
 
 interface ProjectLinkerProps {
   open: boolean
@@ -14,7 +14,7 @@ interface ProjectLinkerProps {
 }
 
 export function ProjectLinker({ open, engagementId, clientName, linkedProjectIds, onClose, onChanged }: ProjectLinkerProps) {
-  const [projects, setProjects] = useState<Project[]>([])
+  const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [search, setSearch] = useState('')
   const [linked, setLinked] = useState<Set<string>>(new Set(linkedProjectIds))
   const [saving, setSaving] = useState(false)

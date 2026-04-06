@@ -1,4 +1,4 @@
-import type { Project } from './types'
+import type { Project, ProjectSummary } from './types'
 
 const SCORED_FIELDS = [
   'tagline',
@@ -41,6 +41,22 @@ export function getCompleteness(project: Project): CompletenessResult {
     total: SCORED_FIELDS.length,
     percentage: Math.round((filled / SCORED_FIELDS.length) * 100),
     missing
+  }
+}
+
+/**
+ * Compute completeness from a ProjectSummary using its precomputed `completeness` number.
+ * We don't have access to the missing field names in summaries, so `missing` is empty.
+ * Use this in list views where we only need the percentage.
+ */
+export function getCompletenessFromSummary(project: ProjectSummary): CompletenessResult {
+  const filled = project.completeness
+  const total = SCORED_FIELDS.length
+  return {
+    score: filled,
+    total,
+    percentage: Math.round((filled / total) * 100),
+    missing: [],
   }
 }
 

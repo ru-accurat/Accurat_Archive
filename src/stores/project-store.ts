@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Project } from '../lib/types'
+import type { ProjectSummary } from '../lib/types'
 
 export interface Filters {
   search: string
@@ -14,21 +14,21 @@ export interface Filters {
 }
 
 export interface ProjectStore {
-  projects: Project[]
+  projects: ProjectSummary[]
   loading: boolean
   filters: Filters
   sortField: string
   sortDirection: 'asc' | 'desc'
   selectedIds: string[]
 
-  setProjects: (projects: Project[]) => void
+  setProjects: (projects: ProjectSummary[]) => void
   setLoading: (loading: boolean) => void
   setSearch: (search: string) => void
   setFilter: <K extends keyof Filters>(key: K, value: Filters[K]) => void
   clearFilters: () => void
   setSort: (field: string, direction?: 'asc' | 'desc') => void
-  updateProject: (id: string, data: Partial<Project>) => void
-  addProject: (project: Project) => void
+  updateProject: (id: string, data: Partial<ProjectSummary>) => void
+  addProject: (project: ProjectSummary) => void
   removeProject: (id: string) => void
   toggleSelection: (id: string) => void
   selectAll: (ids: string[]) => void

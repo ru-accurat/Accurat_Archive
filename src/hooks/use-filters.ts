@@ -2,9 +2,9 @@
 
 import { useMemo } from 'react'
 import { useProjectStore, type Filters } from '@/stores/project-store'
-import type { Project } from '@/lib/types'
+import type { ProjectSummary } from '@/lib/types'
 
-function matchesSearch(project: Project, search: string): boolean {
+function matchesSearch(project: ProjectSummary, search: string): boolean {
   if (!search) return true
   const lower = search.toLowerCase()
   return (
@@ -20,7 +20,7 @@ function matchesSearch(project: Project, search: string): boolean {
   )
 }
 
-function matchesFilters(project: Project, filters: Filters): boolean {
+function matchesFilters(project: ProjectSummary, filters: Filters): boolean {
   if (filters.domains.length > 0) {
     if (!filters.domains.some((d) => project.domains.includes(d))) return false
   }
@@ -46,7 +46,7 @@ function matchesFilters(project: Project, filters: Filters): boolean {
 
   if (filters.missing.length > 0) {
     const hasDescription = !!project.description
-    const hasMedia = !!(project.mediaOrder && project.mediaOrder.length > 0)
+    const hasMedia = project.hasMedia
 
     // Each selected filter is OR'd — project must match at least one
     const matchesAny = filters.missing.some((m) => {
@@ -61,7 +61,7 @@ function matchesFilters(project: Project, filters: Filters): boolean {
   return true
 }
 
-function sortProjects(projects: Project[], field: string, direction: 'asc' | 'desc'): Project[] {
+function sortProjects(projects: ProjectSummary[], field: string, direction: 'asc' | 'desc'): ProjectSummary[] {
   const sorted = [...projects].sort((a, b) => {
     let aVal: string | number | null = ''
     let bVal: string | number | null = ''
@@ -92,8 +92,8 @@ function sortProjects(projects: Project[], field: string, direction: 'asc' | 'de
         bVal = b.tier
         break
       case 'completeness':
-        aVal = getQuickCompleteness(a)
-        bVal = getQuickCompleteness(b)
+        aVal = a.completeness
+        bVal = b.completeness
         break
       default:
         aVal = a.client.toLowerCase()
@@ -106,21 +106,6 @@ function sortProjects(projects: Project[], field: string, direction: 'asc' | 'de
   })
 
   return direction === 'desc' ? sorted.reverse() : sorted
-}
-
-function getQuickCompleteness(p: Project): number {
-  let score = 0
-  if (p.tagline) score++
-  if (p.description) score++
-  if (p.challenge) score++
-  if (p.solution) score++
-  if (p.deliverables) score++
-  if (p.clientQuotes) score++
-  if (p.team.length > 0) score++
-  if (p.urls.length > 0) score++
-  if (p.domains.length > 0) score++
-  if (p.services.length > 0) score++
-  return score
 }
 
 export function useFilteredProjects() {

@@ -7,6 +7,7 @@ import { useKeyboardNav } from '@/hooks/use-keyboard-nav'
 import { useFilteredProjects, useFilterOptions } from '@/hooks/use-filters'
 import { useProjectStore } from '@/stores/project-store'
 import { api } from '@/lib/api-client'
+import { projectToSummary } from '@/lib/db-utils'
 import { pdfUrl } from '@/lib/media-url'
 import type { Project, HistoryEntry } from '@/lib/types'
 
@@ -99,7 +100,7 @@ export default function ProjectPage() {
       const { mediaOrder: _mo, ...saveDraft } = draft
       const updated = await api.updateProject(id, { ...saveDraft, fullName })
       setProject(updated)
-      updateProjectInStore(id, updated)
+      updateProjectInStore(id, projectToSummary(updated))
       setEditMode(false)
       setDraft(null)
     } catch (err) {

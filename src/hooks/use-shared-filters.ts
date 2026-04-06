@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
-import type { Project } from '@/lib/types'
+import type { ProjectSummary } from '@/lib/types'
 
 export interface SharedFilters {
   search: string
@@ -21,7 +21,7 @@ const EMPTY_FILTERS: SharedFilters = {
   status: [],
 }
 
-function matchesSearch(project: Project, search: string): boolean {
+function matchesSearch(project: ProjectSummary, search: string): boolean {
   if (!search) return true
   const lower = search.toLowerCase()
   return (
@@ -33,7 +33,7 @@ function matchesSearch(project: Project, search: string): boolean {
   )
 }
 
-function matchesFilters(project: Project, filters: SharedFilters): boolean {
+function matchesFilters(project: ProjectSummary, filters: SharedFilters): boolean {
   if (filters.domains.length > 0 && !filters.domains.some((d) => project.domains.includes(d))) return false
   if (filters.services.length > 0 && !filters.services.some((s) => project.services.includes(s))) return false
   if (filters.output.length > 0 && !filters.output.includes(project.output)) return false
@@ -42,7 +42,7 @@ function matchesFilters(project: Project, filters: SharedFilters): boolean {
   return true
 }
 
-export function useSharedFilters(projects: Project[]) {
+export function useSharedFilters(projects: ProjectSummary[]) {
   const [filters, setFilters] = useState<SharedFilters>(EMPTY_FILTERS)
 
   const filtered = useMemo(
