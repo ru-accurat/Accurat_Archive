@@ -23,5 +23,9 @@ export async function GET() {
     domains: [...domains].sort(),
     services: [...services].sort(),
     outputs: [...outputs].sort(),
+  }, {
+    headers: {
+      'Cache-Control': 'private, max-age=60, stale-while-revalidate=600',
+    },
   })
 }

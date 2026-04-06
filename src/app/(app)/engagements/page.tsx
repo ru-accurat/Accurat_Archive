@@ -4,10 +4,12 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { api } from '@/lib/api-client'
 import { InlineEditCell } from '@/components/shared/InlineEditCell'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { ImportModal } from '@/components/engagements/ImportModal'
-import { ProjectLinker } from '@/components/engagements/ProjectLinker'
-import { RevenueBreakdown } from '@/components/engagements/RevenueBreakdown'
-import { GapAnalysis } from '@/components/engagements/GapAnalysis'
+import dynamic from 'next/dynamic'
+
+const ImportModal = dynamic(() => import('@/components/engagements/ImportModal').then(m => m.ImportModal), { ssr: false })
+const ProjectLinker = dynamic(() => import('@/components/engagements/ProjectLinker').then(m => m.ProjectLinker), { ssr: false })
+const RevenueBreakdown = dynamic(() => import('@/components/engagements/RevenueBreakdown').then(m => m.RevenueBreakdown), { ssr: false, loading: () => <div className="mt-8 h-40 bg-[var(--c-gray-50)] rounded-[var(--radius-sm)] animate-pulse" /> })
+const GapAnalysis = dynamic(() => import('@/components/engagements/GapAnalysis').then(m => m.GapAnalysis), { ssr: false, loading: () => <div className="mt-8 h-40 bg-[var(--c-gray-50)] rounded-[var(--radius-sm)] animate-pulse" /> })
 import type { Engagement, Client } from '@/lib/types'
 
 function formatEur(val: number | null): string {

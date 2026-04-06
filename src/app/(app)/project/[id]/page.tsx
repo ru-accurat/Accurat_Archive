@@ -24,11 +24,13 @@ import { EditableUrlsField } from '@/components/edit/EditableUrlsField'
 import { EditableMetadata } from '@/components/edit/EditableMetadata'
 import { MediaManager } from '@/components/edit/MediaManager'
 import { HistoryPanel } from '@/components/edit/HistoryPanel'
-import { AiDiffModal } from '@/components/edit/AiDiffModal'
 import { RelatedProjects } from '@/components/project/RelatedProjects'
 import { LinkedEngagements } from '@/components/project/LinkedEngagements'
-import { CaseStudyWriter } from '@/components/edit/CaseStudyWriter'
-import { InUseGenerator } from '@/components/edit/InUseGenerator'
+import dynamic from 'next/dynamic'
+
+const AiDiffModal = dynamic(() => import('@/components/edit/AiDiffModal').then(m => m.AiDiffModal), { ssr: false })
+const CaseStudyWriter = dynamic(() => import('@/components/edit/CaseStudyWriter').then(m => m.CaseStudyWriter), { ssr: false })
+const InUseGenerator = dynamic(() => import('@/components/edit/InUseGenerator').then(m => m.InUseGenerator), { ssr: false })
 import { Breadcrumb } from '@/components/shared/Breadcrumb'
 
 export default function ProjectPage() {

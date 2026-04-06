@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import type { MediaFile } from '@/lib/types'
 import { isVideo, formatFileSize, getFileExt } from '@/lib/format'
 
@@ -67,7 +68,14 @@ export function GalleryGrid({ media, folderName }: Props) {
                   </div>
                 </>
               ) : (
-                <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+                <Image
+                  src={src}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                  loading="lazy"
+                />
               )}
               {/* File info caption */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1.5">

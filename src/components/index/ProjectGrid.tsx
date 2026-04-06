@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { api } from '@/lib/api-client'
 import { useFilteredProjects } from '@/hooks/use-filters'
 import { useProjectStore } from '@/stores/project-store'
@@ -69,12 +70,14 @@ export function ProjectGrid() {
               </div>
 
               {/* Thumbnail */}
-              <div className="aspect-[16/10] bg-[var(--c-gray-100)] overflow-hidden mb-3">
+              <div className="aspect-[16/10] bg-[var(--c-gray-100)] overflow-hidden mb-3 relative">
                 {heroSrc ? (
-                  <img
+                  <Image
                     src={heroSrc}
                     alt={project.projectName}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 240px"
+                    className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                     loading="lazy"
                   />
                 ) : (

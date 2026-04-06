@@ -2,9 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { useProjectStore } from '@/stores/project-store'
 import { api } from '@/lib/api-client'
-import { CsvImportModal } from '@/components/import/CsvImportModal'
+
+const CsvImportModal = dynamic(
+  () => import('@/components/import/CsvImportModal').then(m => m.CsvImportModal),
+  { ssr: false }
+)
 
 export default function SettingsPage() {
   const router = useRouter()

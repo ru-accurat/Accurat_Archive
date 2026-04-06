@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import type { MediaFile } from '@/lib/types'
 import { mediaUrl } from '@/lib/media-url'
 import { isVideo } from '@/lib/format'
@@ -28,8 +29,15 @@ export function HeroSection({ media, folderName, projectName }: Props) {
   }
 
   return (
-    <div className="w-full aspect-[16/10] md:aspect-[21/9] bg-[var(--c-black)] overflow-hidden">
-      <img src={src} alt={projectName} className="w-full h-full object-cover" loading="eager" />
+    <div className="w-full aspect-[16/10] md:aspect-[21/9] bg-[var(--c-black)] overflow-hidden relative">
+      <Image
+        src={src}
+        alt={projectName}
+        fill
+        sizes="(max-width: 768px) 100vw, 1920px"
+        className="object-cover"
+        priority
+      />
     </div>
   )
 }

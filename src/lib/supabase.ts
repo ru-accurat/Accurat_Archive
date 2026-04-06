@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -11,9 +11,15 @@ export function createBrowserClient() {
 
 // Server-side Supabase client (uses service role key, bypasses RLS)
 // Use for admin operations, cron jobs, and public API routes
-export function createServiceClient() {
+// Cached per serverless instance to avoid re-creating on every request
+let _serviceClient: SupabaseClient | null = null
+export function createServiceClient(): SupabaseClient {
+  if (_serviceClient) return _serviceClient
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  return createClient(supabaseUrl, serviceRoleKey)
+  _serviceClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+  return _serviceClient
 }
 
 // Legacy client-side client (for backwards compatibility during migration)

@@ -24,7 +24,11 @@ export async function GET() {
     createdAt: c.created_at,
   }))
 
-  return NextResponse.json(collections)
+  return NextResponse.json(collections, {
+    headers: {
+      'Cache-Control': 'private, max-age=30, stale-while-revalidate=300',
+    },
+  })
 }
 
 // POST /api/collections

@@ -16,7 +16,11 @@ export async function GET() {
   }
 
   const projects = (data as ProjectRow[]).map(rowToProject)
-  return NextResponse.json(projects)
+  return NextResponse.json(projects, {
+    headers: {
+      'Cache-Control': 'private, max-age=30, stale-while-revalidate=300',
+    },
+  })
 }
 
 // POST /api/projects — create a new project

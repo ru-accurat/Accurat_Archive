@@ -57,12 +57,14 @@ export async function GET(request: Request) {
     linkedProjectCount: linkCounts.get(row.id as string) || 0,
   }))
 
+  const cacheHeaders = { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=600' }
+
   // Filter by linked/unlinked after getting counts
   if (linked === 'true') {
-    return NextResponse.json(results.filter((r: { linkedProjectCount: number }) => r.linkedProjectCount > 0))
+    return NextResponse.json(results.filter((r: { linkedProjectCount: number }) => r.linkedProjectCount > 0), { headers: cacheHeaders })
   } else if (linked === 'false') {
-    return NextResponse.json(results.filter((r: { linkedProjectCount: number }) => r.linkedProjectCount === 0))
+    return NextResponse.json(results.filter((r: { linkedProjectCount: number }) => r.linkedProjectCount === 0), { headers: cacheHeaders })
   }
 
-  return NextResponse.json(results)
+  return NextResponse.json(results, { headers: cacheHeaders })
 }

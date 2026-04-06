@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import type { Project } from '@/lib/types'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -42,12 +43,14 @@ export function RelatedProjects({ projectId }: { projectId: string }) {
               onClick={() => router.push(`/project/${p.id}`)}
               className="text-left group"
             >
-              <div className="aspect-[4/3] rounded-[var(--radius-sm)] overflow-hidden bg-[var(--c-gray-100)] mb-2">
+              <div className="aspect-[4/3] rounded-[var(--radius-sm)] overflow-hidden bg-[var(--c-gray-100)] mb-2 relative">
                 {img ? (
-                  <img
+                  <Image
                     src={img}
                     alt={p.projectName}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    fill
+                    sizes="(max-width: 640px) 50vw, 240px"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[var(--c-gray-300)] text-[10px]">
