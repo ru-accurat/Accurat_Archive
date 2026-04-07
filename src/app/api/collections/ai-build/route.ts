@@ -73,6 +73,7 @@ export async function POST(request: Request) {
   const { system, user } = buildBuildPrompt(brief, name, enriched, styleGuide)
 
   let sections: { title: string; subtitle: string; projectIds: string[] }[] = []
+  let collectionSubtitle: string = ''
   try {
     const anthropic = new Anthropic({ apiKey })
     const response = await anthropic.messages.create({
@@ -82,11 +83,14 @@ export async function POST(request: Request) {
       messages: [{ role: 'user', content: user }],
     })
     const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
-    let parsed: { sections?: SectionPlan[] }
+    let parsed: { collectionSubtitle?: string; sections?: SectionPlan[] }
     try {
       parsed = extractJson(text)
     } catch {
       parsed = { sections: [] }
+    }
+    if (parsed?.collectionSubtitle) {
+      collectionSubtitle = String(parsed.collectionSubtitle).trim().slice(0, 280)
     }
     const validIds = new Set(enriched.map((p) => p.id))
     const used = new Set<string>()
@@ -121,9 +125,11 @@ export async function POST(request: Request) {
   }
 
   // 1. Create the collection
+  // - subtitle: AI-generated high-level framing of themes / Accurat experience for this brief
+  // - description: stores the original brief for reference (not displayed as subtitle anywhere)
   const { data: collection, error: createErr } = await supabase
     .from('collections')
-    .insert({ name, description: brief })
+    .insert({ name, subtitle: collectionSubtitle || null, description: brief })
     .select()
     .single()
   if (createErr || !collection) {

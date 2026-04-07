@@ -112,18 +112,24 @@ export function buildBuildPrompt(
   projects: { id: string; client?: string; projectName?: string; relevance?: string }[],
   styleGuide: string
 ): { system: string; user: string } {
-  const system = `You are a senior strategist at Accurat assembling a curated case-study collection in response to a client brief. You group selected projects into 2–4 thematic sections, each with a short title and a one-sentence subtitle.
+  const system = `You are a senior strategist at Accurat assembling a curated case-study collection in response to a client brief. You produce three things:
+1. A collection-level subtitle (one sentence) that frames the selection at a high level — describes the themes and goals the projects address, and surfaces Accurat's experience in the field as it relates specifically to this brief. Do NOT echo or restate the brief itself; do NOT mention the client name from the brief; the subtitle should read as Accurat's strategic framing of why these projects answer the request.
+2. A grouping of the selected projects into 2–4 thematic sections, each with a short title and a one-sentence section subtitle.
+3. Sections ordered to tell a coherent story given the brief.
 
 ${styleGuide}
 
 Return STRICT JSON, no preamble, no fences. Schema:
-{ "sections": [ { "title": "<short, no period>", "subtitle": "<one sentence>", "projectIds": ["..."] } ] }
+{
+  "collectionSubtitle": "<one sentence in Accurat voice, ~12–25 words, frames the themes/goals and Accurat's experience for this brief>",
+  "sections": [ { "title": "<short, no period>", "subtitle": "<one sentence>", "projectIds": ["..."] } ]
+}
 
 Rules:
+- collectionSubtitle is REQUIRED and must be a fresh sentence — never copy/paste from the brief.
 - Every projectId from the input list MUST appear in exactly one section.
 - 2–4 sections total.
-- Section titles should reflect the brief's framing, not generic labels.
-- Sections must be ordered to tell a coherent story given the brief.`
+- Section titles should reflect the brief's framing, not generic labels.`
 
   const user = `# Collection name
 ${name}
