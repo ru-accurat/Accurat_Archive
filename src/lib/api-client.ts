@@ -195,6 +195,28 @@ export const api = {
       body: JSON.stringify({ projectId, mode: 'full', ...opts })
     }).then(r => json(r)),
 
+  // AI collection builder
+  aiSuggestCollection: (brief: string): Promise<{ suggestions: { projectId: string; relevance: string }[]; tokensUsed?: number; error?: string }> =>
+    fetch('/api/collections/ai-suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief }),
+    }).then(r => json(r)),
+
+  aiCollectionRelevance: (brief: string, projectId: string): Promise<{ relevance: string; error?: string }> =>
+    fetch('/api/collections/ai-relevance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief, projectId }),
+    }).then(r => json(r)),
+
+  aiBuildCollection: (payload: { name: string; brief: string; projects: { id: string; relevance: string }[] }): Promise<{ collectionId: string; error?: string }> =>
+    fetch('/api/collections/ai-build', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(r => json(r)),
+
   getAiSettings: (): Promise<Record<string, { value: string; updatedAt: string }>> =>
     fetch('/api/ai/settings').then(r => json(r)),
 
