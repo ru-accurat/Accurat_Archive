@@ -12,12 +12,14 @@ import { projectToSummary } from '@/lib/db-utils'
 import { pdfUrl } from '@/lib/media-url'
 import type { Project, HistoryEntry } from '@/lib/types'
 
-import { HeroSection } from '@/components/project/HeroSection'
-import { TagChips } from '@/components/project/TagChips'
-import { TextBlock } from '@/components/project/TextBlock'
-import { GalleryGrid } from '@/components/project/GalleryGrid'
-import { TeamList } from '@/components/project/TeamList'
-import { UrlLinks } from '@/components/project/UrlLinks'
+import { ProjectHero } from '@/components/project/ProjectHero'
+import { ProjectMetadata } from '@/components/project/ProjectMetadata'
+import { ProjectDescriptions } from '@/components/project/ProjectDescriptions'
+import { ProjectTagsSection } from '@/components/project/ProjectTagsSection'
+import { ProjectLinksSection } from '@/components/project/ProjectLinksSection'
+import { ProjectMediaSection } from '@/components/project/ProjectMediaSection'
+import { ProjectSidebar } from '@/components/project/ProjectSidebar'
+import { ProjectAIBar } from '@/components/project/ProjectAIBar'
 
 import { EditableField } from '@/components/edit/EditableField'
 import { EditableTagsField } from '@/components/edit/EditableTagsField'
@@ -115,6 +117,26 @@ export default function ProjectPage() {
   const setField = useCallback(<K extends keyof Project>(key: K, value: Project[K]) => {
     setDraft((prev) => (prev ? { ...prev, [key]: value } : null))
   }, [])
+
+  // Click-to-edit: PATCH a single field immediately and update local + store.
+  const handleFieldUpdate = useCallback(async (field: keyof Project, value: unknown) => {
+    if (!id || !project) return
+    const prevValue = (project as unknown as Record<string, unknown>)[field as string]
+    if (prevValue === value) return
+    // Optimistic local update
+    setProject((prev) => prev ? ({ ...prev, [field]: value } as Project) : prev)
+    try {
+      const updated = await api.updateProject(id, { [field]: value } as Partial<Project>)
+      setProject(updated)
+      updateProjectInStore(id, projectToSummary(updated))
+      toast.success('Saved')
+    } catch (err) {
+      console.error('Field update failed:', err)
+      // Revert on failure
+      setProject((prev) => prev ? ({ ...prev, [field]: prevValue } as Project) : prev)
+      toast.error('Failed to save: ' + String(err))
+    }
+  }, [id, project, setProject, updateProjectInStore])
 
   const handleRestore = useCallback((entry: HistoryEntry) => {
     if (confirm('Restore this version? Current unsaved changes will be lost.')) {
@@ -509,123 +531,68 @@ export default function ProjectPage() {
                   </div>
                 )}
               </div>
-              <button onClick={enterEdit} className="text-[11px] font-[450] tracking-[0.02em] px-4 py-1.5 rounded-[var(--radius-sm)] bg-white/10 text-white/60 hover:bg-white/15 hover:text-white transition-all duration-200">Edit</button>
+              <button onClick={enterEdit} className="text-[11px] font-[450] tracking-[0.02em] px-4 py-1.5 rounded-[var(--radius-sm)] bg-white/10 text-white/60 hover:bg-white/15 hover:text-white transition-all duration-200">Edit All</button>
             </div>
           </div>
         </div>
-        <HeroSection media={heroMedia} folderName={p.folderName} projectName={p.projectName} />
-        <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] pt-16 pb-12">
-          <h1 className="text-[1.8rem] sm:text-[2.2rem] md:text-[2.8rem] font-[250] tracking-[-0.03em] leading-[1.1] mb-[12px] text-white">{p.projectName}</h1>
-          <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-[13px] sm:text-[15px] mb-[24px]">
-            <span className="font-[500] text-white/90">{p.client}</span>
-            {(p.start || p.end) && <span className="text-white/40 font-[400] tabular-nums">{p.start}{p.end && p.end !== p.start ? `–${p.end}` : ''}</span>}
-            {p.section && <span className="text-[12px] font-[450] tracking-[0.06em] uppercase text-white/40">{p.section}</span>}
-            <span className="text-[12px] font-[400] tracking-[0.04em] text-white/25 uppercase">Tier {p.tier}</span>
-            {p.status && p.status !== 'draft' && (
-              <span className={`text-[10px] font-[500] tracking-[0.06em] uppercase px-2 py-0.5 rounded-[var(--radius-sm)] ${
-                p.status === 'public' ? 'bg-[var(--c-success)]/20 text-[var(--c-success)]' : 'bg-[var(--c-accent)]/20 text-[var(--c-accent-muted)]'
-              }`}>
-                {p.status}
-              </span>
-            )}
-          </div>
-          <TagChips domains={p.domains} services={p.services} output={p.output} dark />
+
+        <ProjectHero project={p} heroMedia={heroMedia} onUpdate={handleFieldUpdate} />
+
+        <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] pb-12 space-y-6">
+          <ProjectMetadata project={p} onUpdate={handleFieldUpdate} />
+          <ProjectTagsSection project={p} onUpdate={handleFieldUpdate} dark />
         </div>
       </div>
 
-      <div className="bg-[var(--c-white)]">
-        <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] pt-16 pb-12">
-          {p.tagline && <div className="mb-12"><TextBlock title="Tagline" content={p.tagline} large isAiGenerated={isAi('tagline')} /></div>}
-          {p.description && <TextBlock title="Description" content={p.description} isAiGenerated={isAi('description')} />}
-          {!p.tagline && !p.description && <TextBlock title="Tagline" content="" />}
-        </div>
-      </div>
-
-      {(p.challenge || p.solution) && (
-        <div className="bg-[var(--c-white)]">
-          <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
-              <TextBlock title="Challenge" content={p.challenge} isAiGenerated={isAi('challenge')} />
-              <TextBlock title="Solution" content={p.solution} isAiGenerated={isAi('solution')} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {p.deliverables && (
-        <div className="bg-[var(--c-white)]">
-          <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-12">
-            <TextBlock title="Deliverables" content={p.deliverables} isAiGenerated={isAi('deliverables')} />
-          </div>
-        </div>
-      )}
-
-      {p.clientQuotes && (
-        <div className="bg-[var(--c-black)]">
-          <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-12">
-            <TextBlock title="Client Quote" content={p.clientQuotes} large dark isAiGenerated={isAi('clientQuotes')} />
-          </div>
-        </div>
-      )}
+      <ProjectDescriptions project={p} onUpdate={handleFieldUpdate} />
 
       <div className="bg-[var(--c-white)]">
         <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] pt-12 pb-16">
-          {(p.urls.filter(Boolean).length > 0 || p.team.length > 0) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-12">
-              <UrlLinks urls={p.urls} />
-              <TeamList team={p.team} />
-            </div>
-          )}
-
-          {/* Documents (PDFs) */}
-          {(p.pdfFiles?.length ?? 0) > 0 && (
-            <div className="mb-12">
-              <h3 className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] mb-4">
-                Documents
-              </h3>
-              <div className="space-y-2">
-                {p.pdfFiles!.map((filename) => (
-                  <div
-                    key={filename}
-                    className="flex items-center gap-3 px-4 py-3 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] bg-[var(--c-gray-50)] hover:bg-[var(--c-gray-100)] transition-colors duration-150"
-                  >
-                    <svg width="20" height="24" viewBox="0 0 20 24" fill="none" className="flex-shrink-0">
-                      <rect x="0.5" y="0.5" width="19" height="23" rx="2" stroke="var(--c-gray-300)" />
-                      <text x="10" y="16" textAnchor="middle" fill="var(--c-gray-400)" fontSize="7" fontWeight="600">PDF</text>
-                    </svg>
-                    <span className="flex-1 text-[13px] font-[400] text-[var(--c-gray-700)]">
-                      {filename.replace(/\.pdf$/i, '')}
-                    </span>
-                    <a
-                      href={pdfUrl(p.folderName, filename)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] font-[450] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors px-2 py-1"
-                    >
-                      View ↗
-                    </a>
-                    <a
-                      href={pdfUrl(p.folderName, filename)}
-                      download={filename}
-                      className="text-[11px] font-[450] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors px-2 py-1"
-                    >
-                      Download
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <GalleryGrid media={galleryMedia} folderName={p.folderName} />
-
-          <LinkedEngagements projectId={p.id} clientName={p.client} />
-
-          <div className="mt-16">
-            <RelatedProjects projectId={p.id} />
+          <div className="mb-12">
+            <ProjectLinksSection project={p} onUpdate={handleFieldUpdate} />
           </div>
+          <ProjectMediaSection project={p} galleryMedia={galleryMedia} />
+          <ProjectSidebar project={p} />
         </div>
       </div>
+
+      <ProjectAIBar
+        onWriteCaseStudy={() => setCaseStudyWriterOpen(true)}
+        onGenerateInUse={() => setInUseGeneratorOpen(true)}
+        hasMedia={media.length > 0}
+      />
+
+      <CaseStudyWriter
+        open={caseStudyWriterOpen}
+        projectId={p.id}
+        currentValues={{
+          tagline: p.tagline,
+          description: p.description,
+          challenge: p.challenge,
+          solution: p.solution,
+          deliverables: p.deliverables,
+        }}
+        onClose={() => setCaseStudyWriterOpen(false)}
+        onAccept={async (fields) => {
+          for (const [key, value] of Object.entries(fields)) {
+            await handleFieldUpdate(key as keyof Project, value)
+          }
+        }}
+      />
+
+      <InUseGenerator
+        open={inUseGeneratorOpen}
+        projectId={p.id}
+        folderName={p.folderName}
+        media={media}
+        onClose={() => setInUseGeneratorOpen(false)}
+        onImageSaved={(filename, asThumbnail) => {
+          refreshMedia()
+          if (asThumbnail && filename) {
+            handleFieldUpdate('thumbImage', filename)
+          }
+        }}
+      />
 
       <div className="bg-[var(--c-black)] h-20" />
       <div className="hidden md:block fixed bottom-5 right-5 text-[10px] font-[400] tracking-[0.04em] text-white/20 bg-[var(--c-black)]/80 backdrop-blur-sm px-3 py-1.5 rounded-[var(--radius-sm)]">← → navigate</div>
