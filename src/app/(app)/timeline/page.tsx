@@ -43,8 +43,8 @@ export default function TimelinePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-[var(--c-white)] text-[var(--c-gray-400)] text-[13px]">
-        Loading...
+      <div className="h-full bg-[var(--c-white)] p-6">
+        <div className="h-[28px] w-40 bg-[var(--c-gray-100)] rounded animate-pulse" />
       </div>
     )
   }

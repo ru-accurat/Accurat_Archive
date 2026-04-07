@@ -61,7 +61,11 @@ export default function ActivityPage() {
         <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)] mb-8">Activity</h1>
 
         {loading ? (
-          <p className="text-[13px] text-[var(--c-gray-400)]">Loading...</p>
+          <div className="flex flex-col gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-3 w-full max-w-[520px] bg-[var(--c-gray-100)] rounded animate-pulse" />
+            ))}
+          </div>
         ) : entries.length === 0 ? (
           <EmptyState
             title="No activity yet"

@@ -75,7 +75,11 @@ export function CollectionPicker({ open, onClose, projectIds }: Props) {
 
         <div className="p-5 max-h-[300px] overflow-y-auto">
           {loading ? (
-            <p className="text-[13px] text-[var(--c-gray-400)]">Loading...</p>
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-[36px] w-full bg-[var(--c-gray-100)] rounded animate-pulse" />
+              ))}
+            </div>
           ) : collections.length === 0 ? (
             <p className="text-[13px] text-[var(--c-gray-400)] mb-3">No collections yet.</p>
           ) : (
