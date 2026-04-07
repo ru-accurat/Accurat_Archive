@@ -13,6 +13,8 @@ type CollectionProject = {
 }
 import { useProjects } from '@/hooks/use-projects'
 import { ProjectSearchPicker } from '@/components/shared/ProjectSearchPicker'
+import { PitchDeckExporter } from '@/components/collections/PitchDeckExporter'
+import type { Project } from '@/lib/types'
 import { Breadcrumb } from '@/components/shared/Breadcrumb'
 import { SharePopover } from '@/components/shared/SharePopover'
 import { InlineEditCell } from '@/components/shared/InlineEditCell'
@@ -318,6 +320,7 @@ export default function CollectionDetailPage() {
   const [analytics, setAnalytics] = useState<{ totalViews: number; uniqueVisitors: number; lastViewedAt: string | null } | null>(null)
   const [overflowOpen, setOverflowOpen] = useState(false)
   const overflowRef = useRef<HTMLDivElement>(null)
+  const [pitchDeckOpen, setPitchDeckOpen] = useState(false)
 
   // Close overflow menu on outside click
   useEffect(() => {
@@ -871,6 +874,12 @@ export default function CollectionDetailPage() {
             {overflowOpen && !deleteMode && (
               <div className="absolute right-0 top-full mt-1 z-50 w-52 bg-[var(--c-white)] border border-[var(--c-gray-200)] rounded-[var(--radius-md)] shadow-lg py-1">
                 <button
+                  onClick={() => { setOverflowOpen(false); setPitchDeckOpen(true) }}
+                  className="w-full text-left px-3 py-2 text-[12px] text-[var(--c-gray-700)] hover:bg-[var(--c-gray-50)] transition-colors"
+                >
+                  Export → Pitch Deck
+                </button>
+                <button
                   onClick={() => { setOverflowOpen(false); handleDelete() }}
                   className="w-full text-left px-3 py-2 text-[12px] text-[var(--c-error)] hover:bg-red-50 transition-colors"
                 >
@@ -905,6 +914,15 @@ export default function CollectionDetailPage() {
         existingProjectIds={existingIds}
         onAdded={handleProjectsAdded}
         groupId={pickerGroupId}
+      />
+
+      <PitchDeckExporter
+        open={pitchDeckOpen}
+        onClose={() => setPitchDeckOpen(false)}
+        collectionId={id}
+        collectionName={collection.name}
+        collectionSubtitle={collection.subtitle}
+        projects={collection.projects as unknown as Project[]}
       />
     </div>
   )
