@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic'
 
 const ImportModal = dynamic(() => import('@/components/engagements/ImportModal').then(m => m.ImportModal), { ssr: false })
 const ProjectLinker = dynamic(() => import('@/components/engagements/ProjectLinker').then(m => m.ProjectLinker), { ssr: false })
+const BatchLinker = dynamic(() => import('@/components/engagements/BatchLinker').then(m => m.BatchLinker), { ssr: false })
 const RevenueBreakdown = dynamic(() => import('@/components/engagements/RevenueBreakdown').then(m => m.RevenueBreakdown), { ssr: false, loading: () => <div className="mt-8 h-40 bg-[var(--c-gray-50)] rounded-[var(--radius-sm)] animate-pulse" /> })
 const GapAnalysis = dynamic(() => import('@/components/engagements/GapAnalysis').then(m => m.GapAnalysis), { ssr: false, loading: () => <div className="mt-8 h-40 bg-[var(--c-gray-50)] rounded-[var(--radius-sm)] animate-pulse" /> })
 import type { Engagement, Client } from '@/lib/types'
@@ -33,6 +34,8 @@ export function EngagementsPageClient({ initialEngagements, initialClients }: Pr
   const [engagements, setEngagements] = useState<Engagement[]>(initialEngagements)
   const [clients] = useState<Client[]>(initialClients)
   const [importOpen, setImportOpen] = useState(false)
+  const [batchLinkerClient, setBatchLinkerClient] = useState<{ id: string; name: string } | null>(null)
+  const [batchLinkerPickerOpen, setBatchLinkerPickerOpen] = useState(false)
   const [yearFilter, setYearFilter] = useState<number | null>(null)
   const [clientFilter, setClientFilter] = useState<string | null>(null)
   const [linkedFilter, setLinkedFilter] = useState<'all' | 'linked' | 'unlinked'>('all')
@@ -80,6 +83,17 @@ export function EngagementsPageClient({ initialEngagements, initialClients }: Pr
   const currentYear = new Date().getFullYear()
   const thisYearRevenue = useMemo(() => engagements.filter(e => e.year === currentYear).reduce((sum, e) => sum + (e.amountEur || 0), 0), [engagements, currentYear])
   const unlinkedCount = useMemo(() => engagements.filter(e => (e.linkedProjectCount || 0) === 0).length, [engagements])
+  const unlinkedRevenue = useMemo(
+    () => engagements.filter(e => (e.linkedProjectCount || 0) === 0).reduce((sum, e) => sum + (e.amountEur || 0), 0),
+    [engagements]
+  )
+  const clientsWithUnlinked = useMemo(() => {
+    const ids = new Set<string>()
+    for (const e of engagements) {
+      if ((e.linkedProjectCount || 0) === 0 && e.clientId) ids.add(e.clientId)
+    }
+    return clients.filter(c => ids.has(c.id)).sort((a, b) => a.name.localeCompare(b.name))
+  }, [engagements, clients])
 
   const handleSort = (field: 'year' | 'clientName' | 'amountEur') => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -123,6 +137,14 @@ export function EngagementsPageClient({ initialEngagements, initialClients }: Pr
                 {editMode ? 'Done' : 'Edit'}
               </button>
             )}
+            {engagements.length > 0 && (
+              <button
+                onClick={() => setBatchLinkerPickerOpen(true)}
+                className="text-[11px] font-[450] px-4 py-2 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] text-[var(--c-gray-600)] hover:bg-[var(--c-gray-50)] transition-colors"
+              >
+                Batch link by client
+              </button>
+            )}
             <button
               onClick={() => setImportOpen(true)}
               className="text-[11px] font-[450] px-4 py-2 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors"
@@ -160,6 +182,23 @@ export function EngagementsPageClient({ initialEngagements, initialClients }: Pr
                   <span className="text-[var(--c-gray-400)] ml-1">unlinked</span>
                 </span>
               </div>
+              {unlinkedRevenue > 0 && (
+                <div className="mt-3 flex items-center gap-2 text-[12px] px-3 py-2 rounded-[var(--radius-sm)] bg-[var(--c-warning)]/10 border border-[var(--c-warning)]/30 text-[var(--c-gray-800)]">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-[var(--c-warning)] flex-shrink-0">
+                    <path d="M8 1.5L15 14H1L8 1.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                    <path d="M8 6.5v3.5M8 12v0.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                  <span>
+                    <strong className="font-[500]">{formatEur(unlinkedRevenue)}</strong> of revenue is not linked to any case study
+                  </span>
+                  <button
+                    onClick={() => setBatchLinkerPickerOpen(true)}
+                    className="ml-auto text-[11px] font-[450] text-[var(--c-gray-700)] hover:text-[var(--c-gray-900)] underline underline-offset-2"
+                  >
+                    Fix →
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Filters */}
@@ -354,6 +393,50 @@ export function EngagementsPageClient({ initialEngagements, initialClients }: Pr
         onClose={() => setImportOpen(false)}
         onImported={loadData}
       />
+
+      {batchLinkerPickerOpen && !batchLinkerClient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-[var(--c-white)] rounded-[var(--radius-md)] shadow-xl w-[90vw] max-w-[440px] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--c-gray-100)]">
+              <h2 className="text-[16px] font-[450] text-[var(--c-gray-900)]">Choose a client</h2>
+              <button onClick={() => setBatchLinkerPickerOpen(false)} className="text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)]">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-[12px] text-[var(--c-gray-500)] mb-3">
+                {clientsWithUnlinked.length === 0
+                  ? 'All engagements are linked. Nothing to do here.'
+                  : 'Clients with at least one unlinked engagement:'}
+              </p>
+              <div className="max-h-[50vh] overflow-y-auto border border-[var(--c-gray-100)] rounded-[var(--radius-sm)]">
+                {clientsWithUnlinked.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => {
+                      setBatchLinkerClient({ id: c.id, name: c.name })
+                      setBatchLinkerPickerOpen(false)
+                    }}
+                    className="w-full text-left px-3 py-2 text-[12px] text-[var(--c-gray-800)] hover:bg-[var(--c-gray-50)] border-b border-[var(--c-gray-50)] last:border-b-0"
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {batchLinkerClient && (
+        <BatchLinker
+          open={!!batchLinkerClient}
+          clientId={batchLinkerClient.id}
+          clientName={batchLinkerClient.name}
+          onClose={() => setBatchLinkerClient(null)}
+          onChanged={loadData}
+        />
+      )}
 
       {linkerEngagement && (
         <ProjectLinker

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { api } from '@/lib/api-client'
 import { toast } from '@/lib/toast'
-import type { ClientMatch, ParsedEngagementRow, Client } from '@/lib/types'
+import type { ClientMatch, ParsedEngagementRow, Client, ProjectSummary } from '@/lib/types'
 
 interface ImportModalProps {
   open: boolean
@@ -11,7 +11,8 @@ interface ImportModalProps {
   onImported: () => void
 }
 
-type Step = 'upload' | 'review' | 'confirm' | 'done'
+type Step = 'upload' | 'review' | 'suggestions' | 'done'
+type AutoLink = { rowIndex: number; suggestedProjectIds: string[] }
 
 export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
   const [step, setStep] = useState<Step>('upload')
@@ -19,8 +20,12 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
   const [rows, setRows] = useState<ParsedEngagementRow[]>([])
   const [clientMatches, setClientMatches] = useState<ClientMatch[]>([])
   const [allClients, setAllClients] = useState<Client[]>([])
+  const [autoLinks, setAutoLinks] = useState<AutoLink[]>([])
+  const [allProjects, setAllProjects] = useState<ProjectSummary[]>([])
+  // rowIndex -> Set of accepted projectIds
+  const [acceptedLinks, setAcceptedLinks] = useState<Map<number, Set<string>>>(new Map())
   const [filename, setFilename] = useState('')
-  const [result, setResult] = useState<{ inserted: number; skipped: number; clientsCreated: number } | null>(null)
+  const [result, setResult] = useState<{ inserted: number; skipped: number; clientsCreated: number; linksCreated: number } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Client mapping overrides: original name → chosen client ID or null for new
@@ -33,10 +38,19 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
       const data = await api.parseEngagementImport(file)
       setRows(data.rows)
       setClientMatches(data.clientMatches)
+      setAutoLinks(data.autoLinks || [])
 
-      // Also fetch all clients for the override dropdowns
-      const clients = await api.getClients()
+      // Pre-accept all suggestions by default
+      const pre = new Map<number, Set<string>>()
+      for (const al of data.autoLinks || []) {
+        pre.set(al.rowIndex, new Set(al.suggestedProjectIds))
+      }
+      setAcceptedLinks(pre)
+
+      // Also fetch all clients + projects for the override dropdowns / suggestions
+      const [clients, projects] = await Promise.all([api.getClients(), api.getProjects()])
       setAllClients(clients)
+      setAllProjects(projects)
 
       setStep('review')
     } catch (err) {
@@ -44,6 +58,12 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     }
     setLoading(false)
   }, [])
+
+  const projectById = useMemo(() => {
+    const m = new Map<string, ProjectSummary>()
+    for (const p of allProjects) m.set(p.id, p)
+    return m
+  }, [allProjects])
 
   const handleApply = useCallback(async () => {
     setLoading(true)
@@ -66,9 +86,16 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
         return { original: m.original, clientId: null, newClientName: m.original }
       })
 
+      // Build projectLinks from acceptedLinks
+      const projectLinks: { rowIndex: number; projectIds: string[] }[] = []
+      acceptedLinks.forEach((set, rowIndex) => {
+        if (set.size > 0) projectLinks.push({ rowIndex, projectIds: Array.from(set) })
+      })
+
       const res = await api.applyEngagementImport({
         rows,
         clientMappings,
+        projectLinks,
         filename,
       })
       setResult(res)
@@ -79,15 +106,29 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
       toast.error('Import failed: ' + String(err))
     }
     setLoading(false)
-  }, [clientMatches, overrides, rows, filename, onImported])
+  }, [clientMatches, overrides, rows, acceptedLinks, filename, onImported])
 
   const handleClose = () => {
     setStep('upload')
     setRows([])
     setClientMatches([])
+    setAutoLinks([])
+    setAcceptedLinks(new Map())
+    setAllProjects([])
     setOverrides(new Map())
     setResult(null)
     onClose()
+  }
+
+  const toggleAccepted = (rowIndex: number, projectId: string) => {
+    setAcceptedLinks(prev => {
+      const next = new Map(prev)
+      const s = new Set(next.get(rowIndex) || [])
+      if (s.has(projectId)) s.delete(projectId)
+      else s.add(projectId)
+      next.set(rowIndex, s)
+      return next
+    })
   }
 
   if (!open) return null
@@ -189,6 +230,56 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
             </div>
           )}
 
+          {step === 'suggestions' && (
+            <div>
+              <p className="text-[13px] text-[var(--c-gray-600)] mb-4">
+                We found <strong>{autoLinks.length}</strong> engagement{autoLinks.length !== 1 ? 's' : ''} with possible case-study matches based on client and year. Uncheck any you don&apos;t want linked.
+              </p>
+              {autoLinks.length === 0 ? (
+                <div className="text-[12px] text-[var(--c-gray-400)] italic py-6 text-center">
+                  No automatic link suggestions found.
+                </div>
+              ) : (
+                <div className="border border-[var(--c-gray-100)] rounded-[var(--radius-sm)] overflow-hidden divide-y divide-[var(--c-gray-50)]">
+                  {autoLinks.map((al) => {
+                    const row = rows[al.rowIndex]
+                    if (!row) return null
+                    const accepted = acceptedLinks.get(al.rowIndex) || new Set<string>()
+                    return (
+                      <div key={al.rowIndex} className="px-3 py-2.5">
+                        <div className="text-[12px] text-[var(--c-gray-800)] mb-1.5">
+                          <span className="text-[var(--c-gray-400)] mr-1.5">{row.year}</span>
+                          <strong className="font-[500]">{row.projectName}</strong>
+                          <span className="text-[var(--c-gray-500)] ml-1.5">· {row.clientName}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {al.suggestedProjectIds.map((pid) => {
+                            const p = projectById.get(pid)
+                            const isAccepted = accepted.has(pid)
+                            return (
+                              <button
+                                key={pid}
+                                onClick={() => toggleAccepted(al.rowIndex, pid)}
+                                className={`text-[10px] font-[450] px-2 py-1 rounded border transition-colors ${
+                                  isAccepted
+                                    ? 'bg-[var(--c-gray-900)] text-white border-[var(--c-gray-900)]'
+                                    : 'bg-white text-[var(--c-gray-500)] border-[var(--c-gray-200)] hover:border-[var(--c-gray-400)]'
+                                }`}
+                              >
+                                {isAccepted ? '✓ ' : '+ '}
+                                {p ? `${p.projectName} (${p.start ?? '?'}${p.end && p.end !== p.start ? `–${p.end}` : ''})` : pid}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {step === 'done' && result && (
             <div className="text-center py-12">
               <svg className="mx-auto mb-4 text-green-500" width="40" height="40" viewBox="0 0 40 40" fill="none">
@@ -200,6 +291,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
                 <p>{result.inserted} engagements imported</p>
                 {result.skipped > 0 && <p>{result.skipped} duplicates skipped</p>}
                 {result.clientsCreated > 0 && <p>{result.clientsCreated} new clients created</p>}
+                {result.linksCreated > 0 && <p>{result.linksCreated} project link{result.linksCreated !== 1 ? 's' : ''} created</p>}
               </div>
             </div>
           )}
@@ -210,6 +302,20 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
           {step === 'review' && (
             <>
               <button onClick={() => setStep('upload')} className="text-[12px] text-[var(--c-gray-500)] hover:text-[var(--c-gray-700)] transition-colors px-3 py-1.5">
+                Back
+              </button>
+              <button
+                onClick={() => setStep('suggestions')}
+                disabled={loading}
+                className="text-[12px] font-[450] px-4 py-2 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors disabled:opacity-50"
+              >
+                Next: review links
+              </button>
+            </>
+          )}
+          {step === 'suggestions' && (
+            <>
+              <button onClick={() => setStep('review')} className="text-[12px] text-[var(--c-gray-500)] hover:text-[var(--c-gray-700)] transition-colors px-3 py-1.5">
                 Back
               </button>
               <button
