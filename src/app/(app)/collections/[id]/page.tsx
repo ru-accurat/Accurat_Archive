@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 // Minimal project shape used on this page (satisfied by both Project and ProjectSummary)
 type CollectionProject = {
@@ -316,6 +316,20 @@ export default function CollectionDetailPage() {
   const [editMode, setEditMode] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [analytics, setAnalytics] = useState<{ totalViews: number; uniqueVisitors: number; lastViewedAt: string | null } | null>(null)
+  const [overflowOpen, setOverflowOpen] = useState(false)
+  const overflowRef = useRef<HTMLDivElement>(null)
+
+  // Close overflow menu on outside click
+  useEffect(() => {
+    if (!overflowOpen) return
+    function onClick(e: MouseEvent) {
+      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
+        setOverflowOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [overflowOpen])
 
   useEffect(() => {
     if (!id) return
@@ -756,7 +770,7 @@ export default function CollectionDetailPage() {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative" ref={overflowRef}>
             {deleteMode ? (
               <>
                 <button
@@ -773,23 +787,19 @@ export default function CollectionDetailPage() {
                   Cancel
                 </button>
               </>
-            ) : (
+            ) : editMode ? (
               <>
                 <button
-                  onClick={() => setEditMode(!editMode)}
-                  className={`text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] transition-colors ${
-                    editMode
-                      ? 'bg-[var(--c-gray-900)] text-white'
-                      : 'border border-[var(--c-gray-200)] text-[var(--c-gray-600)] hover:bg-[var(--c-gray-50)]'
-                  }`}
-                >
-                  {editMode ? 'Done' : 'Edit'}
-                </button>
-                <button
                   onClick={() => { setPickerGroupId(null); setPickerOpen(true) }}
-                  className="text-[11px] font-[450] text-[var(--c-gray-600)] hover:text-[var(--c-gray-900)] transition-colors px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] hover:border-[var(--c-gray-400)]"
+                  className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors"
                 >
                   + Add Projects
+                </button>
+                <button
+                  onClick={handleAddGroup}
+                  className="text-[11px] font-[450] text-[var(--c-gray-600)] hover:text-[var(--c-gray-900)] transition-colors px-3 py-1.5 rounded-[var(--radius-sm)] border border-dashed border-[var(--c-gray-300)] hover:border-[var(--c-gray-500)]"
+                >
+                  + Add Group
                 </button>
                 {collection.projects.length > 0 && (
                   <button
@@ -799,14 +809,28 @@ export default function CollectionDetailPage() {
                     Remove Projects
                   </button>
                 )}
+                <button
+                  onClick={() => setEditMode(false)}
+                  className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors"
+                >
+                  Done
+                </button>
+                <button
+                  onClick={() => setOverflowOpen(o => !o)}
+                  aria-label="More actions"
+                  className="text-[14px] font-[600] text-[var(--c-gray-500)] hover:text-[var(--c-gray-900)] transition-colors px-2 py-1.5 rounded-[var(--radius-sm)] hover:bg-[var(--c-gray-50)] leading-none"
+                >
+                  ···
+                </button>
+              </>
+            ) : (
+              <>
                 {collection.projects.length > 0 && (
                   <button
                     onClick={async () => {
-                      // Ensure a share token exists, then open presentation in a new tab
                       let token = collection.shareToken
                       if (!token) {
                         await handleGenerateShareLink()
-                        // Pull the freshly created token from the latest state
                         const res = await fetch(`/api/collections/${id}`)
                         if (res.ok) {
                           const data = await res.json()
@@ -817,7 +841,7 @@ export default function CollectionDetailPage() {
                         window.open(`/collection/${token}/presentation`, '_blank', 'noopener,noreferrer')
                       }
                     }}
-                    className="text-[11px] font-[450] text-[var(--c-gray-700)] hover:text-[var(--c-gray-900)] transition-colors px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] hover:border-[var(--c-gray-400)]"
+                    className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors"
                     title="Open presentation mode in a new tab"
                   >
                     Present
@@ -830,26 +854,32 @@ export default function CollectionDetailPage() {
                   onDisableLink={handleRevokeShareLink}
                 />
                 <button
-                  onClick={handleDelete}
-                  className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-error)] transition-colors px-3 py-1.5"
+                  onClick={() => setEditMode(true)}
+                  className="text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] text-[var(--c-gray-600)] hover:bg-[var(--c-gray-50)] transition-colors"
                 >
-                  Delete Collection
+                  Edit
+                </button>
+                <button
+                  onClick={() => setOverflowOpen(o => !o)}
+                  aria-label="More actions"
+                  className="text-[14px] font-[600] text-[var(--c-gray-500)] hover:text-[var(--c-gray-900)] transition-colors px-2 py-1.5 rounded-[var(--radius-sm)] hover:bg-[var(--c-gray-50)] leading-none"
+                >
+                  ···
                 </button>
               </>
             )}
+            {overflowOpen && !deleteMode && (
+              <div className="absolute right-0 top-full mt-1 z-50 w-52 bg-[var(--c-white)] border border-[var(--c-gray-200)] rounded-[var(--radius-md)] shadow-lg py-1">
+                <button
+                  onClick={() => { setOverflowOpen(false); handleDelete() }}
+                  className="w-full text-left px-3 py-2 text-[12px] text-[var(--c-error)] hover:bg-red-50 transition-colors"
+                >
+                  Delete Collection
+                </button>
+              </div>
+            )}
           </div>
         </div>
-
-        {editMode && (
-          <div className="mb-6">
-            <button
-              onClick={handleAddGroup}
-              className="text-[11px] font-[450] text-[var(--c-gray-500)] hover:text-[var(--c-gray-900)] transition-colors px-3 py-1.5 rounded-[var(--radius-sm)] border border-dashed border-[var(--c-gray-300)] hover:border-[var(--c-gray-500)]"
-            >
-              + Add Group
-            </button>
-          </div>
-        )}
 
         {editMode ? (
           <DndContext
