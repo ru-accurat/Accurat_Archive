@@ -350,6 +350,15 @@ export const api = {
       body: JSON.stringify(data)
     }).then(r => json(r)),
 
+  getClientIntelligence: (): Promise<{
+    clientHealth: { id: string; name: string; lastEngagementYear: number | null; projectCount: number; avgCompleteness: number; revenueThisYear: number; revenueLastYear: number; trend: 'growing' | 'stable' | 'declining'; healthScore: number }[]
+    coldClients: { id: string; name: string; lastEngagementYear: number | null; totalRevenue: number }[]
+    topGrowing: { id: string; name: string; revenueThisYear: number; revenueLastYear: number; growthPct: number }[]
+    dormantTier1: { id: string; name: string; lastEngagementYear: number | null; topTierProjects: number }[]
+    concentration: { top3Pct: number; top5Pct: number; top10Pct: number; totalRevenue: number }
+  }> =>
+    fetch('/api/clients/intelligence').then(r => json(r)),
+
   mergeClients: (sourceId: string, targetId: string): Promise<{ success: boolean; movedEngagements: number; movedProjects: number; targetName: string }> =>
     fetch('/api/clients/merge', {
       method: 'POST',

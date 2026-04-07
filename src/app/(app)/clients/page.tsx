@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createServiceClient } from '@/lib/supabase'
 import type { Client } from '@/lib/types'
 import { ClientsPageClient } from './client'
@@ -53,5 +54,17 @@ async function fetchClients(): Promise<Client[]> {
 
 export default async function ClientsPage() {
   const clients = await fetchClients()
-  return <ClientsPageClient initialClients={clients} />
+  return (
+    <>
+      <div className="max-w-[1000px] mx-auto px-4 sm:px-6 md:px-[48px] pt-6 -mb-2 flex justify-end">
+        <Link
+          href="/clients/dashboard"
+          className="text-[11px] text-[var(--c-gray-500)] hover:text-[var(--c-gray-800)] transition-colors"
+        >
+          Dashboard →
+        </Link>
+      </div>
+      <ClientsPageClient initialClients={clients} />
+    </>
+  )
 }
