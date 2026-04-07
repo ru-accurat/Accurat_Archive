@@ -799,6 +799,30 @@ export default function CollectionDetailPage() {
                     Remove Projects
                   </button>
                 )}
+                {collection.projects.length > 0 && (
+                  <button
+                    onClick={async () => {
+                      // Ensure a share token exists, then open presentation in a new tab
+                      let token = collection.shareToken
+                      if (!token) {
+                        await handleGenerateShareLink()
+                        // Pull the freshly created token from the latest state
+                        const res = await fetch(`/api/collections/${id}`)
+                        if (res.ok) {
+                          const data = await res.json()
+                          token = data.shareToken
+                        }
+                      }
+                      if (token) {
+                        window.open(`/collection/${token}/presentation`, '_blank', 'noopener,noreferrer')
+                      }
+                    }}
+                    className="text-[11px] font-[450] text-[var(--c-gray-700)] hover:text-[var(--c-gray-900)] transition-colors px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] hover:border-[var(--c-gray-400)]"
+                    title="Open presentation mode in a new tab"
+                  >
+                    Present
+                  </button>
+                )}
                 <SharePopover
                   shareToken={collection.shareToken}
                   baseUrl="/collection"

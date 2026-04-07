@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import type { Project } from '@/lib/types'
 
@@ -13,7 +13,22 @@ interface MediaItem {
 }
 
 export default function SharedProjectPage() {
+  return (
+    <Suspense fallback={null}>
+      <SharedProjectPageInner />
+    </Suspense>
+  )
+}
+
+function SharedProjectPageInner() {
   const { token, projectId } = useParams<{ token: string; projectId: string }>()
+  const searchParams = useSearchParams()
+  const fromPresentation = searchParams.get('from') === 'presentation'
+  const slideIndex = searchParams.get('slide') || '0'
+  const backHref = fromPresentation
+    ? `/collection/${token}/presentation?slide=${slideIndex}`
+    : `/collection/${token}`
+  const backLabel = fromPresentation ? '← Back to presentation' : '← Back to collection'
   const [project, setProject] = useState<Project | null>(null)
   const [media, setMedia] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,10 +76,10 @@ export default function SharedProjectPage() {
     <div className="max-w-[1000px] px-4 sm:px-6 md:px-[48px] py-8 mx-auto">
       {/* Back link */}
       <Link
-        href={`/collection/${token}`}
+        href={backHref}
         className="text-[12px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors mb-6 inline-block"
       >
-        &larr; Back to collection
+        {backLabel}
       </Link>
 
       {/* Hero */}

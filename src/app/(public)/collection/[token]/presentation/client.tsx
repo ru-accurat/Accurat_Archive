@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { Project } from '@/lib/types'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -34,10 +34,12 @@ function imgUrl(folderName: string, image?: string) {
 
 export function PresentationClient({ token }: { token: string }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialSlide = parseInt(searchParams.get('slide') || '0', 10) || 0
   const [collection, setCollection] = useState<SharedCollection | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const [index, setIndex] = useState(0)
+  const [index, setIndex] = useState(initialSlide)
 
   useEffect(() => {
     fetch(`/api/public/collection/${token}`)
@@ -157,7 +159,14 @@ export function PresentationClient({ token }: { token: string }) {
             )}
           </div>
         ) : (
-          <ProjectSlide project={slide.project} caption={slide.caption} />
+          <ProjectSlide
+            key={slide.project.id}
+            project={slide.project}
+            caption={slide.caption}
+            onLearnMore={() =>
+              router.push(`/collection/${token}/project/${slide.project.id}?from=presentation&slide=${index}`)
+            }
+          />
         )}
       </div>
 
@@ -202,7 +211,15 @@ export function PresentationClient({ token }: { token: string }) {
   )
 }
 
-function ProjectSlide({ project, caption }: { project: Project; caption: string }) {
+function ProjectSlide({
+  project,
+  caption,
+  onLearnMore,
+}: {
+  project: Project
+  caption: string
+  onLearnMore: () => void
+}) {
   const hero = imgUrl(project.folderName, project.heroImage || project.thumbImage)
   const excerpt = (project.description || '').trim().slice(0, 320)
 
@@ -210,8 +227,10 @@ function ProjectSlide({ project, caption }: { project: Project; caption: string 
     <div className="w-full max-w-[1400px] grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
       <div className="aspect-[4/3] bg-white/5 rounded-[6px] overflow-hidden">
         {hero ? (
+          // Re-keying on src forces the browser to re-render the image when the slide changes,
+          // avoiding a stale-image bug where React reused the same <img> node.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={hero} alt={project.projectName} className="w-full h-full object-cover" />
+          <img key={hero} src={hero} alt={project.projectName} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white/30 text-[12px]">No image</div>
         )}
@@ -232,6 +251,12 @@ function ProjectSlide({ project, caption }: { project: Project; caption: string 
         {caption && (
           <p className="text-[12px] text-white/40 italic mt-6 border-l border-white/20 pl-4">{caption}</p>
         )}
+        <button
+          onClick={onLearnMore}
+          className="mt-8 text-[12px] tracking-[0.04em] font-[450] text-white/80 hover:text-white border border-white/30 hover:border-white/70 rounded-full px-5 py-2 transition-colors"
+        >
+          Learn more →
+        </button>
       </div>
     </div>
   )
