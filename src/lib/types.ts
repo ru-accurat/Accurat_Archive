@@ -148,6 +148,19 @@ export interface ParsedEngagementRow {
   amountUsd: number | null
 }
 
+export interface CaseStudyDraft {
+  id: string
+  projectId: string
+  userId: string | null
+  notes: string
+  fields: Record<string, string>
+  quality: string
+  referenceProjectId: string | null
+  isIterative: boolean
+  tokensUsed: number | null
+  createdAt: string
+}
+
 export interface FilterPreset {
   id: string
   name: string

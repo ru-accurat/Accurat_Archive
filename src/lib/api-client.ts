@@ -1,4 +1,4 @@
-import type { Project, ProjectSummary, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow, FilterPreset } from './types'
+import type { Project, ProjectSummary, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow, FilterPreset, CaseStudyDraft } from './types'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -188,12 +188,34 @@ export const api = {
       body: JSON.stringify({ projectId, fieldName })
     }).then(r => json(r)),
 
-  generateCaseStudy: (projectId: string, opts: { notes?: string; quality?: string }): Promise<{ success: boolean; fields?: Record<string, string>; tokensUsed?: number; message?: string }> =>
+  generateCaseStudy: (projectId: string, opts: { notes?: string; quality?: string; referenceProjectId?: string }): Promise<{ success: boolean; fields?: Record<string, string>; tokensUsed?: number; isIterative?: boolean; message?: string }> =>
     fetch('/api/ai/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectId, mode: 'full', ...opts })
     }).then(r => json(r)),
+
+  // Case study drafts (persistence)
+  getCaseStudyDrafts: (projectId: string): Promise<CaseStudyDraft[]> =>
+    fetch(`/api/case-study-drafts?projectId=${encodeURIComponent(projectId)}`).then(r => json(r)),
+
+  createCaseStudyDraft: (data: {
+    projectId: string
+    notes?: string
+    fields: Record<string, string>
+    quality?: string
+    referenceProjectId?: string | null
+    isIterative?: boolean
+    tokensUsed?: number | null
+  }): Promise<CaseStudyDraft> =>
+    fetch('/api/case-study-drafts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then(r => json(r)),
+
+  deleteCaseStudyDraft: (id: string): Promise<{ success: boolean }> =>
+    fetch(`/api/case-study-drafts/${id}`, { method: 'DELETE' }).then(r => json(r)),
 
   getAiSettings: (): Promise<Record<string, { value: string; updatedAt: string }>> =>
     fetch('/api/ai/settings').then(r => json(r)),

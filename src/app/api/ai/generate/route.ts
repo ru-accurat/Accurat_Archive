@@ -120,7 +120,7 @@ export async function POST(request: Request) {
 
   const supabase = createServiceClient()
   const body = await request.json()
-  const { projectId, mode = 'single', fieldName, notes, quality = 'fast' } = body
+  const { projectId, mode = 'single', fieldName, notes, quality = 'fast', referenceProjectId } = body
 
   if (!projectId) {
     return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
@@ -166,9 +166,17 @@ export async function POST(request: Request) {
   })).sort((a, b) => b.score - a.score)
 
   const examples = scored.slice(0, 3).map(s => s.project)
-  const examplesText = examples.length > 0
+  let examplesText = examples.length > 0
     ? `\n\nHere are ${examples.length} similar completed case studies for reference. Match their voice and quality:\n\n${examples.map(formatExampleProject).join('\n')}`
     : ''
+
+  // Optional explicit reference project for style anchoring
+  if (referenceProjectId && referenceProjectId !== projectId) {
+    const refProject = allProjects.find(p => p.id === referenceProjectId)
+    if (refProject) {
+      examplesText += `\n\nThe team specifically chose this project as a STYLE ANCHOR. Match its tone, structure, level of detail, and voice as closely as possible:\n${formatExampleProject(refProject)}`
+    }
+  }
 
   // Build prompt
   const model = quality === 'premium' ? 'claude-opus-4-20250514' : 'claude-sonnet-4-20250514'
