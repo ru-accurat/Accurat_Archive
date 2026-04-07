@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { toast } from '@/lib/toast'
 
 export interface CollectionSummary {
   id: string
@@ -12,25 +13,74 @@ export interface CollectionSummary {
   createdAt: string
 }
 
+interface CollectionTemplate {
+  id: string
+  name: string
+  description: string
+  groups: { name: string; subtitle?: string }[]
+}
+
 export function CollectionsPageClient({ initialCollections }: { initialCollections: CollectionSummary[] }) {
   const router = useRouter()
   const [collections] = useState<CollectionSummary[]>(initialCollections)
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
+  const [templates, setTemplates] = useState<CollectionTemplate[]>([])
+  const [templateId, setTemplateId] = useState<string>('')
+
+  useEffect(() => {
+    fetch('/api/collection-templates')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setTemplates(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [])
 
   async function handleCreate() {
     if (!newName.trim()) return
     setCreating(true)
-    const res = await fetch('/api/collections', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newName.trim() }),
-    })
-    const data = await res.json()
-    if (data.id) {
+    try {
+      const res = await fetch('/api/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim() }),
+      })
+      const data = await res.json()
+      if (!data.id) {
+        toast.error('Failed to create collection')
+        setCreating(false)
+        return
+      }
+
+      // Apply template if selected
+      const tpl = templates.find((t) => t.id === templateId)
+      if (tpl) {
+        for (const g of tpl.groups) {
+          try {
+            const gRes = await fetch(`/api/collections/${data.id}/groups`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: g.name }),
+            })
+            if (!gRes.ok) continue
+            const created = await gRes.json()
+            if (created?.id && g.subtitle) {
+              await fetch(`/api/collections/${data.id}/groups/${created.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subtitle: g.subtitle }),
+              })
+            }
+          } catch {
+            // ignore individual group failure
+          }
+        }
+      }
+
       router.push(`/collections/${data.id}`)
+    } catch {
+      toast.error('Failed to create collection')
+      setCreating(false)
     }
-    setCreating(false)
   }
 
   return (
@@ -40,7 +90,7 @@ export function CollectionsPageClient({ initialCollections }: { initialCollectio
           <h1 className="text-[1.4rem] font-[300] tracking-[-0.02em] text-[var(--c-gray-900)]">Collections</h1>
         </div>
 
-        <div className="flex gap-2 mb-8">
+        <div className="flex gap-2 mb-2">
           <input
             type="text"
             placeholder="New collection name..."
@@ -57,6 +107,29 @@ export function CollectionsPageClient({ initialCollections }: { initialCollectio
             Create
           </button>
         </div>
+
+        {templates.length > 0 && (
+          <div className="mb-8 flex items-center gap-2">
+            <label className="text-[11px] text-[var(--c-gray-400)]">Template:</label>
+            <select
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+              className="text-[11px] bg-transparent border-b border-[var(--c-gray-200)] focus:border-[var(--c-gray-900)] focus:outline-none py-1 text-[var(--c-gray-700)]"
+            >
+              <option value="">None (blank)</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            {templateId && (
+              <span className="text-[10px] text-[var(--c-gray-400)] italic">
+                {templates.find((t) => t.id === templateId)?.description}
+              </span>
+            )}
+          </div>
+        )}
 
         {collections.length === 0 ? (
           <EmptyState

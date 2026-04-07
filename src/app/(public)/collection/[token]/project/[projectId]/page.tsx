@@ -20,6 +20,12 @@ export default function SharedProjectPage() {
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
+    // Anonymous view tracking (project-level)
+    fetch(`/api/public/collection/${token}/track-view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId }),
+    }).catch(() => {})
     fetch(`/api/public/collection/${token}/project/${projectId}`)
       .then((r) => {
         if (!r.ok) { setNotFound(true); setLoading(false); return null }

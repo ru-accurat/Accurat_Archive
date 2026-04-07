@@ -315,6 +315,15 @@ export default function CollectionDetailPage() {
   const [batchRemoving, setBatchRemoving] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [analytics, setAnalytics] = useState<{ totalViews: number; uniqueVisitors: number; lastViewedAt: string | null } | null>(null)
+
+  useEffect(() => {
+    if (!id) return
+    fetch(`/api/collections/${id}/analytics`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) setAnalytics(data) })
+      .catch(() => {})
+  }, [id])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -737,6 +746,14 @@ export default function CollectionDetailPage() {
             <p className="text-[12px] text-[var(--c-gray-400)] mt-2">
               {collection.projects.length} project{collection.projects.length !== 1 ? 's' : ''}
               {collection.groups.length > 0 && ` · ${collection.groups.length} group${collection.groups.length !== 1 ? 's' : ''}`}
+              {analytics && analytics.totalViews > 0 && (
+                <>
+                  {' · '}
+                  <span title={`${analytics.uniqueVisitors} unique visitor${analytics.uniqueVisitors !== 1 ? 's' : ''}${analytics.lastViewedAt ? ' · last viewed ' + new Date(analytics.lastViewedAt).toLocaleDateString() : ''}`}>
+                    Viewed {analytics.totalViews} time{analytics.totalViews !== 1 ? 's' : ''}
+                  </span>
+                </>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">
