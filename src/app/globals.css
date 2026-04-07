@@ -17,8 +17,8 @@
   --c-gray-100: #f3f3f1;
   --c-gray-200: #e5e5e2;
   --c-gray-300: #d4d4d0;
-  --c-gray-400: #a3a3a0;
-  --c-gray-500: #737370;
+  --c-gray-400: #6f6f6c; /* darkened from #a3a3a0 for WCAG AA on white (B5 audit) */
+  --c-gray-500: #5f5f5c; /* darkened from #737370 to preserve scale separation (B5 audit) */
   --c-gray-600: #525250;
   --c-gray-700: #3f3f3d;
   --c-gray-800: #292929;
