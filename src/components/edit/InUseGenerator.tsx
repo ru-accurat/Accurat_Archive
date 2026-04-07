@@ -1,8 +1,17 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import type { MediaFile } from '@/lib/types'
 import { mediaUrl } from '@/lib/media-url'
+import { toast } from '@/lib/toast'
+import {
+  DEVICES,
+  PRINT_KEYS,
+  SURFACES,
+  FRAMINGS,
+  ENVIRONMENT_PRESETS,
+  type FramingKey,
+} from '@/components/edit/in-use-options'
 
 interface InUseGeneratorProps {
   open: boolean
@@ -13,26 +22,45 @@ interface InUseGeneratorProps {
   onImageSaved: (filename: string, setAsThumbnail: boolean) => void
 }
 
-type Step = 'pick-image' | 'notes' | 'generating' | 'results'
+type Step = 'pick-image' | 'configure' | 'generating' | 'results'
 
 interface GeneratedImage {
   data: string
   mimeType: string
 }
 
+const DEFAULT_ENV_KEY = 'modern_corporate_office'
+
 export function InUseGenerator({ open, projectId, folderName, media, onClose, onImageSaved }: InUseGeneratorProps) {
   const [step, setStep] = useState<Step>('pick-image')
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [notes, setNotes] = useState('')
+
+  // Form state
+  const [device, setDevice] = useState<string>('laptop')
+  const [surface, setSurface] = useState<string>(SURFACES[0].key)
+  const [includeHuman, setIncludeHuman] = useState<boolean>(true)
+  const [framing, setFraming] = useState<FramingKey>('hands_only')
+  const [envPresetKey, setEnvPresetKey] = useState<string>(DEFAULT_ENV_KEY)
+  const [envCustom, setEnvCustom] = useState<string>('')
+
   const [images, setImages] = useState<GeneratedImage[]>([])
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [setAsThumbnail, setSetAsThumbnail] = useState(false)
 
+  const digitalDevices = useMemo(() => DEVICES.filter((d) => d.kind === 'digital'), [])
+  const printDevices = useMemo(() => DEVICES.filter((d) => d.kind === 'print'), [])
+  const isPrint = PRINT_KEYS.has(device)
+
   const reset = useCallback(() => {
     setStep('pick-image')
     setSelectedImage(null)
-    setNotes('')
+    setDevice('laptop')
+    setSurface(SURFACES[0].key)
+    setIncludeHuman(true)
+    setFraming('hands_only')
+    setEnvPresetKey(DEFAULT_ENV_KEY)
+    setEnvCustom('')
     setImages([])
     setError(null)
     setSaving(false)
@@ -43,6 +71,14 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
     reset()
     onClose()
   }, [reset, onClose])
+
+  const resolvedEnvironment = useCallback((): string => {
+    if (envPresetKey === 'custom') return envCustom.trim()
+    const preset = ENVIRONMENT_PRESETS.find((p) => p.key === envPresetKey)
+    const base = preset?.description?.trim() || ''
+    const extra = envCustom.trim()
+    return extra ? `${base} ${extra}` : base
+  }, [envPresetKey, envCustom])
 
   const handleGenerate = useCallback(async () => {
     if (!selectedImage) return
@@ -57,7 +93,11 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
         body: JSON.stringify({
           projectId,
           imageFilename: selectedImage,
-          notes: notes.trim() || undefined,
+          device,
+          surface: isPrint ? surface : undefined,
+          includeHuman,
+          framing: includeHuman ? framing : undefined,
+          environment: resolvedEnvironment(),
         }),
       })
       const data = await res.json()
@@ -65,14 +105,18 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
         setImages(data.images)
         setStep('results')
       } else {
-        setError(data.error || 'Generation failed')
-        setStep('notes')
+        const msg = data.error || 'Generation failed'
+        setError(msg)
+        toast.error(msg)
+        setStep('configure')
       }
     } catch (err) {
-      setError(String(err))
-      setStep('notes')
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(msg)
+      toast.error(msg)
+      setStep('configure')
     }
-  }, [projectId, selectedImage, notes])
+  }, [projectId, selectedImage, device, surface, isPrint, includeHuman, framing, resolvedEnvironment])
 
   const handleAccept = useCallback(async (index: number) => {
     const img = images[index]
@@ -92,25 +136,33 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
       })
       const data = await res.json()
       if (data.success) {
+        toast.success('Image saved to project media')
         onImageSaved(data.filename, !!setAsThumbnail)
         handleClose()
       } else {
-        setError(data.error || 'Save failed')
+        const msg = data.error || 'Save failed'
+        setError(msg)
+        toast.error(msg)
         setSaving(false)
       }
     } catch (err) {
-      setError(String(err))
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(msg)
+      toast.error(msg)
       setSaving(false)
     }
   }, [images, projectId, setAsThumbnail, onImageSaved, handleClose])
 
   if (!open) return null
 
-  // Filter to images only (no PDFs, etc.)
-  const imageMedia = media.filter(m => {
+  const imageMedia = media.filter((m) => {
     const ext = m.filename.toLowerCase()
     return ext.endsWith('.png') || ext.endsWith('.jpg') || ext.endsWith('.jpeg') || ext.endsWith('.webp')
   })
+
+  const selectClass =
+    'w-full text-[13px] px-3 py-2 bg-[var(--c-gray-50)] border border-[var(--c-gray-200)] rounded-[var(--radius-sm)] focus:outline-none focus:border-[var(--c-gray-400)]'
+  const labelClass = 'block text-[11px] font-[450] text-[var(--c-gray-600)] mb-1.5'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -118,13 +170,13 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--c-gray-100)]">
           <div className="flex items-center gap-3">
-            <h2 className="text-[16px] font-[450] text-[var(--c-gray-900)]">
-              Generate In-Use Image
-            </h2>
+            <h2 className="text-[16px] font-[450] text-[var(--c-gray-900)]">Generate In-Use Image</h2>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--c-ai)]/10 text-[var(--c-ai)]">Gemini</span>
           </div>
           <button onClick={handleClose} className="text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)]">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
           </button>
         </div>
 
@@ -134,7 +186,7 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
           {step === 'pick-image' && (
             <div>
               <p className="text-[13px] text-[var(--c-gray-600)] mb-4">
-                Select a source screenshot. The AI will place it on a device screen in a photorealistic setting.
+                Select a source screenshot. It will be composited onto the chosen device or print medium.
               </p>
               {imageMedia.length === 0 ? (
                 <p className="text-[12px] text-[var(--c-gray-400)] italic">No images in this project&apos;s media.</p>
@@ -148,14 +200,22 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
                         key={m.filename}
                         onClick={() => setSelectedImage(m.filename)}
                         className={`relative aspect-[4/3] rounded-[var(--radius-sm)] overflow-hidden border-2 transition-all ${
-                          isSelected ? 'border-[var(--c-gray-900)] ring-2 ring-[var(--c-gray-900)]/20' : 'border-transparent hover:border-[var(--c-gray-300)]'
+                          isSelected
+                            ? 'border-[var(--c-gray-900)] ring-2 ring-[var(--c-gray-900)]/20'
+                            : 'border-transparent hover:border-[var(--c-gray-300)]'
                         }`}
                       >
                         <img src={url} alt={m.filename} className="w-full h-full object-cover" />
                         {isSelected && (
                           <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[var(--c-gray-900)] text-white flex items-center justify-center">
                             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                              <path d="M2 5l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              <path
+                                d="M2 5l2 2 4-4"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
                             </svg>
                           </div>
                         )}
@@ -167,32 +227,114 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
             </div>
           )}
 
-          {/* Step 2: Notes */}
-          {step === 'notes' && selectedImage && (
+          {/* Step 2: Configure */}
+          {step === 'configure' && selectedImage && (
             <div>
-              <div className="flex gap-4 mb-4">
+              <div className="flex gap-4 mb-5">
                 <div className="w-32 h-24 rounded-[var(--radius-sm)] overflow-hidden bg-[var(--c-gray-100)] shrink-0">
                   <img src={mediaUrl(folderName, selectedImage)} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-[13px] text-[var(--c-gray-600)] mb-2">
-                    Add optional notes to guide the generation. Leave blank for automatic selection.
-                  </p>
-                  <p className="text-[10px] text-[var(--c-gray-400)]">
-                    e.g., &quot;Use a corporate setting with a laptop&quot; or &quot;Urban context, person on a smartphone&quot;
+                  <p className="text-[13px] text-[var(--c-gray-600)]">
+                    Configure the device, framing, and environment. Style, lighting, and aspect ratio come from the universal template in Settings.
                   </p>
                 </div>
               </div>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Optional: describe the context, device, or framing you want..."
-                rows={3}
-                className="w-full text-[13px] px-4 py-3 bg-[var(--c-gray-50)] border border-[var(--c-gray-200)] rounded-[var(--radius-sm)] focus:outline-none focus:border-[var(--c-gray-400)] resize-none"
-              />
-              {error && (
-                <p className="text-[11px] text-[var(--c-error)] mt-2">{error}</p>
-              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Device */}
+                <div>
+                  <label className={labelClass}>Device / medium</label>
+                  <select value={device} onChange={(e) => setDevice(e.target.value)} className={selectClass}>
+                    <optgroup label="Digital">
+                      {digitalDevices.map((d) => (
+                        <option key={d.key} value={d.key}>{d.label}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Print">
+                      {printDevices.map((d) => (
+                        <option key={d.key} value={d.key}>{d.label}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                {/* Surface (print only) */}
+                {isPrint && (
+                  <div>
+                    <label className={labelClass}>Surface / placement</label>
+                    <select value={surface} onChange={(e) => setSurface(e.target.value)} className={selectClass}>
+                      {SURFACES.map((s) => (
+                        <option key={s.key} value={s.key}>{s.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Include person toggle */}
+                <div className={isPrint ? 'col-span-2' : ''}>
+                  <label className={labelClass}>People</label>
+                  <label className="flex items-center gap-2 cursor-pointer text-[13px] text-[var(--c-gray-700)] py-2">
+                    <input
+                      type="checkbox"
+                      checked={includeHuman}
+                      onChange={(e) => setIncludeHuman(e.target.checked)}
+                      className="w-3.5 h-3.5 rounded-[2px] border-[var(--c-gray-300)] cursor-pointer"
+                    />
+                    Include a person interacting with the device
+                  </label>
+                </div>
+
+                {/* Framing */}
+                {includeHuman && (
+                  <div className="col-span-2">
+                    <label className={labelClass}>Framing</label>
+                    <select
+                      value={framing}
+                      onChange={(e) => setFraming(e.target.value as FramingKey)}
+                      className={selectClass}
+                    >
+                      {FRAMINGS.map((f) => (
+                        <option key={f.key} value={f.key}>{f.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Environment preset */}
+                <div className="col-span-2">
+                  <label className={labelClass}>Environment preset</label>
+                  <select
+                    value={envPresetKey}
+                    onChange={(e) => setEnvPresetKey(e.target.value)}
+                    className={selectClass}
+                  >
+                    {ENVIRONMENT_PRESETS.map((p) => (
+                      <option key={p.key} value={p.key}>{p.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Environment custom / extras */}
+                <div className="col-span-2">
+                  <label className={labelClass}>
+                    {envPresetKey === 'custom' ? 'Custom environment description' : 'Extra details (optional)'}
+                  </label>
+                  <textarea
+                    value={envCustom}
+                    onChange={(e) => setEnvCustom(e.target.value)}
+                    placeholder={
+                      envPresetKey === 'custom'
+                        ? 'Describe the scene in detail...'
+                        : 'Add extra context to append to the preset...'
+                    }
+                    rows={2}
+                    className={`${selectClass} resize-none`}
+                  />
+                </div>
+              </div>
+
+              {error && <p className="text-[11px] text-[var(--c-error)] mt-3">{error}</p>}
             </div>
           )}
 
@@ -244,9 +386,7 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
                 </label>
               </div>
 
-              {error && (
-                <p className="text-[11px] text-[var(--c-error)] mt-2">{error}</p>
-              )}
+              {error && <p className="text-[11px] text-[var(--c-error)] mt-2">{error}</p>}
             </div>
           )}
         </div>
@@ -262,24 +402,36 @@ export function InUseGenerator({ open, projectId, folderName, media, onClose, on
                 Regenerate
               </button>
             )}
+            {step === 'configure' && (
+              <button
+                onClick={() => setStep('pick-image')}
+                className="text-[12px] text-[var(--c-gray-500)] hover:text-[var(--c-gray-700)] transition-colors"
+              >
+                Back
+              </button>
+            )}
           </div>
           <div className="flex gap-3">
-            <button onClick={handleClose} className="text-[12px] text-[var(--c-gray-500)] hover:text-[var(--c-gray-700)] transition-colors px-3 py-1.5">
+            <button
+              onClick={handleClose}
+              className="text-[12px] text-[var(--c-gray-500)] hover:text-[var(--c-gray-700)] transition-colors px-3 py-1.5"
+            >
               Cancel
             </button>
             {step === 'pick-image' && (
               <button
-                onClick={() => setStep('notes')}
+                onClick={() => setStep('configure')}
                 disabled={!selectedImage}
                 className="text-[12px] font-[450] px-4 py-2 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors disabled:opacity-30"
               >
                 Next
               </button>
             )}
-            {step === 'notes' && (
+            {step === 'configure' && (
               <button
                 onClick={handleGenerate}
-                className="text-[12px] font-[450] px-4 py-2 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors"
+                disabled={envPresetKey === 'custom' && !envCustom.trim()}
+                className="text-[12px] font-[450] px-4 py-2 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors disabled:opacity-30"
               >
                 Generate
               </button>
