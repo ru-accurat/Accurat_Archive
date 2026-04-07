@@ -63,7 +63,13 @@ export function SharePopover({ shareToken, onCreateLink, onDisableLink, baseUrl 
         Share
       </button>
       {open && (
-        <div className="absolute right-0 top-9 w-72 bg-[var(--c-white)] border border-[var(--c-gray-200)] rounded-[var(--radius-md)] shadow-lg p-4 z-50">
+        <>
+          {/* Mobile backdrop */}
+          <div
+            className="md:hidden fixed inset-0 bg-black/40 z-40"
+            onClick={() => setOpen(false)}
+          />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-32px)] max-w-[320px] md:absolute md:left-auto md:top-9 md:right-0 md:translate-x-0 md:translate-y-0 md:w-72 bg-[var(--c-white)] border border-[var(--c-gray-200)] rounded-[var(--radius-md)] shadow-lg p-4 z-50">
           {shareToken ? (
             <div>
               <p className="text-[11px] font-[450] text-[var(--c-gray-700)] mb-2">Shareable link</p>
@@ -103,6 +109,7 @@ export function SharePopover({ shareToken, onCreateLink, onDisableLink, baseUrl 
             </div>
           )}
         </div>
+        </>
       )}
     </div>
   )

@@ -39,8 +39,7 @@ export function ProjectGrid() {
   return (
     <div className="h-full overflow-auto">
       <div
-        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}
-        className="grid gap-5 px-4 sm:px-6 md:px-[48px] pt-5 pb-12"
+        className="grid gap-5 px-4 sm:px-6 md:px-[48px] pt-5 pb-12 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))] sm:[grid-template-columns:repeat(auto-fill,minmax(200px,1fr))] md:[grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]"
       >
         {filteredProjects.map((project) => {
           const special = specialMedia[project.folderName]

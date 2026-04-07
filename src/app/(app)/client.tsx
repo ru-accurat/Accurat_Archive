@@ -38,6 +38,14 @@ export function IndexPageClient({ initialProjects }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Force grid view on mobile (table is unusable on small screens)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setViewMode('grid')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Status default is ['internal', 'public'] — only count as active filter if different from default
   const isStatusNonDefault = filters.status.length !== 2 || !filters.status.includes('internal') || !filters.status.includes('public')
   const hasActiveFilters = !!(filters.search || filters.domains.length || filters.services.length || filters.output.length || filters.section.length || filters.tier.length || filters.missing.length || isStatusNonDefault)
