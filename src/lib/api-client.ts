@@ -422,4 +422,13 @@ export const api = {
     lastViewedAt: string | null
     topProjects: { id: string; client: string; projectName: string; views: number }[]
   }> => fetch(`/api/collections/${id}/analytics`).then(r => json(r)),
+
+  // Capabilities
+  getCapabilities: (): Promise<{
+    totalProjects: number
+    domains: { value: string; count: number; examples: { id: string; client: string; projectName: string }[] }[]
+    services: { value: string; count: number; examples: { id: string; client: string; projectName: string }[] }[]
+    outputs: { value: string; count: number; examples: { id: string; client: string; projectName: string }[] }[]
+    sections: { value: string; count: number; examples: { id: string; client: string; projectName: string }[] }[]
+  }> => fetch('/api/capabilities').then(r => json(r)),
 }
