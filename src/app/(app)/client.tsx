@@ -11,6 +11,7 @@ import { ProjectGrid } from '@/components/index/ProjectGrid'
 import { FilterAccordion } from '@/components/index/FilterAccordion'
 import { FilterBar } from '@/components/index/FilterBar'
 import { BulkActions } from '@/components/index/BulkActions'
+import { ActivityFeed } from '@/components/index/ActivityFeed'
 import type { ProjectSummary } from '@/lib/types'
 
 // Wraps useUrlFilters in a Suspense-friendly component since it uses useSearchParams
@@ -116,6 +117,7 @@ export function IndexPageClient({ initialProjects }: Props) {
 
       <FilterAccordion />
       <FilterBar />
+      <ActivityFeed />
       {hasActiveFilters && (
         <div className="px-4 sm:px-6 md:px-[48px] pb-2">
           <span className="text-[11px] font-[400] text-[var(--c-gray-400)]">
