@@ -11,7 +11,7 @@ const TABS = [
   { key: 'company', label: 'Company Background', description: 'Accurat\'s positioning, team structure, and capabilities.' },
   { key: 'market', label: 'Market Positioning', description: 'Core intellectual positions: Data-Native, Data Humanism, etc.' },
   { key: 'projects', label: 'Key Projects', description: 'Reference projects, Tier 1 clients, and landmark work.' },
-  { key: 'inuse_prompt', label: 'In-Use Photography', description: 'Photography style, device types, framing, and context rules for generating in-use mockup images.' },
+  { key: 'inuse_prompt', label: 'In-Use Photography', description: 'Universal style template (visual style, lighting, quality, composition rules, hard constraints). Device, framing, and environment are picked per-generation in the form — do not hard-code them here.' },
 ]
 
 export default function AiSettingsPage() {
