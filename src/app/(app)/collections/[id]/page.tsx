@@ -626,7 +626,7 @@ export default function CollectionDetailPage() {
   }, [collection, handleMoveToGroup])
 
   if (loading) {
-    return <div className="flex items-center justify-center h-full bg-[var(--c-white)] text-[var(--c-gray-400)] text-[13px]">Loading...</div>
+    return <div className="h-full bg-[var(--c-white)]"><div className="max-w-[1400px] px-4 sm:px-6 md:px-[48px] py-10"><div className="h-[36px] w-80 bg-[var(--c-gray-100)] rounded animate-pulse" /></div></div>
   }
 
   if (!collection) {

@@ -57,7 +57,7 @@ function SharedProjectPageInner() {
   }, [token, projectId])
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-[60vh] text-[var(--c-gray-400)] text-[13px]">Loading...</div>
+    return <div className="max-w-[1200px] px-4 sm:px-6 md:px-[48px] py-12 mx-auto"><div className="h-[40px] w-2/3 bg-[var(--c-gray-100)] rounded animate-pulse mb-6" /><div className="aspect-[16/9] w-full bg-[var(--c-gray-100)] rounded animate-pulse" /></div>
   }
 
   if (notFound || !project) {

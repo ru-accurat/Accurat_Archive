@@ -80,7 +80,7 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-full bg-[var(--c-white)] text-[var(--c-gray-400)] text-[13px]">Loading...</div>
+    return <div className="h-full bg-[var(--c-white)]"><div className="max-w-[720px] mx-auto px-4 sm:px-6 md:px-[48px] py-10"><div className="h-[28px] w-32 bg-[var(--c-gray-100)] rounded animate-pulse" /></div></div>
   }
 
   return (
