@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { api } from '@/lib/api-client'
+import { toast } from '@/lib/toast'
 import { useProjectStore } from '@/stores/project-store'
 import { BulkGenerateModal } from '@/components/shared/BulkGenerateModal'
 import { CollectionPicker } from '@/components/shared/CollectionPicker'
@@ -24,8 +25,9 @@ export function BulkActions() {
       a.download = 'export.csv'
       a.click()
       URL.revokeObjectURL(url)
+      toast.success(`Exported ${selectedIds.length} project${selectedIds.length !== 1 ? 's' : ''} as CSV`)
     } catch (err) {
-      alert(String(err))
+      toast.error('CSV export failed: ' + String(err))
     }
     setExporting(false)
   }
@@ -40,8 +42,9 @@ export function BulkActions() {
       a.download = 'export.zip'
       a.click()
       URL.revokeObjectURL(url)
+      toast.success(`Exported ${selectedIds.length} project${selectedIds.length !== 1 ? 's' : ''} as ZIP`)
     } catch (err) {
-      alert(String(err))
+      toast.error('ZIP export failed: ' + String(err))
     }
     setExporting(false)
   }

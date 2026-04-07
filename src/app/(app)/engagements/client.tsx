@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react'
 import { api } from '@/lib/api-client'
+import { toast } from '@/lib/toast'
 import { InlineEditCell } from '@/components/shared/InlineEditCell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import dynamic from 'next/dynamic'
@@ -43,7 +44,9 @@ export function EngagementsPageClient({ initialEngagements, initialClients }: Pr
     try {
       const eng = await api.getEngagements()
       setEngagements(eng)
-    } catch { /* ignore */ }
+    } catch (err) {
+      toast.error('Failed to reload engagements: ' + String(err), { retry: () => loadData() })
+    }
   }, [])
 
   // Unique years from engagements
@@ -90,9 +93,13 @@ export function EngagementsPageClient({ initialEngagements, initialClients }: Pr
     else if (field === 'year') data.year = parseInt(value)
     else if (field === 'clientName') data.clientName = value
 
-    await api.updateEngagement(id, data)
-    const eng = await api.getEngagements()
-    setEngagements(eng)
+    try {
+      await api.updateEngagement(id, data)
+      const eng = await api.getEngagements()
+      setEngagements(eng)
+    } catch (err) {
+      toast.error('Failed to update engagement: ' + String(err))
+    }
   }, [])
 
   return (
@@ -312,8 +319,13 @@ export function EngagementsPageClient({ initialEngagements, initialClients }: Pr
                           <button
                             onClick={async () => {
                               if (!confirm(`Delete "${e.projectName}" (${e.year})?`)) return
-                              await api.deleteEngagement(e.id)
-                              setEngagements(prev => prev.filter(eng => eng.id !== e.id))
+                              try {
+                                await api.deleteEngagement(e.id)
+                                setEngagements(prev => prev.filter(eng => eng.id !== e.id))
+                                toast.success('Engagement deleted')
+                              } catch (err) {
+                                toast.error('Failed to delete: ' + String(err))
+                              }
                             }}
                             className="text-[var(--c-gray-300)] hover:text-[var(--c-error)] transition-colors"
                             title="Delete engagement"

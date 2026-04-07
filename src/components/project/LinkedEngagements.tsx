@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api-client'
+import { toast } from '@/lib/toast'
 import { EngagementLinker } from '@/components/engagements/EngagementLinker'
 import type { Engagement } from '@/lib/types'
 
@@ -24,7 +25,9 @@ export function LinkedEngagements({ projectId, clientName }: LinkedEngagementsPr
     try {
       const data = await api.getProjectEngagements(projectId)
       setEngagements(data)
-    } catch { /* ignore */ }
+    } catch (err) {
+      toast.error('Failed to load engagements: ' + String(err))
+    }
     setLoading(false)
   }, [projectId])
 
@@ -69,8 +72,13 @@ export function LinkedEngagements({ projectId, clientName }: LinkedEngagementsPr
               <span className="text-[11px] text-[var(--c-gray-600)] tabular-nums shrink-0">{formatEur(e.amountEur)}</span>
               <button
                 onClick={async () => {
-                  await api.unlinkProjectEngagement(projectId, e.id)
-                  load()
+                  try {
+                    await api.unlinkProjectEngagement(projectId, e.id)
+                    load()
+                    toast.success('Engagement unlinked')
+                  } catch (err) {
+                    toast.error('Unlink failed: ' + String(err))
+                  }
                 }}
                 className="text-[var(--c-gray-300)] hover:text-[var(--c-error)] transition-colors opacity-0 group-hover:opacity-100"
                 title="Unlink"

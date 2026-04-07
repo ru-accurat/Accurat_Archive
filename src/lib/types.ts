@@ -147,3 +147,24 @@ export interface ParsedEngagementRow {
   amountEur: number | null
   amountUsd: number | null
 }
+
+export interface FilterPreset {
+  id: string
+  name: string
+  filters: {
+    search?: string
+    domains?: string[]
+    services?: string[]
+    output?: string[]
+    section?: string[]
+    yearRange?: [number | null, number | null]
+    tier?: number[]
+    missing?: string[]
+    status?: string[]
+  }
+  sortField?: string | null
+  sortDirection?: 'asc' | 'desc' | null
+  viewMode?: 'table' | 'grid' | null
+  createdAt: string
+  updatedAt: string
+}

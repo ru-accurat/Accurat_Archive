@@ -1,16 +1,23 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProjectStore } from '@/stores/project-store'
 import { useUiStore } from '@/stores/ui-store'
 import { useFilteredProjects } from '@/hooks/use-filters'
+import { useUrlFilters } from '@/hooks/use-url-filters'
 import { ProjectTable } from '@/components/index/ProjectTable'
 import { ProjectGrid } from '@/components/index/ProjectGrid'
 import { FilterAccordion } from '@/components/index/FilterAccordion'
 import { FilterBar } from '@/components/index/FilterBar'
 import { BulkActions } from '@/components/index/BulkActions'
 import type { ProjectSummary } from '@/lib/types'
+
+// Wraps useUrlFilters in a Suspense-friendly component since it uses useSearchParams
+function UrlFiltersSync() {
+  useUrlFilters()
+  return null
+}
 
 interface Props {
   initialProjects: ProjectSummary[]
@@ -37,6 +44,9 @@ export function IndexPageClient({ initialProjects }: Props) {
 
   return (
     <div className="flex flex-col h-full bg-[var(--c-white)]">
+      <Suspense fallback={null}>
+        <UrlFiltersSync />
+      </Suspense>
       <div className="flex items-end gap-4 px-4 sm:px-6 md:px-[48px] pt-5 pb-3">
         <div className="flex-1 relative">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="absolute left-0 top-1/2 -translate-y-1/2 text-[var(--c-gray-300)]">

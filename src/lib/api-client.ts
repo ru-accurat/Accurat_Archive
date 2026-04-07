@@ -1,4 +1,4 @@
-import type { Project, ProjectSummary, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow } from './types'
+import type { Project, ProjectSummary, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow, FilterPreset } from './types'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -204,6 +204,27 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates)
     }).then(r => json(r)),
+
+  // Filter presets (per-user)
+  getFilterPresets: (): Promise<FilterPreset[]> =>
+    fetch('/api/filter-presets').then(r => json(r)),
+
+  createFilterPreset: (data: Omit<FilterPreset, 'id' | 'createdAt' | 'updatedAt'>): Promise<FilterPreset> =>
+    fetch('/api/filter-presets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then(r => json(r)),
+
+  updateFilterPreset: (id: string, data: Partial<Omit<FilterPreset, 'id' | 'createdAt' | 'updatedAt'>>): Promise<FilterPreset> =>
+    fetch(`/api/filter-presets/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then(r => json(r)),
+
+  deleteFilterPreset: (id: string): Promise<{ success: boolean }> =>
+    fetch(`/api/filter-presets/${id}`, { method: 'DELETE' }).then(r => json(r)),
 
   // Export
   exportCsv: (projectIds: string[]): Promise<Blob> =>

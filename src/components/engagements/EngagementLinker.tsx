@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { api } from '@/lib/api-client'
+import { toast } from '@/lib/toast'
 import type { Engagement } from '@/lib/types'
 
 interface EngagementLinkerProps {
@@ -26,7 +27,7 @@ export function EngagementLinker({ open, projectId, clientName, linkedEngagement
 
   useEffect(() => {
     if (open) {
-      api.getEngagements().then(setEngagements).catch(() => {})
+      api.getEngagements().then(setEngagements).catch((err) => toast.error('Failed to load engagements: ' + String(err)))
       setLinked(new Set(linkedEngagementIds))
       setSearch('')
     }
@@ -64,7 +65,9 @@ export function EngagementLinker({ open, projectId, clientName, linkedEngagement
         setLinked(prev => new Set(prev).add(engagementId))
       }
       onChanged()
-    } catch { /* ignore */ }
+    } catch (err) {
+      toast.error('Failed to update link: ' + String(err))
+    }
     setSaving(false)
   }, [projectId, linked, onChanged])
 

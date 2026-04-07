@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api-client'
+import { toast } from '@/lib/toast'
 import { EmptyState } from '@/components/shared/EmptyState'
 import type { Client } from '@/lib/types'
 
@@ -56,8 +57,9 @@ export function ClientsPageClient({ initialClients }: { initialClients: Client[]
       await api.mergeClients(mergeSource.id, targetId)
       setMergeSource(null)
       await reloadClients()
+      toast.success(`Merged "${mergeSource.name}" into "${target.name}"`)
     } catch (err) {
-      alert('Merge failed: ' + String(err))
+      toast.error('Merge failed: ' + String(err))
     }
     setMerging(false)
   }, [mergeSource, clients, reloadClients])

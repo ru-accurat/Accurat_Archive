@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { api } from '@/lib/api-client'
+import { toast } from '@/lib/toast'
 import type { ProjectSummary } from '@/lib/types'
 
 interface ProjectLinkerProps {
@@ -21,7 +22,7 @@ export function ProjectLinker({ open, engagementId, clientName, linkedProjectIds
 
   useEffect(() => {
     if (open) {
-      api.getProjects().then(setProjects).catch(() => {})
+      api.getProjects().then(setProjects).catch((err) => toast.error('Failed to load projects: ' + String(err)))
       setLinked(new Set(linkedProjectIds))
       setSearch('')
     }
@@ -61,7 +62,9 @@ export function ProjectLinker({ open, engagementId, clientName, linkedProjectIds
         setLinked(prev => new Set(prev).add(projectId))
       }
       onChanged()
-    } catch { /* ignore */ }
+    } catch (err) {
+      toast.error('Failed to update link: ' + String(err))
+    }
     setSaving(false)
   }, [engagementId, linked, onChanged])
 

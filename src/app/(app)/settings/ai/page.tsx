@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { api } from '@/lib/api-client'
+import { toast } from '@/lib/toast'
 import { Breadcrumb } from '@/components/shared/Breadcrumb'
 
 const TABS = [
@@ -53,8 +54,9 @@ export default function AiSettingsPage() {
       await api.updateAiSettings(updates)
       setDirty(new Set())
       await loadSettings()
+      toast.success('Settings saved')
     } catch (err) {
-      alert('Save failed: ' + String(err))
+      toast.error('Save failed: ' + String(err))
     }
     setSaving(false)
   }
@@ -69,8 +71,9 @@ export default function AiSettingsPage() {
       await api.updateAiSettings(updates)
       setDirty(new Set())
       await loadSettings()
+      toast.success('All settings saved')
     } catch (err) {
-      alert('Save failed: ' + String(err))
+      toast.error('Save failed: ' + String(err))
     }
     setSaving(false)
   }

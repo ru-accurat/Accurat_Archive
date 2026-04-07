@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { api } from '@/lib/api-client'
+import { toast } from '@/lib/toast'
 import type { ClientMatch, ParsedEngagementRow, Client } from '@/lib/types'
 
 interface ImportModalProps {
@@ -39,7 +40,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
 
       setStep('review')
     } catch (err) {
-      alert('Failed to parse file: ' + String(err))
+      toast.error('Failed to parse file: ' + String(err))
     }
     setLoading(false)
   }, [])
@@ -73,8 +74,9 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
       setResult(res)
       setStep('done')
       onImported()
+      toast.success(`Imported ${res.inserted} engagement${res.inserted !== 1 ? 's' : ''}`)
     } catch (err) {
-      alert('Import failed: ' + String(err))
+      toast.error('Import failed: ' + String(err))
     }
     setLoading(false)
   }, [clientMatches, overrides, rows, filename, onImported])

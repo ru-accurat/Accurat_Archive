@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useProjectStore } from '@/stores/project-store'
 import { api } from '@/lib/api-client'
+import { toast } from '@/lib/toast'
 import { EmptyState } from '@/components/shared/EmptyState'
 
 type TagType = 'domains' | 'services' | 'output'
@@ -41,7 +42,8 @@ export default function TagsPage() {
       await api.renameTag(activeTab, oldName, editValue.trim())
       const updated = await api.getProjects()
       useProjectStore.getState().setProjects(updated)
-    } catch (err) { alert(String(err)) }
+      toast.success(`Renamed to "${editValue.trim()}"`)
+    } catch (err) { toast.error('Rename failed: ' + String(err)) }
     setSaving(false)
     setEditingTag(null)
   }
@@ -55,9 +57,9 @@ export default function TagsPage() {
       if (result.success) {
         const updated = await api.getProjects()
         useProjectStore.getState().setProjects(updated)
-        alert(`Merged into "${target}" — ${result.updated} projects updated`)
+        toast.success(`Merged into "${target}" — ${result.updated} projects updated`)
       }
-    } catch (err) { alert(String(err)) }
+    } catch (err) { toast.error('Merge failed: ' + String(err)) }
     setSaving(false)
   }
 

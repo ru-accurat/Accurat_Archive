@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
+import { toast } from '@/lib/toast'
 
 interface CaseStudyWriterProps {
   open: boolean
@@ -140,10 +141,10 @@ export function CaseStudyWriter({ open, projectId, currentValues, onClose, onAcc
         setGenerated(data.fields)
         setTokensUsed(data.tokensUsed || null)
       } else {
-        alert(data.message || 'Generation failed')
+        toast.error(data.message || 'Generation failed')
       }
     } catch (err) {
-      alert('Failed: ' + String(err))
+      toast.error('Generation failed: ' + String(err))
     }
     setLoading(false)
   }, [projectId, notes, quality])

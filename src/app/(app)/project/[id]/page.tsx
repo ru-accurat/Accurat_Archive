@@ -7,6 +7,7 @@ import { useKeyboardNav } from '@/hooks/use-keyboard-nav'
 import { useFilteredProjects, useFilterOptions } from '@/hooks/use-filters'
 import { useProjectStore } from '@/stores/project-store'
 import { api } from '@/lib/api-client'
+import { toast } from '@/lib/toast'
 import { projectToSummary } from '@/lib/db-utils'
 import { pdfUrl } from '@/lib/media-url'
 import type { Project, HistoryEntry } from '@/lib/types'
@@ -103,9 +104,10 @@ export default function ProjectPage() {
       updateProjectInStore(id, projectToSummary(updated))
       setEditMode(false)
       setDraft(null)
+      toast.success('Project saved')
     } catch (err) {
       console.error('Failed to save:', err)
-      alert('Failed to save changes.')
+      toast.error('Failed to save changes: ' + String(err), { retry: () => saveEdit() })
     }
     setSaving(false)
   }, [draft, id, setProject, updateProjectInStore])
@@ -134,12 +136,12 @@ export default function ProjectPage() {
         setTimeout(() => setUploadProgress({ active: false, message: '', done: false }), 1500)
       } else {
         setUploadProgress({ active: false, message: '', done: false })
-        alert('Upload failed. Please try again.')
+        toast.error('Upload failed. Please try again.')
       }
     } catch (err) {
       console.error('Media upload error:', err)
       setUploadProgress({ active: false, message: '', done: false })
-      alert('Upload failed: ' + String(err))
+      toast.error('Upload failed: ' + String(err))
     }
     e.target.value = ''
   }, [id, refreshMedia])
@@ -157,7 +159,7 @@ export default function ProjectPage() {
     } catch (err) {
       console.error('Batch delete error:', err)
       setUploadProgress({ active: false, message: '', done: false })
-      alert('Failed to delete media: ' + String(err))
+      toast.error('Failed to delete media: ' + String(err))
     }
   }, [id, refreshMedia])
 
@@ -189,7 +191,7 @@ export default function ProjectPage() {
       }
     } catch (err) {
       console.error('Logo upload error:', err)
-      alert('Logo upload failed: ' + String(err))
+      toast.error('Logo upload failed: ' + String(err))
     }
     e.target.value = ''
   }, [id, setField, setProject])
@@ -205,7 +207,7 @@ export default function ProjectPage() {
       }
     } catch (err) {
       console.error('Logo delete error:', err)
-      alert('Failed to delete logo: ' + String(err))
+      toast.error('Failed to delete logo: ' + String(err))
     }
   }, [id, setField, setProject])
 
@@ -226,11 +228,11 @@ export default function ProjectPage() {
         setTimeout(() => setUploadProgress({ active: false, message: '', done: false }), 1500)
       } else {
         setUploadProgress({ active: false, message: '', done: false })
-        alert('PDF upload failed.')
+        toast.error('PDF upload failed.')
       }
     } catch (err) {
       setUploadProgress({ active: false, message: '', done: false })
-      alert('PDF upload failed: ' + String(err))
+      toast.error('PDF upload failed: ' + String(err))
     }
     e.target.value = ''
   }, [id, draft, setProject])
@@ -249,7 +251,7 @@ export default function ProjectPage() {
       }
     } catch (err) {
       setUploadProgress({ active: false, message: '', done: false })
-      alert('Failed to delete PDFs: ' + String(err))
+      toast.error('Failed to delete PDFs: ' + String(err))
     }
   }, [id, draft, setProject])
 
@@ -263,7 +265,7 @@ export default function ProjectPage() {
         if (draft) setDraft((prev) => prev ? { ...prev, pdfFiles: updated.pdfFiles } : null)
       }
     } catch (err) {
-      alert('Failed to rename PDF: ' + String(err))
+      toast.error('Failed to rename PDF: ' + String(err))
     }
   }, [id, draft, setProject])
 
@@ -273,9 +275,10 @@ export default function ProjectPage() {
     try {
       await api.deleteProject(id)
       removeProjectFromStore(id)
+      toast.success('Project deleted')
       router.push('/')
     } catch (err) {
-      alert('Failed to delete: ' + String(err))
+      toast.error('Failed to delete: ' + String(err))
     }
   }, [id, project, router, removeProjectFromStore])
 
