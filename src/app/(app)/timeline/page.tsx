@@ -5,6 +5,7 @@ import { useProjectStore } from '@/stores/project-store'
 import { useSharedFilters } from '@/hooks/use-shared-filters'
 import { CompactFilterBar } from '@/components/shared/CompactFilterBar'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { MobileOnlyNotice } from '@/components/shared/MobileOnlyNotice'
 import { useRouter } from 'next/navigation'
 import { useMemo, useRef, useState } from 'react'
 
@@ -49,6 +50,7 @@ export default function TimelinePage() {
   }
 
   return (
+    <MobileOnlyNotice feature="Timeline">
     <div className="flex flex-col h-full bg-[var(--c-white)]">
       <div className="px-4 sm:px-6 md:px-[48px] pt-5 pb-3 flex items-start justify-between">
         <div>
@@ -144,5 +146,6 @@ export default function TimelinePage() {
         </div>
       )}
     </div>
+    </MobileOnlyNotice>
   )
 }

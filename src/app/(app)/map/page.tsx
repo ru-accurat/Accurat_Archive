@@ -5,6 +5,7 @@ import { useProjects } from '@/hooks/use-projects'
 import { useProjectStore } from '@/stores/project-store'
 import { useSharedFilters } from '@/hooks/use-shared-filters'
 import { CompactFilterBar } from '@/components/shared/CompactFilterBar'
+import { MobileOnlyNotice } from '@/components/shared/MobileOnlyNotice'
 import { useEffect, useRef, useMemo, useState } from 'react'
 import type { ProjectSummary } from '@/lib/types'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -224,6 +225,7 @@ export default function MapPage() {
   }
 
   return (
+    <MobileOnlyNotice feature="Map">
     <div className="flex flex-col h-[calc(100vh-var(--topbar-h))] bg-[var(--c-white)]">
       <div className="px-4 sm:px-6 md:px-[48px] pt-5 pb-3 flex items-center justify-between shrink-0">
         <div>
@@ -255,5 +257,6 @@ export default function MapPage() {
         </div>
       </div>
     </div>
+    </MobileOnlyNotice>
   )
 }

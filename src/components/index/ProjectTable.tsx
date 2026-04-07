@@ -54,13 +54,13 @@ export function ProjectTable() {
   )
 
   const columns = [
-    { key: 'client', label: 'Client', width: '18%' },
-    { key: 'projectName', label: 'Project', width: '20%' },
-    { key: 'section', label: 'Unit', width: '8%' },
-    { key: 'tier', label: 'Tier', width: '6%' },
-    { key: 'year', label: 'Year', width: '10%' },
-    { key: 'output', label: 'Category', width: '20%' },
-    { key: 'completeness', label: 'Complete', width: '14%' }
+    { key: 'client', label: 'Client', width: '18%', mobile: true },
+    { key: 'projectName', label: 'Project', width: '20%', mobile: true },
+    { key: 'section', label: 'Unit', width: '8%', mobile: false },
+    { key: 'tier', label: 'Tier', width: '6%', mobile: false },
+    { key: 'year', label: 'Year', width: '10%', mobile: false },
+    { key: 'output', label: 'Category', width: '20%', mobile: false },
+    { key: 'completeness', label: 'Complete', width: '14%', mobile: false }
   ]
 
   const thPad = (i: number) =>
@@ -71,11 +71,11 @@ export function ProjectTable() {
 
   return (
     <div className="h-full overflow-auto">
-      <table className="w-full text-[13px] min-w-[800px]">
+      <table className="w-full text-[13px] md:min-w-[800px]">
         <thead className="sticky top-0 bg-[var(--c-white)] z-10">
           <tr className="border-b border-[var(--c-gray-900)]">
             {/* Checkbox column */}
-            <th className="w-[44px] pl-[48px] pr-0 py-3">
+            <th className="w-[44px] pl-4 md:pl-[48px] pr-0 py-3">
               <input
                 type="checkbox"
                 checked={allSelected}
@@ -86,7 +86,7 @@ export function ProjectTable() {
             {columns.map((col, i) => (
               <th
                 key={col.key}
-                className={`text-left py-3 text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-500)] cursor-pointer hover:text-[var(--c-gray-900)] select-none transition-colors duration-200 ${thPad(i)}`}
+                className={`${col.mobile ? '' : 'hidden md:table-cell'} text-left py-3 text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-500)] cursor-pointer hover:text-[var(--c-gray-900)] select-none transition-colors duration-200 ${thPad(i)}`}
                 style={{ width: col.width }}
                 onClick={() => setSort(col.key)}
               >
@@ -116,7 +116,7 @@ export function ProjectTable() {
                 className={`group transition-colors duration-150 ${editMode ? '' : 'cursor-pointer'} ${isSelected ? 'bg-[var(--c-gray-50)]' : 'hover:bg-[var(--c-gray-50)]'} ${isSaving ? 'opacity-60' : ''}`}
                 onClick={editMode ? undefined : () => router.push(`/project/${project.id}`)}
               >
-                <td className="pl-[48px] pr-0 py-3.5" onClick={(e) => e.stopPropagation()}>
+                <td className="pl-4 md:pl-[48px] pr-0 py-3.5" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     checked={isSelected}
@@ -167,7 +167,7 @@ export function ProjectTable() {
                 </td>
 
                 {/* Unit (section) */}
-                <td className={`py-3.5 ${tdPad(2)}`}>
+                <td className={`hidden md:table-cell py-3.5 ${tdPad(2)}`}>
                   {editMode ? (
                     <select
                       defaultValue={project.section}
@@ -189,7 +189,7 @@ export function ProjectTable() {
                 </td>
 
                 {/* Tier */}
-                <td className={`py-3.5 ${tdPad(3)}`}>
+                <td className={`hidden md:table-cell py-3.5 ${tdPad(3)}`}>
                   {editMode ? (
                     <select
                       defaultValue={project.tier}
@@ -208,7 +208,7 @@ export function ProjectTable() {
                 </td>
 
                 {/* Year */}
-                <td className={`py-3.5 text-[var(--c-gray-500)] font-[400] text-[13px] tabular-nums ${tdPad(4)}`}>
+                <td className={`hidden md:table-cell py-3.5 text-[var(--c-gray-500)] font-[400] text-[13px] tabular-nums ${tdPad(4)}`}>
                   {editMode ? (
                     <div className="flex gap-1 items-center">
                       <input
@@ -239,7 +239,7 @@ export function ProjectTable() {
                 </td>
 
                 {/* Category (output) */}
-                <td className={`py-3.5 text-[12px] text-[var(--c-gray-400)] font-[400] ${tdPad(5)}`}>
+                <td className={`hidden md:table-cell py-3.5 text-[12px] text-[var(--c-gray-400)] font-[400] ${tdPad(5)}`}>
                   {editMode ? (
                     <select
                       defaultValue={project.output}
@@ -259,7 +259,7 @@ export function ProjectTable() {
                 </td>
 
                 {/* Completeness */}
-                <td className={`py-3.5 ${tdPad(6)}`}>
+                <td className={`hidden md:table-cell py-3.5 ${tdPad(6)}`}>
                   <CompletenessIndicator percentage={completeness.percentage} />
                 </td>
               </tr>

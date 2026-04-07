@@ -5,6 +5,7 @@ import { api } from '@/lib/api-client'
 import { toast } from '@/lib/toast'
 import { InlineEditCell } from '@/components/shared/InlineEditCell'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { MobileOnlyNotice } from '@/components/shared/MobileOnlyNotice'
 import dynamic from 'next/dynamic'
 
 const ImportModal = dynamic(() => import('@/components/engagements/ImportModal').then(m => m.ImportModal), { ssr: false })
@@ -103,6 +104,7 @@ export function EngagementsPageClient({ initialEngagements, initialClients }: Pr
   }, [])
 
   return (
+    <MobileOnlyNotice feature="Engagements">
     <div className="h-full overflow-y-auto bg-[var(--c-white)]">
       <div className="max-w-[1200px] px-4 sm:px-6 md:px-[48px] py-10">
         {/* Header */}
@@ -364,5 +366,6 @@ export function EngagementsPageClient({ initialEngagements, initialClients }: Pr
         />
       )}
     </div>
+    </MobileOnlyNotice>
   )
 }
