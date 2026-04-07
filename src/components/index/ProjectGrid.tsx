@@ -4,14 +4,18 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { api } from '@/lib/api-client'
-import { useFilteredProjects } from '@/hooks/use-filters'
+import { useFilteredProjectsWithMatches } from '@/hooks/use-filters'
 import { useProjectStore } from '@/stores/project-store'
+import { Highlight } from '@/components/shared/Highlight'
+
+const HIGHLIGHT_FIELDS = new Set(['client', 'projectName', 'fullName'])
 
 type SpecialMediaMap = Record<string, { header: string | null; thumb: string | null; first: string | null }>
 
 export function ProjectGrid() {
   const router = useRouter()
-  const filteredProjects = useFilteredProjects()
+  const { projects: filteredProjects, matches } = useFilteredProjectsWithMatches()
+  const search = useProjectStore((s) => s.filters.search)
   const [specialMedia, setSpecialMedia] = useState<SpecialMediaMap>({})
   const { selectedIds } = useProjectStore()
   const toggleSelection = useProjectStore((s) => s.toggleSelection)
@@ -93,7 +97,7 @@ export function ProjectGrid() {
 
               {/* Info */}
               <div className="flex items-center gap-1.5 text-[12px] font-[500] text-[var(--c-gray-900)] leading-tight mb-0.5 group-hover:text-[var(--c-gray-700)] transition-colors duration-150">
-                {project.client}
+                <Highlight text={project.client} match={search} />
                 {(!hasDescription || !hasMedia) && (
                   <span className="flex gap-0.5">
                     {!hasDescription && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="Missing description" />}
@@ -102,8 +106,13 @@ export function ProjectGrid() {
                 )}
               </div>
               <div className="text-[11px] font-[400] text-[var(--c-gray-500)] leading-tight line-clamp-2">
-                {project.projectName}
+                <Highlight text={project.projectName} match={search} />
               </div>
+              {search && matches.get(project.id) && !HIGHLIGHT_FIELDS.has(matches.get(project.id)!) && (
+                <div className="text-[9px] font-[450] uppercase tracking-[0.06em] text-[var(--c-gray-400)] mt-1 inline-block bg-[var(--c-gray-100)] px-1.5 py-0.5 rounded-sm">
+                  matched: {matches.get(project.id)}
+                </div>
+              )}
               {project.section && (
                 <div className="text-[9px] font-[450] uppercase tracking-[0.08em] text-[var(--c-gray-400)] mt-1">
                   {project.section}

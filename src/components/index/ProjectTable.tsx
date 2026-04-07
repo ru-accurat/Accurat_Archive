@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api-client'
 import { useProjectStore } from '@/stores/project-store'
 import { useUiStore } from '@/stores/ui-store'
-import { useFilteredProjects, useFilterOptions } from '@/hooks/use-filters'
+import { useFilteredProjectsWithMatches, useFilterOptions } from '@/hooks/use-filters'
 import { getCompletenessFromSummary } from '@/lib/completeness'
 import { CompletenessIndicator } from './CompletenessIndicator'
 import { formatYearRange } from '@/lib/format'
+import { Highlight } from '@/components/shared/Highlight'
+
+const HIGHLIGHT_FIELDS = new Set(['client', 'projectName', 'fullName'])
 
 const cellInputClass =
   'w-full bg-transparent border-b border-[var(--c-gray-200)] focus:border-[var(--c-gray-900)] focus:outline-none text-[13px] font-[400] text-[var(--c-gray-800)] py-0.5 px-0'
@@ -17,7 +20,8 @@ const cellSelectClass =
 
 export function ProjectTable() {
   const router = useRouter()
-  const filteredProjects = useFilteredProjects()
+  const { projects: filteredProjects, matches } = useFilteredProjectsWithMatches()
+  const search = useProjectStore((s) => s.filters.search)
   const { sortField, sortDirection, setSort, selectedIds, toggleSelection, selectAll, clearSelection, updateProject } =
     useProjectStore()
   const { editMode } = useUiStore()
@@ -138,7 +142,7 @@ export function ProjectTable() {
                     />
                   ) : (
                     <span className="flex items-center gap-1.5">
-                      {project.client}
+                      <Highlight text={project.client} match={search} />
                       {(!hasDescription || !hasMedia) && (
                         <span className="flex gap-0.5 ml-0.5">
                           {!hasDescription && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="Missing description" />}
@@ -162,7 +166,14 @@ export function ProjectTable() {
                       className={cellInputClass}
                     />
                   ) : (
-                    project.projectName
+                    <span className="flex items-center gap-1.5">
+                      <Highlight text={project.projectName} match={search} />
+                      {search && matches.get(project.id) && !HIGHLIGHT_FIELDS.has(matches.get(project.id)!) && (
+                        <span className="text-[9px] font-[450] uppercase tracking-[0.06em] text-[var(--c-gray-400)] bg-[var(--c-gray-100)] px-1.5 py-0.5 rounded-sm">
+                          {matches.get(project.id)}
+                        </span>
+                      )}
+                    </span>
                   )}
                 </td>
 

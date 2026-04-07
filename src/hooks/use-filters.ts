@@ -1,23 +1,28 @@
 'use client'
 
 import { useMemo } from 'react'
+import Fuse, { type IFuseOptions } from 'fuse.js'
 import { useProjectStore, type Filters } from '@/stores/project-store'
 import type { ProjectSummary } from '@/lib/types'
 
-function matchesSearch(project: ProjectSummary, search: string): boolean {
-  if (!search) return true
-  const lower = search.toLowerCase()
-  return (
-    project.client.toLowerCase().includes(lower) ||
-    project.projectName.toLowerCase().includes(lower) ||
-    project.fullName.toLowerCase().includes(lower) ||
-    project.description.toLowerCase().includes(lower) ||
-    project.tagline.toLowerCase().includes(lower) ||
-    project.output.toLowerCase().includes(lower) ||
-    project.domains.some((d) => d.toLowerCase().includes(lower)) ||
-    project.services.some((s) => s.toLowerCase().includes(lower)) ||
-    project.team.some((t) => t.toLowerCase().includes(lower))
-  )
+const FUSE_KEYS: IFuseOptions<ProjectSummary>['keys'] = [
+  'client',
+  'projectName',
+  'fullName',
+  'tagline',
+  'description',
+  'output',
+  'domains',
+  'services',
+  'team',
+]
+
+const FUSE_OPTIONS: IFuseOptions<ProjectSummary> = {
+  keys: FUSE_KEYS,
+  threshold: 0.3,
+  ignoreLocation: true,
+  includeMatches: true,
+  minMatchCharLength: 2,
 }
 
 function matchesFilters(project: ProjectSummary, filters: Filters): boolean {
@@ -108,16 +113,51 @@ function sortProjects(projects: ProjectSummary[], field: string, direction: 'asc
   return direction === 'desc' ? sorted.reverse() : sorted
 }
 
+function useFuse(projects: ProjectSummary[]) {
+  return useMemo(() => new Fuse(projects, FUSE_OPTIONS), [projects])
+}
+
+function searchProjects(
+  projects: ProjectSummary[],
+  fuse: Fuse<ProjectSummary>,
+  search: string
+): { results: ProjectSummary[]; matches: Map<string, string> } {
+  if (!search) return { results: projects, matches: new Map() }
+  const hits = fuse.search(search)
+  const matches = new Map<string, string>()
+  const results: ProjectSummary[] = []
+  for (const hit of hits) {
+    results.push(hit.item)
+    const first = hit.matches?.[0]
+    if (first?.key) matches.set(hit.item.id, first.key)
+  }
+  return { results, matches }
+}
+
 export function useFilteredProjects() {
   const { projects, filters, sortField, sortDirection } = useProjectStore()
+  const fuse = useFuse(projects)
 
   return useMemo(() => {
-    const filtered = projects
-      .filter((p) => matchesSearch(p, filters.search))
-      .filter((p) => matchesFilters(p, filters))
-
+    const { results } = searchProjects(projects, fuse, filters.search)
+    const filtered = results.filter((p) => matchesFilters(p, filters))
     return sortProjects(filtered, sortField, sortDirection)
-  }, [projects, filters, sortField, sortDirection])
+  }, [projects, fuse, filters, sortField, sortDirection])
+}
+
+export function useFilteredProjectsWithMatches(): {
+  projects: ProjectSummary[]
+  matches: Map<string, string>
+} {
+  const { projects, filters, sortField, sortDirection } = useProjectStore()
+  const fuse = useFuse(projects)
+
+  return useMemo(() => {
+    const { results, matches } = searchProjects(projects, fuse, filters.search)
+    const filtered = results.filter((p) => matchesFilters(p, filters))
+    const sorted = sortProjects(filtered, sortField, sortDirection)
+    return { projects: sorted, matches }
+  }, [projects, fuse, filters, sortField, sortDirection])
 }
 
 export function useFilterOptions() {
