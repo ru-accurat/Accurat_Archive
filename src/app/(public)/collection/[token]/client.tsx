@@ -34,6 +34,12 @@ export function SharedCollectionClient({ token }: { token: string }) {
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
+    // Anonymous view tracking (collection-level)
+    fetch(`/api/public/collection/${token}/track-view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    }).catch(() => {})
     fetch(`/api/public/collection/${token}`)
       .then((r) => {
         if (!r.ok) { setNotFound(true); setLoading(false); return null }
@@ -115,7 +121,8 @@ export function SharedCollectionClient({ token }: { token: string }) {
 
   return (
     <div className="max-w-[1200px] px-4 sm:px-6 md:px-[48px] py-12 mx-auto">
-      <div className="mb-10">
+      <div className="mb-10 flex items-start justify-between gap-4">
+        <div>
         <h1 className="text-[1.6rem] sm:text-[2rem] font-[250] tracking-[-0.02em] text-[var(--c-gray-900)]">
           {collection.name}
         </h1>
@@ -128,6 +135,15 @@ export function SharedCollectionClient({ token }: { token: string }) {
         <p className="text-[12px] text-[var(--c-gray-400)] mt-2">
           {collection.projects.length} project{collection.projects.length !== 1 ? 's' : ''}
         </p>
+        </div>
+        {collection.projects.length > 0 && (
+          <Link
+            href={`/collection/${token}/presentation`}
+            className="shrink-0 text-[11px] font-[450] px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] text-[var(--c-gray-700)] hover:bg-[var(--c-gray-50)] transition-colors"
+          >
+            Present →
+          </Link>
+        )}
       </div>
 
       {collection.projects.length === 0 ? (

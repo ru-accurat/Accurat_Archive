@@ -362,4 +362,20 @@ export const api = {
 
   deleteImportBatch: (batchId: string): Promise<{ deleted: number }> =>
     fetch(`/api/engagements/import/${batchId}`, { method: 'DELETE' }).then(r => json(r)),
+
+  // Collection templates
+  getCollectionTemplates: (): Promise<{
+    id: string
+    name: string
+    description: string
+    groups: { name: string; subtitle?: string }[]
+  }[]> => fetch('/api/collection-templates').then(r => json(r)),
+
+  // Collection analytics
+  getCollectionAnalytics: (id: string): Promise<{
+    totalViews: number
+    uniqueVisitors: number
+    lastViewedAt: string | null
+    topProjects: { id: string; client: string; projectName: string; views: number }[]
+  }> => fetch(`/api/collections/${id}/analytics`).then(r => json(r)),
 }
