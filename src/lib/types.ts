@@ -38,6 +38,8 @@ export interface Project {
   latitude?: number | null
   longitude?: number | null
   shareToken?: string | null
+  publishedAt?: string | null
+  hasUnpublishedChanges?: boolean
 }
 
 /**
