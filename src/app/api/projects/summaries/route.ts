@@ -6,7 +6,7 @@ import type { ProjectSummaryRow } from '@/lib/db-utils'
 // Columns needed to compute ProjectSummary. We select challenge/solution/etc
 // only for the completeness count, not to ship them to the client.
 const SUMMARY_COLUMNS = [
-  'id', 'full_name', 'client', 'project_name', 'tier', 'section',
+  'id', 'full_name', 'client', 'client_2', 'agency', 'project_name', 'tier', 'section',
   'start_year', 'end_year', 'domains', 'services', 'tagline', 'description',
   'challenge', 'solution', 'deliverables', 'client_quotes',
   'team', 'urls', 'output', 'folder_name', 'media_order', 'hero_image',
