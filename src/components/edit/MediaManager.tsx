@@ -27,12 +27,12 @@ import { isVideo, formatFileSize, getFileExt } from '@/lib/format'
 interface Props {
   media: MediaFile[]
   folderName: string
-  heroIndex: number
-  thumbIndex: number
+  heroFilename: string | null
+  thumbFilename: string | null
   clientLogo: string | null
   pdfFiles: string[]
-  onHeroChange: (index: number) => void
-  onThumbChange: (index: number) => void
+  onHeroChange: (filename: string) => void
+  onThumbChange: (filename: string) => void
   onGalleryReorder: (orderedFilenames: string[]) => void
   onAddMedia: () => void
   onDeleteMedia: (filenames: string[]) => void
@@ -47,7 +47,6 @@ interface Props {
 
 function SortableMediaItem({
   item,
-  index,
   folderName,
   isHero,
   isThumb,
@@ -58,14 +57,13 @@ function SortableMediaItem({
   onToggleDelete,
 }: {
   item: MediaFile
-  index: number
   folderName: string
   isHero: boolean
   isThumb: boolean
   isSelecting: boolean
   deleteMode: boolean
   isSelectedForDelete: boolean
-  onSelect: (index: number) => void
+  onSelect: (filename: string) => void
   onToggleDelete: (filename: string) => void
 }) {
   const {
@@ -87,7 +85,7 @@ function SortableMediaItem({
   const src = mediaUrl(folderName, item.filename)
 
   const handleClick = () => {
-    if (isSelecting) onSelect(index)
+    if (isSelecting) onSelect(item.filename)
     else if (deleteMode) onToggleDelete(item.filename)
   }
 
@@ -172,8 +170,8 @@ function SortableMediaItem({
 export function MediaManager({
   media,
   folderName,
-  heroIndex,
-  thumbIndex,
+  heroFilename,
+  thumbFilename,
   clientLogo,
   pdfFiles,
   onHeroChange,
@@ -200,10 +198,10 @@ export function MediaManager({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  const handleSelect = (index: number) => {
+  const handleSelect = (filename: string) => {
     if (!selectingFor) return
-    if (selectingFor === 'hero') onHeroChange(index)
-    else if (selectingFor === 'thumb') onThumbChange(index)
+    if (selectingFor === 'hero') onHeroChange(filename)
+    else if (selectingFor === 'thumb') onThumbChange(filename)
     setSelectingFor(null)
   }
 
@@ -251,6 +249,8 @@ export function MediaManager({
   }
 
   const isSelecting = selectingFor !== null
+  const heroMedia = heroFilename ? media.find((m) => m.filename === heroFilename) : null
+  const thumbMedia = thumbFilename ? media.find((m) => m.filename === thumbFilename) : null
 
   return (
     <div className="py-8 mt-4 border-t border-[var(--c-gray-200)]">
@@ -352,17 +352,17 @@ export function MediaManager({
                 {selectingFor === 'hero' ? 'Select below...' : 'Change'}
               </button>
             </div>
-            {media[heroIndex] && (
+            {heroMedia && (
               <div className="w-48 h-28 overflow-hidden bg-[var(--c-gray-100)]">
-                {isVideo(media[heroIndex].filename) ? (
+                {isVideo(heroMedia.filename) ? (
                   <video
-                    src={mediaUrl(folderName, media[heroIndex].filename)}
+                    src={mediaUrl(folderName, heroMedia.filename)}
                     className="w-full h-full object-cover"
                     preload="metadata"
                   />
                 ) : (
                   <img
-                    src={mediaUrl(folderName, media[heroIndex].filename)}
+                    src={mediaUrl(folderName, heroMedia.filename)}
                     className="w-full h-full object-cover"
                     alt="Hero"
                   />
@@ -386,17 +386,17 @@ export function MediaManager({
                 {selectingFor === 'thumb' ? 'Select below...' : 'Change'}
               </button>
             </div>
-            {media[thumbIndex] !== undefined && media[thumbIndex] ? (
+            {thumbMedia ? (
               <div className="w-28 h-28 overflow-hidden bg-[var(--c-gray-100)]">
-                {isVideo(media[thumbIndex].filename) ? (
+                {isVideo(thumbMedia.filename) ? (
                   <video
-                    src={mediaUrl(folderName, media[thumbIndex].filename)}
+                    src={mediaUrl(folderName, thumbMedia.filename)}
                     className="w-full h-full object-cover"
                     preload="metadata"
                   />
                 ) : (
                   <img
-                    src={mediaUrl(folderName, media[thumbIndex].filename)}
+                    src={mediaUrl(folderName, thumbMedia.filename)}
                     className="w-full h-full object-cover"
                     alt="Thumbnail"
                   />
@@ -423,14 +423,13 @@ export function MediaManager({
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={media.map((m) => m.filename)} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-6 gap-2">
-              {media.map((m, i) => (
+              {media.map((m) => (
                 <SortableMediaItem
                   key={m.filename}
                   item={m}
-                  index={i}
                   folderName={folderName}
-                  isHero={i === heroIndex}
-                  isThumb={i === thumbIndex}
+                  isHero={m.filename === heroFilename}
+                  isThumb={m.filename === thumbFilename}
                   isSelecting={isSelecting}
                   deleteMode={deleteMode}
                   isSelectedForDelete={selectedForDelete.has(m.filename)}
