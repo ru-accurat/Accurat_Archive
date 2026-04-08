@@ -49,8 +49,8 @@ export default function ProjectPage() {
   const [editMode, setEditMode] = useState(false)
   const [draft, setDraft] = useState<Project | null>(null)
   const [saving, setSaving] = useState(false)
-  const [heroIndex, setHeroIndex] = useState(0)
-  const [thumbIndex, setThumbIndex] = useState(-1)
+  const [heroFilename, setHeroFilename] = useState<string | null>(null)
+  const [thumbFilename, setThumbFilename] = useState<string | null>(null)
   const [aiResult, setAiResult] = useState<{ field: string; text: string } | null>(null)
   const [allTags, setAllTags] = useState<{ domains: string[]; services: string[]; outputs: string[] }>({ domains: [], services: [], outputs: [] })
   const [uploadProgress, setUploadProgress] = useState<{ active: boolean; message: string; done: boolean }>({ active: false, message: '', done: false })
@@ -75,22 +75,11 @@ export default function ProjectPage() {
   const enterEdit = useCallback(() => {
     if (project) {
       setDraft({ ...project })
-      const heroFile = project.heroImage || heroMedia?.filename
-      if (heroFile) {
-        const idx = media.findIndex((m) => m.filename === heroFile)
-        setHeroIndex(idx >= 0 ? idx : 0)
-      } else {
-        setHeroIndex(0)
-      }
-      if (project.thumbImage) {
-        const tIdx = media.findIndex((m) => m.filename === project.thumbImage)
-        setThumbIndex(tIdx >= 0 ? tIdx : -1)
-      } else {
-        setThumbIndex(-1)
-      }
+      setHeroFilename(project.heroImage || heroMedia?.filename || null)
+      setThumbFilename(project.thumbImage || null)
       setEditMode(true)
     }
-  }, [project, media, heroMedia])
+  }, [project, heroMedia])
 
   const cancelEdit = useCallback(() => { setDraft(null); setEditMode(false) }, [])
 
@@ -392,11 +381,11 @@ export default function ProjectPage() {
           <EditableUrlsField urls={p.urls} onChange={(v) => setField('urls', v)} />
           <EditableTagsField title="Team" tags={p.team} onChange={(v) => setField('team', v)} placeholder="Add team member..." />
           <MediaManager
-            media={media} folderName={p.folderName} heroIndex={heroIndex} thumbIndex={thumbIndex}
+            media={media} folderName={p.folderName} heroFilename={heroFilename} thumbFilename={thumbFilename}
             clientLogo={p.clientLogo || null}
             pdfFiles={p.pdfFiles || []}
-            onHeroChange={(idx) => { setHeroIndex(idx); if (media[idx]) setField('heroImage', media[idx].filename) }}
-            onThumbChange={(idx) => { setThumbIndex(idx); if (media[idx]) setField('thumbImage', media[idx].filename) }}
+            onHeroChange={(filename) => { setHeroFilename(filename); setField('heroImage', filename) }}
+            onThumbChange={(filename) => { setThumbFilename(filename); setField('thumbImage', filename) }}
             onGalleryReorder={handleReorderMedia}
             onAddMedia={handleAddMedia} onDeleteMedia={handleDeleteMedia}
             onUploadLogo={handleUploadLogo} onDeleteLogo={handleDeleteLogo}
