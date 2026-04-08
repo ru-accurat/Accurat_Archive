@@ -43,6 +43,7 @@ const NAV_GROUPS: NavGroup[] = [
     name: 'Admin',
     items: [
       { label: 'Attention', path: '/needs-attention' },
+      { label: 'Team', path: '/team' },
       { label: 'Tags', path: '/tags' },
       { label: 'Capabilities', path: '/capabilities' },
       { label: 'Activity', path: '/activity' },

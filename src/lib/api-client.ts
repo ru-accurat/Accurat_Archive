@@ -336,6 +336,21 @@ export const api = {
       body: JSON.stringify({ projectIds })
     }).then(r => json(r)),
 
+  // Team
+  getTeam: (): Promise<Array<{ name: string; projectCount: number; domains: string[]; services: string[]; firstYear: number | null; lastYear: number | null }>> =>
+    fetch('/api/team').then(r => json(r)),
+
+  getTeamMember: (name: string): Promise<{
+    name: string
+    projectCount: number
+    topDomains: { name: string; count: number }[]
+    topServices: { name: string; count: number }[]
+    firstYear: number | null
+    lastYear: number | null
+    projects: Project[]
+  }> =>
+    fetch(`/api/team/${encodeURIComponent(name)}`).then(r => json(r)),
+
   // Clients
   getClients: (): Promise<Client[]> =>
     fetch('/api/clients').then(r => json(r)),
