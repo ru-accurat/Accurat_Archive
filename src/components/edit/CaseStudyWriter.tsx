@@ -17,7 +17,7 @@ interface CaseStudyWriterProps {
     deliverables?: string
   }
   onClose: () => void
-  onAccept: (fields: Record<string, string>) => void
+  onAccept: (fields: Record<string, unknown>) => void
 }
 
 type Quality = 'fast' | 'premium'
@@ -102,6 +102,7 @@ export function CaseStudyWriter({ open, projectId, currentValues, onClose, onAcc
   const [quality, setQuality] = useState<Quality>('fast')
   const [loading, setLoading] = useState(false)
   const [generated, setGenerated] = useState<Record<string, string> | null>(null)
+  const [generatedLocation, setGeneratedLocation] = useState<{ locationName?: string; latitude?: number; longitude?: number } | null>(null)
   const [accepted, setAccepted] = useState<Set<string>>(new Set())
   const [tokensUsed, setTokensUsed] = useState<number | null>(null)
 
@@ -171,6 +172,7 @@ export function CaseStudyWriter({ open, projectId, currentValues, onClose, onAcc
       })
       if (data.success && data.fields) {
         setGenerated(data.fields)
+        setGeneratedLocation(data.location && Object.keys(data.location).length > 0 ? data.location : null)
         setTokensUsed(data.tokensUsed || null)
         // Persist as a draft
         try {
@@ -198,9 +200,15 @@ export function CaseStudyWriter({ open, projectId, currentValues, onClose, onAcc
 
   const handleAcceptAll = useCallback(() => {
     if (!generated) return
-    onAccept(generated)
+    const payload: Record<string, unknown> = { ...generated }
+    if (generatedLocation) {
+      if (generatedLocation.locationName) payload.locationName = generatedLocation.locationName
+      if (generatedLocation.latitude !== undefined) payload.latitude = generatedLocation.latitude
+      if (generatedLocation.longitude !== undefined) payload.longitude = generatedLocation.longitude
+    }
+    onAccept(payload)
     onClose()
-  }, [generated, onAccept, onClose])
+  }, [generated, generatedLocation, onAccept, onClose])
 
   const handleAcceptField = useCallback((field: string) => {
     if (!generated?.[field]) return

@@ -204,6 +204,9 @@ DESCRIPTION: (100-200 words)
 CHALLENGE: (15-35 words)
 SOLUTION: (15-35 words)
 DELIVERABLES: (comma-separated list)
+LOCATION_NAME: (city, country — ONLY if clearly inferable from client HQ, an explicitly referenced event venue, or unambiguous mention; otherwise the literal word NULL)
+LATITUDE: (decimal number matching LOCATION_NAME; otherwise NULL)
+LONGITUDE: (decimal number matching LOCATION_NAME; otherwise NULL)
 
 Write only the content. No preamble, no explanation, no markdown formatting.`
       } else {
@@ -219,6 +222,9 @@ DESCRIPTION: (100-200 words)
 CHALLENGE: (15-35 words)
 SOLUTION: (15-35 words)
 DELIVERABLES: (comma-separated list)
+LOCATION_NAME: (city, country — ONLY if clearly inferable from client HQ, an explicitly referenced event venue, or unambiguous mention; otherwise the literal word NULL)
+LATITUDE: (decimal number matching LOCATION_NAME; otherwise NULL)
+LONGITUDE: (decimal number matching LOCATION_NAME; otherwise NULL)
 
 Write only the content. No preamble, no explanation, no markdown formatting.`
       }
@@ -236,14 +242,30 @@ Write only the content. No preamble, no explanation, no markdown formatting.`
       const fields: Record<string, string> = {}
       const fieldNames = ['tagline', 'description', 'challenge', 'solution', 'deliverables']
       for (const f of fieldNames) {
-        const regex = new RegExp(`${f.toUpperCase()}:\\s*(.+?)(?=\\n[A-Z]+:|$)`, 's')
+        const regex = new RegExp(`${f.toUpperCase()}:\\s*(.+?)(?=\\n[A-Z_]+:|$)`, 's')
         const match = text.match(regex)
         if (match) fields[f] = match[1].trim()
       }
 
+      // Parse optional location fields
+      const location: { locationName?: string; latitude?: number; longitude?: number } = {}
+      const parseVal = (label: string) => {
+        const m = text.match(new RegExp(`${label}:\\s*(.+?)(?=\\n[A-Z_]+:|$)`, 's'))
+        return m ? m[1].trim() : ''
+      }
+      const locName = parseVal('LOCATION_NAME')
+      const latRaw = parseVal('LATITUDE')
+      const lonRaw = parseVal('LONGITUDE')
+      if (locName && !/^null$/i.test(locName)) location.locationName = locName
+      const lat = parseFloat(latRaw)
+      const lon = parseFloat(lonRaw)
+      if (!Number.isNaN(lat) && !/^null$/i.test(latRaw)) location.latitude = lat
+      if (!Number.isNaN(lon) && !/^null$/i.test(lonRaw)) location.longitude = lon
+
       return NextResponse.json({
         success: true,
         fields,
+        location,
         isIterative: hasExistingContent && !!notes,
         tokensUsed: response.usage?.input_tokens + response.usage?.output_tokens,
       })

@@ -191,7 +191,7 @@ export const api = {
       body: JSON.stringify({ projectId, fieldName })
     }).then(r => json(r)),
 
-  generateCaseStudy: (projectId: string, opts: { notes?: string; quality?: string; referenceProjectId?: string }): Promise<{ success: boolean; fields?: Record<string, string>; tokensUsed?: number; isIterative?: boolean; message?: string }> =>
+  generateCaseStudy: (projectId: string, opts: { notes?: string; quality?: string; referenceProjectId?: string }): Promise<{ success: boolean; fields?: Record<string, string>; location?: { locationName?: string; latitude?: number; longitude?: number }; tokensUsed?: number; isIterative?: boolean; message?: string }> =>
     fetch('/api/ai/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
