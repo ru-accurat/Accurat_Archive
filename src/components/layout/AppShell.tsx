@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
+import { CommandPalette } from '@/components/CommandPalette'
+import { ProductTour } from '@/components/onboarding/ProductTour'
 
 interface NavItem {
   label: string
@@ -245,6 +247,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1 overflow-hidden">
         {children}
       </div>
+
+      <CommandPalette />
+      <ProductTour />
     </div>
   )
 }
