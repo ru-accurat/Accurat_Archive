@@ -7,9 +7,13 @@ import { pdfUrl } from '@/lib/media-url'
 interface Props {
   project: Project
   galleryMedia: MediaFile[]
+  onAddMedia?: () => void
+  onDeleteMedia?: (filename: string) => void
+  onSetHero?: (filename: string) => void
+  onSetThumb?: (filename: string) => void
 }
 
-export function ProjectMediaSection({ project, galleryMedia }: Props) {
+export function ProjectMediaSection({ project, galleryMedia, onAddMedia, onDeleteMedia, onSetHero, onSetThumb }: Props) {
   return (
     <>
       {(project.pdfFiles?.length ?? 0) > 0 && (
@@ -35,7 +39,16 @@ export function ProjectMediaSection({ project, galleryMedia }: Props) {
           </div>
         </div>
       )}
-      <GalleryGrid media={galleryMedia} folderName={project.folderName} />
+      <GalleryGrid
+        media={galleryMedia}
+        folderName={project.folderName}
+        heroFilename={project.heroImage || null}
+        thumbFilename={project.thumbImage || null}
+        onAddMedia={onAddMedia}
+        onDeleteMedia={onDeleteMedia}
+        onSetHero={onSetHero}
+        onSetThumb={onSetThumb}
+      />
     </>
   )
 }

@@ -9,9 +9,16 @@ import { isInUseImage } from '@/lib/media-naming'
 interface Props {
   media: MediaFile[]
   folderName: string
+  heroFilename?: string | null
+  thumbFilename?: string | null
+  onAddMedia?: () => void
+  onDeleteMedia?: (filename: string) => void
+  onSetHero?: (filename: string) => void
+  onSetThumb?: (filename: string) => void
 }
 
-export function GalleryGrid({ media, folderName }: Props) {
+export function GalleryGrid({ media, folderName, heroFilename, thumbFilename, onAddMedia, onDeleteMedia, onSetHero, onSetThumb }: Props) {
+  const editable = !!(onAddMedia || onDeleteMedia || onSetHero || onSetThumb)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   // Keyboard navigation in lightbox
@@ -39,13 +46,23 @@ export function GalleryGrid({ media, folderName }: Props) {
     }
   }, [lightboxIndex, handleLightboxKey])
 
-  if (media.length === 0) return null
+  if (media.length === 0 && !editable) return null
 
   return (
     <>
-      <h3 className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] mb-6">
-        Gallery
-      </h3>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)]">
+          Gallery
+        </h3>
+        {onAddMedia && (
+          <button
+            onClick={onAddMedia}
+            className="text-[10px] font-[500] uppercase tracking-[0.08em] px-2.5 py-1 rounded-[var(--radius-sm)] border border-[var(--c-gray-200)] text-[var(--c-gray-600)] hover:bg-[var(--c-gray-50)] transition-colors"
+          >
+            + Add media
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {media.map((m, i) => {
           const src = m.path
@@ -82,6 +99,48 @@ export function GalleryGrid({ media, folderName }: Props) {
               {isInUseImage(m.filename) && (
                 <div className="absolute top-1.5 left-1.5 text-[9px] font-[500] uppercase tracking-[0.05em] text-white bg-black/70 px-1.5 py-0.5 rounded-[2px]">
                   In-Use
+                </div>
+              )}
+              {/* Hero/Thumb labels */}
+              {heroFilename === m.filename && (
+                <div className="absolute top-1.5 right-1.5 text-[9px] font-[500] uppercase tracking-[0.05em] text-white bg-[var(--c-ai)]/90 px-1.5 py-0.5 rounded-[2px]">Hero</div>
+              )}
+              {thumbFilename === m.filename && heroFilename !== m.filename && (
+                <div className="absolute top-1.5 right-1.5 text-[9px] font-[500] uppercase tracking-[0.05em] text-white bg-black/70 px-1.5 py-0.5 rounded-[2px]">Thumb</div>
+              )}
+              {/* Edit actions overlay */}
+              {editable && (
+                <div
+                  className="absolute inset-x-0 top-0 flex items-start justify-end gap-1 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {onSetHero && heroFilename !== m.filename && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onSetHero(m.filename) }}
+                      className="text-[9px] font-[500] uppercase tracking-[0.05em] px-1.5 py-0.5 rounded-[2px] bg-white/90 text-[var(--c-gray-900)] hover:bg-white"
+                      title="Set as hero"
+                    >
+                      Hero
+                    </button>
+                  )}
+                  {onSetThumb && thumbFilename !== m.filename && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onSetThumb(m.filename) }}
+                      className="text-[9px] font-[500] uppercase tracking-[0.05em] px-1.5 py-0.5 rounded-[2px] bg-white/90 text-[var(--c-gray-900)] hover:bg-white"
+                      title="Set as thumbnail"
+                    >
+                      Thumb
+                    </button>
+                  )}
+                  {onDeleteMedia && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); if (confirm(`Delete ${m.filename}?`)) onDeleteMedia(m.filename) }}
+                      className="text-[10px] font-[600] leading-none px-1.5 py-0.5 rounded-[2px] bg-red-500/90 text-white hover:bg-red-600"
+                      title="Delete"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               )}
               {/* File info caption */}

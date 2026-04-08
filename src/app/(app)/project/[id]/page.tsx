@@ -464,6 +464,7 @@ export default function ProjectPage() {
 
   return (
     <div className="h-full overflow-y-auto bg-[var(--c-black)]">
+      {fileInput}
       <div className="bg-[var(--c-black)] text-white">
         <div className="sticky top-0 z-40 bg-[var(--c-black)]/80 backdrop-blur-xl">
           <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-3 flex items-center justify-between">
@@ -540,7 +541,14 @@ export default function ProjectPage() {
           <div className="mb-12">
             <ProjectLinksSection project={p} onUpdate={handleFieldUpdate} />
           </div>
-          <ProjectMediaSection project={p} galleryMedia={galleryMedia} />
+          <ProjectMediaSection
+            project={p}
+            galleryMedia={galleryMedia}
+            onAddMedia={handleAddMedia}
+            onDeleteMedia={(filename) => handleDeleteMedia([filename])}
+            onSetHero={(filename) => handleFieldUpdate('heroImage', filename)}
+            onSetThumb={(filename) => handleFieldUpdate('thumbImage', filename)}
+          />
           <ProjectSidebar project={p} />
         </div>
       </div>
