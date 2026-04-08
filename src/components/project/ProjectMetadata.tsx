@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import type { Project } from '@/lib/types'
 import { InlineEditCell } from '@/components/shared/InlineEditCell'
+import { LocationAutocomplete } from '@/components/edit/LocationAutocomplete'
 
 interface ProjectMetadataProps {
   project: Project
@@ -84,13 +86,57 @@ export function ProjectMetadata({ project, onUpdate }: ProjectMetadataProps) {
         />
       </div>
       <div className="min-w-[140px] flex-1">
-        <InlineEditCell
-          value={project.locationName || ''}
-          onSave={(v) => onUpdate('locationName', v)}
-          placeholder="Location"
-          className="!text-white/50 !bg-transparent hover:!bg-white/5"
-        />
+        <LocationInlineEdit project={project} onUpdate={onUpdate} />
       </div>
+    </div>
+  )
+}
+
+function LocationInlineEdit({
+  project,
+  onUpdate,
+}: {
+  project: Project
+  onUpdate: (field: keyof Project, value: unknown) => Promise<void>
+}) {
+  const [editing, setEditing] = useState(false)
+  const display = project.locationName || 'Location'
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => setEditing(true)}
+        className={`text-left text-[12px] px-2 py-1 rounded-[var(--radius-sm)] hover:bg-white/5 transition-colors w-full ${
+          project.locationName ? 'text-white/50' : 'text-white/30'
+        }`}
+      >
+        {display}
+      </button>
+    )
+  }
+
+  return (
+    <div onBlur={(e) => {
+      // Close when focus leaves the wrapper
+      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+        setTimeout(() => setEditing(false), 200)
+      }
+    }}>
+      <LocationAutocomplete
+        locationName={project.locationName || ''}
+        autoFocus
+        inputClassName="text-[12px] bg-white border border-[var(--c-gray-300)] rounded-[var(--radius-sm)] px-2 py-1 outline-none focus:border-[var(--c-gray-900)] w-full text-[var(--c-gray-800)]"
+        onSelect={async (name, lat, lon) => {
+          await onUpdate('locationName', name)
+          await onUpdate('latitude', lat)
+          await onUpdate('longitude', lon)
+          setEditing(false)
+        }}
+        onNameChange={async (name) => {
+          await onUpdate('locationName', name)
+          setEditing(false)
+        }}
+      />
     </div>
   )
 }

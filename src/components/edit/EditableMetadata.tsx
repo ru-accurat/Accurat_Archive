@@ -1,5 +1,7 @@
 'use client'
 
+import { LocationAutocomplete } from './LocationAutocomplete'
+
 interface Props {
   client: string
   start: number | null
@@ -143,40 +145,25 @@ export function EditableMetadata({
         </select>
       </div>
 
-      <div>
-        <label className={labelClass}>Location</label>
-        <input
-          type="text"
-          value={locationName}
-          onChange={(e) => onLocationNameChange(e.target.value)}
-          placeholder="e.g. Milan, Italy"
-          className={inputClass}
+      <div className="sm:col-span-2 md:col-span-2">
+        <label className={labelClass}>
+          Location
+          {(latitude != null || longitude != null) && (
+            <span className="ml-2 normal-case tracking-normal text-[var(--c-gray-400)]">
+              {latitude?.toFixed(4)}, {longitude?.toFixed(4)}
+            </span>
+          )}
+        </label>
+        <LocationAutocomplete
+          locationName={locationName}
+          inputClassName={inputClass}
+          onSelect={(name, lat, lon) => {
+            onLocationNameChange(name)
+            onLatitudeChange(lat)
+            onLongitudeChange(lon)
+          }}
+          onNameChange={(name) => onLocationNameChange(name)}
         />
-      </div>
-
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <label className={labelClass}>Latitude</label>
-          <input
-            type="number"
-            step="any"
-            value={latitude ?? ''}
-            onChange={(e) => onLatitudeChange(e.target.value ? parseFloat(e.target.value) : null)}
-            placeholder="45.4642"
-            className={inputClass}
-          />
-        </div>
-        <div className="flex-1">
-          <label className={labelClass}>Longitude</label>
-          <input
-            type="number"
-            step="any"
-            value={longitude ?? ''}
-            onChange={(e) => onLongitudeChange(e.target.value ? parseFloat(e.target.value) : null)}
-            placeholder="9.1900"
-            className={inputClass}
-          />
-        </div>
       </div>
     </div>
   )
