@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import type { MediaFile } from '@/lib/types'
 import { isVideo, formatFileSize, getFileExt } from '@/lib/format'
+import { isInUseImage } from '@/lib/media-naming'
 
 interface Props {
   media: MediaFile[]
@@ -76,6 +77,12 @@ export function GalleryGrid({ media, folderName }: Props) {
                   className="object-cover"
                   loading="lazy"
                 />
+              )}
+              {/* In-Use badge */}
+              {isInUseImage(m.filename) && (
+                <div className="absolute top-1.5 left-1.5 text-[9px] font-[500] uppercase tracking-[0.05em] text-white bg-black/70 px-1.5 py-0.5 rounded-[2px]">
+                  In-Use
+                </div>
               )}
               {/* File info caption */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1.5">

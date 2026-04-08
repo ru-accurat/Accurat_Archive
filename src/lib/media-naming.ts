@@ -12,14 +12,16 @@ function escapeRegex(s: string): string {
 }
 
 function buildPattern(folder: string): RegExp {
-  // Captures: 1=optional "inuse" prefix marker, 2=NN, 3=ext
-  return new RegExp(
-    `^${escapeRegex(folder)}_(inuse_)?(\\d{2,})\\.([a-z0-9]+)$`
-  )
+  return new RegExp(`^${escapeRegex(folder)}_(inuse_)?(\\d{2,})\\.([a-z0-9]+)$`)
 }
 
 export function isConventional(folder: string, filename: string): boolean {
   return buildPattern(folder).test(filename)
+}
+
+/** Returns true if the filename is an in-use generated image. */
+export function isInUseImage(filename: string): boolean {
+  return /_inuse[_.]/i.test(filename)
 }
 
 function parseSeq(folder: string, filename: string): { inuse: boolean; seq: number; ext: string } | null {
@@ -29,7 +31,6 @@ function parseSeq(folder: string, filename: string): { inuse: boolean; seq: numb
 }
 
 function hasInusePrefix(filename: string): boolean {
-  // Detect the legacy/general "inuse" marker anywhere recognizable in original name.
   return /(^|[_\-\s])inuse([_\-\s.]|$)/i.test(filename)
 }
 
@@ -55,14 +56,6 @@ export function nextConventionalName(
   return `${folder}_${mid}${nn}.${cleanExt}`
 }
 
-/**
- * Lists all files in a project folder and renames non-conforming ones to the
- * convention. Performs storage moves in place. Returns a map of old→new names
- * (basename only, not full storage path) so callers can update DB references.
- *
- * Files already matching the convention are NOT renamed.
- * Files whose original name carries an "inuse" marker get the inuse prefix.
- */
 export async function normalizeFolderFiles(
   supabase: SupabaseClient,
   folder: string
@@ -75,7 +68,6 @@ export async function normalizeFolderFiles(
 
   if (error || !files) return renames
 
-  // Existing conventional names (used to seed sequence allocation).
   const existingNames: string[] = files
     .map(f => f.name)
     .filter(n => isConventional(folder, n))

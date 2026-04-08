@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       .webp({ quality: 30 })
       .toBuffer() as Buffer<ArrayBuffer>
   }
-  const filename = `_inuse_${Date.now()}.webp`
+  const filename = `${project.folder_name}_inuse_${Date.now()}.webp`
   const storagePath = `${project.folder_name}/${filename}`
 
   // Upload to Supabase storage
