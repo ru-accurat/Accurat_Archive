@@ -71,6 +71,7 @@ export function rowToProject(row: ProjectRow): Project {
     latitude: row.latitude,
     longitude: row.longitude,
     shareToken: row.share_token,
+    updatedAt: row.updated_at,
   }
 }
 
