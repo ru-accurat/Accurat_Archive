@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "media:normalize": "tsx scripts/rename-all-media.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",

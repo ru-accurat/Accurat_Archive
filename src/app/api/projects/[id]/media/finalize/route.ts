@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { MEDIA_EXTS } from '@/lib/media-types'
+import { normalizeFolderFiles } from '@/lib/media-naming'
 import sharp from 'sharp'
 
 // Extensions that need conversion to WebP for universal browser support
@@ -19,7 +20,7 @@ export async function POST(
 
   const { data: project } = await supabase
     .from('projects')
-    .select('folder_name, hero_image')
+    .select('folder_name, hero_image, thumb_image, media_order')
     .eq('id', id)
     .single()
 
@@ -83,7 +84,15 @@ export async function POST(
     }
   }
 
-  // Re-list files after conversions
+  // Normalize file names to the convention {folder}_{NN}.{ext}.
+  // Files already conforming are left untouched.
+  const renames = await normalizeFolderFiles(supabase, folder)
+  const remap = (name: string | null | undefined): string | null | undefined => {
+    if (!name) return name
+    return renames[name] ?? name
+  }
+
+  // Re-list files after conversions + renames
   const { data: finalFiles } = await supabase.storage
     .from('project-media')
     .list(folder, { sortBy: { column: 'name', order: 'asc' } })
@@ -98,14 +107,22 @@ export async function POST(
   const updates: Record<string, unknown> = { media_order: mediaOrder }
 
   // Fix hero_image reference if it was converted
-  if (project.hero_image) {
-    const heroExt = '.' + project.hero_image.split('.').pop()?.toLowerCase()
+  let currentHero = project.hero_image as string | null | undefined
+  if (currentHero) {
+    const heroExt = '.' + currentHero.split('.').pop()?.toLowerCase()
     if (CONVERT_EXTS.has(heroExt)) {
-      const newHero = project.hero_image.replace(/\.[^.]+$/, '.webp')
-      if (mediaOrder.includes(newHero)) {
-        updates.hero_image = newHero
-      }
+      const newHero = currentHero.replace(/\.[^.]+$/, '.webp')
+      currentHero = newHero
     }
+  }
+  // Apply rename remap to hero/thumb
+  const remappedHero = remap(currentHero)
+  if (remappedHero && remappedHero !== project.hero_image && mediaOrder.includes(remappedHero)) {
+    updates.hero_image = remappedHero
+  }
+  const remappedThumb = remap(project.thumb_image as string | null | undefined)
+  if (remappedThumb && remappedThumb !== project.thumb_image && mediaOrder.includes(remappedThumb)) {
+    updates.thumb_image = remappedThumb
   }
 
   // Set hero_image if not already set
