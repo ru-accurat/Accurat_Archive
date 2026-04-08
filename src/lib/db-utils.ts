@@ -33,8 +33,34 @@ export interface ProjectRow {
   latitude: number | null
   longitude: number | null
   share_token: string | null
+  published_version: Record<string, unknown> | null
+  published_at: string | null
   created_at?: string
   updated_at?: string
+}
+
+/** Compare current row content against published_version snapshot.
+ * Returns true if ANY tracked field differs. */
+function computeHasUnpublishedChanges(row: ProjectRow): boolean {
+  const pv = row.published_version
+  if (!pv) return false
+  const eq = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+  return !(
+    eq(pv.name, row.project_name) &&
+    eq(pv.client, row.client) &&
+    eq(pv.tagline, row.tagline) &&
+    eq(pv.description, row.description) &&
+    eq(pv.challenge, row.challenge) &&
+    eq(pv.solution, row.solution) &&
+    eq(pv.deliverables, row.deliverables) &&
+    eq(pv.client_quotes, row.client_quotes) &&
+    eq(pv.domains, row.domains) &&
+    eq(pv.services, row.services) &&
+    eq(pv.tier, row.tier) &&
+    eq(pv.section, row.section) &&
+    eq(pv.status, row.status) &&
+    eq(pv.output, row.output)
+  )
 }
 
 /** Convert a Supabase row to the frontend Project type */
@@ -72,6 +98,8 @@ export function rowToProject(row: ProjectRow): Project {
     longitude: row.longitude,
     shareToken: row.share_token,
     updatedAt: row.updated_at,
+    publishedAt: row.published_at,
+    hasUnpublishedChanges: computeHasUnpublishedChanges(row),
   }
 }
 

@@ -37,6 +37,9 @@ export const api = {
   deleteProject: (id: string): Promise<{ success: boolean }> =>
     fetch(`/api/projects/${id}`, { method: 'DELETE' }).then(r => json(r)),
 
+  publishProject: (id: string): Promise<{ success: boolean; publishedAt: string }> =>
+    fetch(`/api/projects/${id}/publish`, { method: 'POST' }).then(r => json(r)),
+
   // Media
   getProjectMedia: (id: string): Promise<MediaFile[]> =>
     fetch(`/api/projects/${id}/media`).then(r => json(r)),

@@ -39,6 +39,8 @@ export interface Project {
   longitude?: number | null
   shareToken?: string | null
   updatedAt?: string
+  publishedAt?: string | null
+  hasUnpublishedChanges?: boolean
 }
 
 /**
