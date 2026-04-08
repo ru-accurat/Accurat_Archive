@@ -5,6 +5,10 @@ export interface ProjectRow {
   id: string
   full_name: string
   client: string
+  client_2: string | null
+  client_id_2: string | null
+  agency: string | null
+  agency_id: string | null
   project_name: string
   tier: number
   section: string
@@ -69,6 +73,8 @@ export function rowToProject(row: ProjectRow): Project {
     id: row.id,
     fullName: row.full_name,
     client: row.client,
+    client2: row.client_2,
+    agency: row.agency,
     projectName: row.project_name,
     tier: row.tier,
     section: row.section,
@@ -108,6 +114,8 @@ export interface ProjectSummaryRow {
   id: string
   full_name: string
   client: string
+  client_2: string | null
+  agency: string | null
   project_name: string
   tier: number
   section: string
@@ -160,6 +168,8 @@ export function rowToProjectSummary(row: ProjectSummaryRow): ProjectSummary {
     id: row.id,
     fullName: row.full_name,
     client: row.client,
+    client2: row.client_2,
+    agency: row.agency,
     projectName: row.project_name,
     tier: row.tier,
     section: row.section,
@@ -204,6 +214,8 @@ export function projectToSummary(p: Project): ProjectSummary {
     id: p.id,
     fullName: p.fullName,
     client: p.client,
+    client2: p.client2 ?? null,
+    agency: p.agency ?? null,
     projectName: p.projectName,
     tier: p.tier,
     section: p.section,
@@ -237,6 +249,8 @@ export function projectToRow(project: Partial<Project>): Partial<ProjectRow> {
   if (project.id !== undefined) row.id = project.id
   if (project.fullName !== undefined) row.full_name = project.fullName
   if (project.client !== undefined) row.client = project.client
+  if (project.client2 !== undefined) row.client_2 = project.client2
+  if (project.agency !== undefined) row.agency = project.agency
   if (project.projectName !== undefined) row.project_name = project.projectName
   if (project.tier !== undefined) row.tier = project.tier
   if (project.section !== undefined) row.section = project.section

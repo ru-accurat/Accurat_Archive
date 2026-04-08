@@ -9,6 +9,8 @@ export interface Project {
   id: string
   fullName: string
   client: string
+  client2?: string | null
+  agency?: string | null
   projectName: string
   tier: number
   section: string
@@ -54,6 +56,8 @@ export interface ProjectSummary {
   id: string
   fullName: string
   client: string
+  client2?: string | null
+  agency?: string | null
   projectName: string
   tier: number
   section: string

@@ -27,15 +27,18 @@ export async function GET() {
     engCounts.set(e.client_id, existing)
   }
 
-  // Get project counts per client
+  // Get project counts per client — includes both primary (client_id) and
+  // secondary (client_id_2) assignments so Client 2 projects still show up
+  // under that client in the Clients tab. Budget/revenue is NOT affected —
+  // engagements only reference the primary client_id.
   const { data: projStats } = await supabase
     .from('projects')
-    .select('client_id')
-    .not('client_id', 'is', null)
+    .select('client_id, client_id_2')
 
   const projCounts = new Map<string, number>()
-  for (const p of (projStats || []) as { client_id: string }[]) {
-    projCounts.set(p.client_id, (projCounts.get(p.client_id) || 0) + 1)
+  for (const p of (projStats || []) as { client_id: string | null; client_id_2: string | null }[]) {
+    if (p.client_id) projCounts.set(p.client_id, (projCounts.get(p.client_id) || 0) + 1)
+    if (p.client_id_2) projCounts.set(p.client_id_2, (projCounts.get(p.client_id_2) || 0) + 1)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

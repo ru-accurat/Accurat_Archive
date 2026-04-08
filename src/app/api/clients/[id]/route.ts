@@ -34,11 +34,13 @@ export async function GET(
     totalRevenue += eur
   }
 
-  // Get linked projects
+  // Get linked projects — union of primary (client_id) and secondary (client_id_2)
+  // so that projects where this client is "Client 2" still appear here.
+  // Revenue above is unaffected (engagements only reference primary client_id).
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, full_name, client, project_name, folder_name, thumb_image, hero_image, start_year, section')
-    .eq('client_id', id)
+    .select('id, full_name, client, client_2, project_name, folder_name, thumb_image, hero_image, start_year, section')
+    .or(`client_id.eq.${id},client_id_2.eq.${id}`)
 
   return NextResponse.json({
     id: client.id,
@@ -61,6 +63,7 @@ export async function GET(
       id: p.id,
       fullName: p.full_name,
       client: p.client,
+      client2: p.client_2,
       projectName: p.project_name,
       folderName: p.folder_name,
       thumbImage: p.thumb_image,

@@ -4,6 +4,8 @@ import { LocationAutocomplete } from './LocationAutocomplete'
 
 interface Props {
   client: string
+  client2: string
+  agency: string
   start: number | null
   end: number | null
   section: string
@@ -14,6 +16,8 @@ interface Props {
   latitude: number | null
   longitude: number | null
   onClientChange: (v: string) => void
+  onClient2Change: (v: string) => void
+  onAgencyChange: (v: string) => void
   onStartChange: (v: number | null) => void
   onEndChange: (v: number | null) => void
   onSectionChange: (v: string) => void
@@ -32,6 +36,8 @@ const labelClass = "text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(
 
 export function EditableMetadata({
   client,
+  client2,
+  agency,
   start,
   end,
   section,
@@ -42,6 +48,8 @@ export function EditableMetadata({
   latitude,
   longitude,
   onClientChange,
+  onClient2Change,
+  onAgencyChange,
   onStartChange,
   onEndChange,
   onSectionChange,
@@ -61,6 +69,28 @@ export function EditableMetadata({
           type="text"
           value={client}
           onChange={(e) => onClientChange(e.target.value)}
+          className={inputClass}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Client 2</label>
+        <input
+          type="text"
+          value={client2}
+          onChange={(e) => onClient2Change(e.target.value)}
+          placeholder="—"
+          className={inputClass}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Agency</label>
+        <input
+          type="text"
+          value={agency}
+          onChange={(e) => onAgencyChange(e.target.value)}
+          placeholder="—"
           className={inputClass}
         />
       </div>

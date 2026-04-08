@@ -358,9 +358,12 @@ export default function ProjectPage() {
         <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-10">
           <EditableField title="Project Name" value={p.projectName} onChange={(v) => setField('projectName', v)} large multiline={false} />
           <EditableMetadata
-            client={p.client} start={p.start} end={p.end} section={p.section} tier={p.tier} output={p.output} status={p.status}
+            client={p.client} client2={p.client2 || ''} agency={p.agency || ''} start={p.start} end={p.end} section={p.section} tier={p.tier} output={p.output} status={p.status}
             locationName={p.locationName || ''} latitude={p.latitude ?? null} longitude={p.longitude ?? null}
-            onClientChange={(v) => setField('client', v)} onStartChange={(v) => setField('start', v)} onEndChange={(v) => setField('end', v)}
+            onClientChange={(v) => setField('client', v)}
+            onClient2Change={(v) => setField('client2', v || null)}
+            onAgencyChange={(v) => setField('agency', v || null)}
+            onStartChange={(v) => setField('start', v)} onEndChange={(v) => setField('end', v)}
             onSectionChange={(v) => setField('section', v)} onTierChange={(v) => setField('tier', v)} onOutputChange={(v) => setField('output', v)}
             onStatusChange={(v) => setField('status', v)}
             onLocationNameChange={(v) => setField('locationName', v)} onLatitudeChange={(v) => setField('latitude', v)} onLongitudeChange={(v) => setField('longitude', v)}

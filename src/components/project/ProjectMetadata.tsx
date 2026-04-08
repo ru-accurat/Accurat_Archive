@@ -33,6 +33,22 @@ export function ProjectMetadata({ project, onUpdate }: ProjectMetadataProps) {
           className="!text-[13px] !text-white !font-[500] !bg-transparent hover:!bg-white/5"
         />
       </div>
+      <div className="min-w-[120px]">
+        <InlineEditCell
+          value={project.client2 || ''}
+          onSave={(v) => onUpdate('client2', v || null)}
+          placeholder="+ Client 2"
+          className="!text-[13px] !text-white/60 !font-[400] !bg-transparent hover:!bg-white/5"
+        />
+      </div>
+      <div className="min-w-[120px]">
+        <InlineEditCell
+          value={project.agency || ''}
+          onSave={(v) => onUpdate('agency', v || null)}
+          placeholder="+ Agency"
+          className="!text-[13px] !text-white/60 !font-[400] !bg-transparent hover:!bg-white/5"
+        />
+      </div>
       <div className="w-[80px]">
         <InlineEditCell
           value={project.start}
