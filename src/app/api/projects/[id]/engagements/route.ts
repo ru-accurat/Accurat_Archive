@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireEditor } from '@/lib/api-auth'
 
 // GET /api/projects/[id]/engagements — get engagements linked to this project
 export async function GET(
@@ -48,6 +49,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const { engagementIds } = await request.json()
@@ -77,6 +80,8 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const { engagementId } = await request.json()

@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { rowToProject, type ProjectRow } from '@/lib/db-utils'
 import { DECK, POS, type DeckLayout } from '@/lib/pptx-templates'
 import type { Project } from '@/lib/types'
+import { requireEditor } from '@/lib/api-auth'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -244,6 +245,8 @@ function addThankYouSlide(pptx: PptxGenJS) {
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   let body: ExportBody = {}
   try {

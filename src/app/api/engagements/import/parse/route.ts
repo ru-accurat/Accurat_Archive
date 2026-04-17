@@ -4,8 +4,11 @@ import { rowToClient } from '@/lib/db-utils'
 import { matchClients } from '@/lib/client-matching'
 import type { ClientRow } from '@/lib/db-utils'
 import * as XLSX from 'xlsx'
+import { requireBusinessAccess } from '@/lib/api-auth'
 
 export async function POST(request: Request) {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const supabase = createServiceClient()
 
   const formData = await request.formData()

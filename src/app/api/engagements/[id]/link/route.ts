@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireBusinessAccess } from '@/lib/api-auth'
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const { projectIds } = await request.json()
@@ -33,6 +36,8 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const { projectIds } = await request.json()

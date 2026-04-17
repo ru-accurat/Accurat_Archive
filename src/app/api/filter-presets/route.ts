@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAuthServerClient } from '@/lib/supabase-server'
+import { requireEditor } from '@/lib/api-auth'
 
 // GET /api/filter-presets — list current user's presets
 export async function GET() {
@@ -36,6 +37,8 @@ export async function GET() {
 
 // POST /api/filter-presets — create a new preset for the current user
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const supabase = await createAuthServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {

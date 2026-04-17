@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireEditor } from '@/lib/api-auth'
 
 // POST /api/collections/[id]/items — add projects to collection
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const body = await request.json()
@@ -45,6 +48,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
 // PATCH /api/collections/[id]/items — move items to a group or update caption
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const body = await request.json()
@@ -84,6 +89,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
 // DELETE /api/collections/[id]/items — remove project from collection
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const body = await request.json()

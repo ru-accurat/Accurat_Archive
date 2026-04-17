@@ -3,6 +3,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useProjectDetail } from '@/hooks/use-project-detail'
+import { useAuth } from '@/hooks/use-auth'
+import { canEdit } from '@/lib/auth'
 import { useKeyboardNav } from '@/hooks/use-keyboard-nav'
 import { useFilteredProjects, useFilterOptions } from '@/hooks/use-filters'
 import { useProjectStore } from '@/stores/project-store'
@@ -40,6 +42,8 @@ import { Breadcrumb } from '@/components/shared/Breadcrumb'
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const { profile } = useAuth()
+  const userCanEdit = canEdit(profile?.role)
   const { project, media, setMedia, heroMedia, galleryMedia, loading, setProject, refreshMedia } = useProjectDetail(id)
   const filteredProjects = useFilteredProjects()
   const filterOptions = useFilterOptions()
@@ -110,6 +114,7 @@ export default function ProjectPage() {
   // Click-to-edit: PATCH a single field immediately and update local + store.
   const handleFieldUpdate = useCallback(async (field: keyof Project, value: unknown) => {
     if (!id || !project) return
+    if (!userCanEdit) return
     const prevValue = (project as unknown as Record<string, unknown>)[field as string]
     if (prevValue === value) return
     // Optimistic local update
@@ -125,7 +130,7 @@ export default function ProjectPage() {
       setProject((prev) => prev ? ({ ...prev, [field]: prevValue } as Project) : prev)
       toast.error('Failed to save: ' + String(err))
     }
-  }, [id, project, setProject, updateProjectInStore])
+  }, [id, project, setProject, updateProjectInStore, userCanEdit])
 
   const handleRestore = useCallback((entry: HistoryEntry) => {
     if (confirm('Restore this version? Current unsaved changes will be lost.')) {
@@ -524,7 +529,9 @@ export default function ProjectPage() {
                   </div>
                 )}
               </div>
-              <button onClick={enterEdit} className="text-[11px] font-[450] tracking-[0.02em] px-4 py-1.5 rounded-[var(--radius-sm)] bg-white/10 text-white/60 hover:bg-white/15 hover:text-white transition-all duration-200">Edit All</button>
+              {userCanEdit && (
+                <button onClick={enterEdit} className="text-[11px] font-[450] tracking-[0.02em] px-4 py-1.5 rounded-[var(--radius-sm)] bg-white/10 text-white/60 hover:bg-white/15 hover:text-white transition-all duration-200">Edit All</button>
+              )}
             </div>
           </div>
         </div>
@@ -547,20 +554,22 @@ export default function ProjectPage() {
           <ProjectMediaSection
             project={p}
             galleryMedia={galleryMedia}
-            onAddMedia={handleAddMedia}
-            onDeleteMedia={(filename) => handleDeleteMedia([filename])}
-            onSetHero={(filename) => handleFieldUpdate('heroImage', filename)}
-            onSetThumb={(filename) => handleFieldUpdate('thumbImage', filename)}
+            onAddMedia={userCanEdit ? handleAddMedia : undefined}
+            onDeleteMedia={userCanEdit ? (filename) => handleDeleteMedia([filename]) : undefined}
+            onSetHero={userCanEdit ? (filename) => handleFieldUpdate('heroImage', filename) : undefined}
+            onSetThumb={userCanEdit ? (filename) => handleFieldUpdate('thumbImage', filename) : undefined}
           />
           <ProjectSidebar project={p} />
         </div>
       </div>
 
-      <ProjectAIBar
-        onWriteCaseStudy={() => setCaseStudyWriterOpen(true)}
-        onGenerateInUse={() => setInUseGeneratorOpen(true)}
-        hasMedia={media.length > 0}
-      />
+      {userCanEdit && (
+        <ProjectAIBar
+          onWriteCaseStudy={() => setCaseStudyWriterOpen(true)}
+          onGenerateInUse={() => setInUseGeneratorOpen(true)}
+          hasMedia={media.length > 0}
+        />
+      )}
 
       <CaseStudyWriter
         open={caseStudyWriterOpen}

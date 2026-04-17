@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAuthServerClient } from '@/lib/supabase-server'
+import { requireEditor } from '@/lib/api-auth'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapRow(row: any) {
@@ -47,6 +48,8 @@ export async function GET(request: Request) {
 
 // POST /api/case-study-drafts — create a draft after a successful generation
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const supabase = await createAuthServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { MEDIA_EXTS, getMediaType } from '@/lib/media-types'
 import type { MediaFile } from '@/lib/types'
+import { requireEditor } from '@/lib/api-auth'
 
 // GET /api/projects/[id]/media — list media files
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -45,6 +46,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 // POST /api/projects/[id]/media — upload media files (small files only, <4MB)
 // For large files, use /api/projects/[id]/media/upload-urls for direct upload
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
 

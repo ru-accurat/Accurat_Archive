@@ -5,6 +5,8 @@ import { api } from '@/lib/api-client'
 import { toast } from '@/lib/toast'
 import { EngagementLinker } from '@/components/engagements/EngagementLinker'
 import type { Engagement } from '@/lib/types'
+import { useAuth } from '@/hooks/use-auth'
+import { canSeeBusiness } from '@/lib/auth'
 
 function formatEur(val: number | null): string {
   if (val == null) return '—'
@@ -17,6 +19,7 @@ interface LinkedEngagementsProps {
 }
 
 export function LinkedEngagements({ projectId, clientName }: LinkedEngagementsProps) {
+  const { profile } = useAuth()
   const [engagements, setEngagements] = useState<Engagement[]>([])
   const [loading, setLoading] = useState(true)
   const [linkerOpen, setLinkerOpen] = useState(false)
@@ -36,6 +39,8 @@ export function LinkedEngagements({ projectId, clientName }: LinkedEngagementsPr
   const totalRevenue = engagements.reduce((sum, e) => sum + (e.amountEur || 0), 0)
 
   if (loading) return null
+  // content_reader never sees engagement connections on the project page
+  if (!canSeeBusiness(profile?.role)) return null
 
   return (
     <div className="mt-16">

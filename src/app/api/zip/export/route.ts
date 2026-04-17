@@ -4,9 +4,12 @@ import { rowToProject } from '@/lib/db-utils'
 import type { ProjectRow } from '@/lib/db-utils'
 import archiver from 'archiver'
 import { PassThrough } from 'stream'
+import { requireEditor } from '@/lib/api-auth'
 
 // POST /api/zip/export — export selected projects as ZIP with media
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const supabase = createServiceClient()
   const { projectIds } = await request.json()
 

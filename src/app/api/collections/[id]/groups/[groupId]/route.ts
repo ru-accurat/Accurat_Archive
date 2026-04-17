@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireEditor } from '@/lib/api-auth'
 
 // PATCH /api/collections/[id]/groups/[groupId] — update group name or order
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string; groupId: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { groupId } = await params
   const supabase = createServiceClient()
   const body = await request.json()
@@ -26,6 +29,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
 // DELETE /api/collections/[id]/groups/[groupId] — delete group (items become ungrouped)
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string; groupId: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { groupId } = await params
   const supabase = createServiceClient()
 

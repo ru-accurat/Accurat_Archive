@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireBusinessAccess } from '@/lib/api-auth'
 
 // POST /api/clients/merge
 // Merge source client into target client:
@@ -8,6 +9,8 @@ import { createServiceClient } from '@/lib/supabase'
 // - Add source name + aliases to target aliases
 // - Delete source client
 export async function POST(request: Request) {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const supabase = createServiceClient()
   const { sourceId, targetId } = await request.json()
 

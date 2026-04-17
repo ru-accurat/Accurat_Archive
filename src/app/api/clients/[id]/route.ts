@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireBusinessAccess } from '@/lib/api-auth'
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
 
@@ -78,6 +81,8 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const body = await request.json()

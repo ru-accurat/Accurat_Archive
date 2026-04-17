@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { rowToImportBatch } from '@/lib/db-utils'
 import type { ImportBatchRow } from '@/lib/db-utils'
+import { requireBusinessAccess } from '@/lib/api-auth'
 
 export async function GET() {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('import_batches')

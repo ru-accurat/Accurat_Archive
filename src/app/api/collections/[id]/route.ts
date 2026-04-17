@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { rowToProject } from '@/lib/db-utils'
 import type { ProjectRow } from '@/lib/db-utils'
+import { requireEditor } from '@/lib/api-auth'
 
 // GET /api/collections/[id] — collection with full project data
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -75,6 +76,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 // PATCH /api/collections/[id]
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const body = await request.json()
@@ -98,6 +101,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
 // DELETE /api/collections/[id]
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
 

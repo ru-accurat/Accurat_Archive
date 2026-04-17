@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import sharp from 'sharp'
+import { requireEditor } from '@/lib/api-auth'
 
 // POST /api/ai/generate-inuse/accept
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const supabase = createServiceClient()
   const { projectId, imageBase64, imageMimeType, setAsThumbnail } = await request.json()
 

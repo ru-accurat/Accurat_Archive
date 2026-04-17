@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { logActivity } from '@/lib/activity'
+import { requireEditor } from '@/lib/api-auth'
 
 // POST /api/projects/[id]/publish
 // Two things happen on publish:
@@ -8,6 +9,8 @@ import { logActivity } from '@/lib/activity'
 //    (so shared links and the public portfolio freeze at this version)
 // 2. Promote `status` to 'public' so the project appears in non-admin views
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
 

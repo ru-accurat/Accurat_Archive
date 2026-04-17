@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireEditor } from '@/lib/api-auth'
 
 // POST /api/tags/merge — merge source tag into target (remove duplicates)
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const supabase = createServiceClient()
   const { type, source, target } = await request.json()
 

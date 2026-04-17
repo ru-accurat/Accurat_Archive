@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireBusinessAccess } from '@/lib/api-auth'
 
 interface ClientMapping {
   original: string
@@ -13,6 +14,8 @@ interface ProjectLink {
 }
 
 export async function POST(request: Request) {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const supabase = createServiceClient()
   const { rows, clientMappings, projectLinks, filename } = await request.json() as {
     rows: { year: number; projectName: string; clientName: string; amountEur: number | null; amountUsd: number | null }[]

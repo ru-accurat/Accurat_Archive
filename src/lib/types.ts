@@ -2,7 +2,7 @@ export interface UserProfile {
   id: string
   email: string
   displayName: string
-  role: 'admin' | 'editor' | 'viewer'
+  role: 'admin' | 'editor' | 'viewer' | 'content_reader'
 }
 
 export interface Project {

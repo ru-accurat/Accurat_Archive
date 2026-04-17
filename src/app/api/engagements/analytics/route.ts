@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireBusinessAccess } from '@/lib/api-auth'
 
 export async function GET() {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const supabase = createServiceClient()
 
   // Get all engagements with client info

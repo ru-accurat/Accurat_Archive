@@ -6,6 +6,7 @@ import {
   extractJson,
   loadStyleGuide,
 } from '@/lib/ai-collection-prompts'
+import { requireEditor } from '@/lib/api-auth'
 
 interface InputProject {
   id: string
@@ -20,6 +21,8 @@ interface SectionPlan {
 
 // POST /api/collections/ai-build — { name, brief, projects: [{id, relevance}] } → { collectionId }
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 })

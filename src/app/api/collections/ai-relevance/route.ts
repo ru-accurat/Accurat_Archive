@@ -8,9 +8,12 @@ import {
   loadStyleGuide,
   type TrimmedProject,
 } from '@/lib/ai-collection-prompts'
+import { requireEditor } from '@/lib/api-auth'
 
 // POST /api/collections/ai-relevance — { brief, projectId } → { relevance }
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 })

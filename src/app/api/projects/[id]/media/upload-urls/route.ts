@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireEditor } from '@/lib/api-auth'
 
 const MAX_FILE_SIZE = 150 * 1024 * 1024 // 150 MB
 
@@ -10,6 +11,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const { files } = await request.json() as {
     files: { name: string; size: number; type: string }[]

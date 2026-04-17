@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { MEDIA_EXTS } from '@/lib/media-types'
 import { normalizeFolderFiles } from '@/lib/media-naming'
 import sharp from 'sharp'
+import { requireEditor } from '@/lib/api-auth'
 
 // Extensions that need conversion to WebP for universal browser support
 const CONVERT_EXTS = new Set(['.heic', '.heif', '.avif', '.tiff', '.tif', '.bmp'])
@@ -15,6 +16,8 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
 

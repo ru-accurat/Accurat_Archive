@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireBusinessAccess } from '@/lib/api-auth'
 
 export async function GET(request: Request) {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const supabase = createServiceClient()
   const { searchParams } = new URL(request.url)
   const year = searchParams.get('year')

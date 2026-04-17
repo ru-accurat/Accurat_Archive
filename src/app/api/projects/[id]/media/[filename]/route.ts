@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireEditor } from '@/lib/api-auth'
 
 // DELETE /api/projects/[id]/media/[filename]
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string; filename: string }> }
 ) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id, filename } = await params
   const supabase = createServiceClient()
 

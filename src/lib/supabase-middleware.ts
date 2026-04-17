@@ -1,5 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { CONTENT_READER_BLOCKED_PREFIXES, type Role } from './auth'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -46,6 +48,39 @@ export async function updateSession(request: NextRequest) {
     url.pathname = '/login'
     url.searchParams.set('redirect', pathname)
     return NextResponse.redirect(url)
+  }
+
+  // Role-based route gating: content_reader is blocked from Clients /
+  // Engagements / Needs-Attention sections. Do a best-effort lookup via the
+  // service role; if it fails (misconfig), we fail open to avoid locking out.
+  if (user && !isApiPath && !isStaticPath) {
+    const blocked = CONTENT_READER_BLOCKED_PREFIXES.some((p) => pathname.startsWith(p))
+    if (blocked) {
+      try {
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+        if (serviceKey) {
+          const admin = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            serviceKey,
+            { auth: { persistSession: false, autoRefreshToken: false } }
+          )
+          const { data } = await admin
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+          const role = (data?.role as Role | undefined) ?? null
+          if (role === 'content_reader') {
+            const url = request.nextUrl.clone()
+            url.pathname = '/'
+            url.search = ''
+            return NextResponse.redirect(url)
+          }
+        }
+      } catch {
+        // fail open
+      }
+    }
   }
 
   return supabaseResponse

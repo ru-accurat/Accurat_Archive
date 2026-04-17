@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import Anthropic from '@anthropic-ai/sdk'
+import { requireEditor } from '@/lib/api-auth'
 
 const FALLBACK_GUIDELINES = `Accurat tag guidelines: choose 3-5 concise, reusable tags for domains (industries/topics like "Finance", "Climate", "Culture") and services (capabilities like "Data Visualization", "Dashboard", "Research"). Prefer reusing existing tags from the available lists when they fit. Only add new tags when nothing in the existing list fits.`
 
@@ -55,6 +56,8 @@ function uniqueClean(arr: unknown, exclude: Set<string>): string[] {
 }
 
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     return NextResponse.json({ success: false, message: 'ANTHROPIC_API_KEY not configured' }, { status: 500 })

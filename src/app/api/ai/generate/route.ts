@@ -5,6 +5,7 @@ import type { ProjectRow } from '@/lib/db-utils'
 import type { Project } from '@/lib/types'
 import Anthropic from '@anthropic-ai/sdk'
 import { scoreSimilarity } from '@/lib/similarity'
+import { requireEditor } from '@/lib/api-auth'
 
 // Fallback guidelines used when ai_settings table is empty
 const FALLBACK_GUIDELINES = `# Accurat Case Study Writing Guidelines
@@ -113,6 +114,8 @@ async function loadGuidelines(supabase: ReturnType<typeof createServiceClient>):
 
 // POST /api/ai/generate
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     return NextResponse.json({ success: false, message: 'ANTHROPIC_API_KEY not configured' }, { status: 500 })

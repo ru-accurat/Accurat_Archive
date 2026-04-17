@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireEditor } from '@/lib/api-auth'
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const { oldName, newName } = await request.json() as { oldName: string; newName: string }
 

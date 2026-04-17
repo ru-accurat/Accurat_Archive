@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireEditor } from '@/lib/api-auth'
 
 // GET /api/ai/settings — get all AI settings
 export async function GET() {
@@ -24,6 +25,8 @@ export async function GET() {
 
 // PATCH /api/ai/settings — update one or more settings
 export async function PATCH(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const supabase = createServiceClient()
   const updates: Record<string, string> = await request.json()
 

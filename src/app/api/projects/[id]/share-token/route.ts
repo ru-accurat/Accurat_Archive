@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import crypto from 'crypto'
+import { requireEditor } from '@/lib/api-auth'
 
 // POST — generate a share token
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const token = crypto.randomUUID().replace(/-/g, '').slice(0, 16)
@@ -22,6 +25,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
 // DELETE — revoke the share token
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
 

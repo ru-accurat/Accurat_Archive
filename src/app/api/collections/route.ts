@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireEditor } from '@/lib/api-auth'
 
 // GET /api/collections
 export async function GET() {
@@ -33,6 +34,8 @@ export async function GET() {
 
 // POST /api/collections
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const supabase = createServiceClient()
   const body = await request.json()
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireBusinessAccess } from '@/lib/api-auth'
 
 /**
  * Client Intelligence — BD-focused signals computed from engagements + projects.
@@ -55,6 +56,8 @@ function completenessOf(p: ProjRow): number {
 }
 
 export async function GET() {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const supabase = createServiceClient()
   const currentYear = new Date().getFullYear()
   const lastYear = currentYear - 1

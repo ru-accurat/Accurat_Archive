@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createAuthServerClient } from '@/lib/supabase-server'
+import { requireEditor } from '@/lib/api-auth'
 
 // PATCH /api/filter-presets/[id] — rename or update a preset (current user only)
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = await createAuthServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -54,6 +57,8 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = await createAuthServerClient()
   const { data: { user } } = await supabase.auth.getUser()

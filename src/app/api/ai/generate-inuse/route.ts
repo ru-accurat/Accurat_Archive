@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { DEVICES, PRINT_KEYS, SURFACES, FRAMINGS, type FramingKey } from '@/components/edit/in-use-options'
+import { requireEditor } from '@/lib/api-auth'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
@@ -89,6 +90,8 @@ function buildPrompt(
 
 // POST /api/ai/generate-inuse
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const supabase = createServiceClient()
   const body = (await request.json()) as InUseBody
   const { projectId, imageFilename, device, surface, includeHuman, framing, environment } = body

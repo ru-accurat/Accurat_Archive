@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireEditor } from '@/lib/api-auth'
 
 // GET /api/collections/[id]/groups — list groups for a collection
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -21,6 +22,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 // POST /api/collections/[id]/groups — create a new group
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const body = await request.json()
@@ -54,6 +57,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
 // PATCH /api/collections/[id]/groups — reorder groups
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireEditor()
+  if (deny) return deny
   const { id } = await params
   const supabase = createServiceClient()
   const body = await request.json()

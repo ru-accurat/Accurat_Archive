@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireBusinessAccess } from '@/lib/api-auth'
 
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ batchId: string }> }
 ) {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
   const { batchId } = await params
   const supabase = createServiceClient()
 

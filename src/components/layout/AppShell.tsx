@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
+import { canSeeBusiness, canSeeAdminDashboards } from '@/lib/auth'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
 import { CommandPalette } from '@/components/CommandPalette'
 import { ProductTour } from '@/components/onboarding/ProductTour'
@@ -82,6 +83,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [userMenuOpen])
 
+  // Role-based nav filtering. content_reader loses Business (Clients /
+  // Engagements) and the Attention dashboard.
+  const role = profile?.role
+  const visibleGroups = NAV_GROUPS
+    .map((g) => {
+      if (g.name === 'Business' && !canSeeBusiness(role)) return null
+      if (g.name === 'Admin') {
+        const items = canSeeAdminDashboards(role)
+          ? g.items
+          : g.items.filter((i) => i.path !== '/needs-attention')
+        if (items.length === 0) return null
+        return { ...g, items }
+      }
+      return g
+    })
+    .filter((g): g is NavGroup => g !== null)
+
   const initials = profile?.displayName
     ? profile.displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
     : profile?.email?.slice(0, 2).toUpperCase() || '?'
@@ -107,7 +125,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Desktop nav — grouped */}
           <div className="hidden sm:flex items-center gap-1">
-            {NAV_GROUPS.map((group, gi) => (
+            {visibleGroups.map((group, gi) => (
               <div key={group.name} className="flex items-center">
                 {gi > 0 && (
                   <div className="w-px h-3.5 bg-white/10 mx-3" />
@@ -201,7 +219,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile dropdown menu — grouped */}
       {menuOpen && (
         <div className="sm:hidden bg-[var(--c-black)] border-t border-white/10 px-4 py-3 flex flex-col z-40">
-          {NAV_GROUPS.map((group, gi) => (
+          {visibleGroups.map((group, gi) => (
             <div key={group.name}>
               {gi > 0 && <div className="border-t border-white/10 my-2" />}
               <span className="text-[9px] font-[500] tracking-[0.1em] uppercase text-white/20 mb-1 block">
