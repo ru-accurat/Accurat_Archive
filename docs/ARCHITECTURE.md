@@ -413,17 +413,44 @@ All routes live under `src/app/api/`. They use `createServiceClient()` (Supabase
 
 ## 11. Development Roadmap
 
-### Completed
-- Phase 1: Auth & Roles, Project Status, Smart Search, Activity Log
-- Phase 2: Related Projects, Timeline, Collections, Map
+**Last reconciled:** 2026-04-21 (original phase plan replaced after mid-April band sprint).
 
-### Shelved (Phase 3)
-- Engagements dashboard, Client view, Capability matrix — awaiting stakeholder input
+### Shipped
 
-### Planned
-- Phase 4: Public portfolio, shareable project links, shared collection links
-- Phase 5: AI case study writer (Claude Sonnet), multi-language (EN/IT), PPTX export
-- Phase 6: Automated backups, video thumbnails, asset tagging
+- **Phase 1** — Auth & Roles, Project Status, Search, Activity Log.
+- **Phase 2** — Related Projects, Timeline, Collections, Map.
+- **Phase 3** (previously labeled shelved; built during the Bands B/C sprint):
+  - Engagements system (clients, engagements, linking, CSV import with undo).
+  - Client Intelligence Dashboard (C3).
+  - Capability Inventory dashboard (C1/C2).
+  - Team Contribution view (C4).
+- **Phase 4** — Public portfolio, shareable project links, shared collection links.
+- **Phase 5A** — AI Case Study Writer with draft persistence and draft/published versioning.
+- **Phase 5C** — PPTX Pitch Deck Generator with per-project image picker.
 
-### SQL Migrations Applied (001–010)
-001 initial schema, 002 auth & profiles, 003 project status, 004 activity log, 005 collections, 006 project location, 007 share tokens, 008 clients & engagements, 009 AI settings, 010 collection enhancements
+### Shipped beyond the original plan (Bands A/B/C sprint)
+
+Onboarding (command palette + product tour, B4) · Needs-attention dashboard (B2) · Audit surfacing / last-edited badge / activity feed (B7) · Skeleton loading states (B6) · Design system docs + WCAG AA fixes (B5) · Role-based access with `content_reader` role · Multi-client projects (`client_2` + `agency`) · AI auto-tag suggestions (C6) · AI Collection Builder · AI-inferred project location.
+
+The band structure is retired.
+
+### Active work
+
+None. Codebase review planned; roadmap will be revisited after.
+
+### Backlog (no commitment, no ordering)
+
+- **Semantic search via pgvector** — the only major item from `UX-RESEARCH-AND-ROADMAP.md` §3.1 that never shipped. Use Claude/OpenAI embeddings, store in Supabase pgvector. Enables semantic discovery, "more like this," question-answering.
+- **Automated backups** — scheduled off-platform export of projects + media.
+- **Video thumbnails** — auto-generate poster frames so video tiles don't render black.
+- **Asset tagging** — per-media tagging beyond the project-level taxonomy.
+
+### Dropped
+
+- **Multi-language (EN/IT)** — previously listed as Phase 5B. Explicitly dropped 2026-04-21. Do not resurface without explicit re-scoping.
+
+### SQL Migrations Applied (001–019)
+
+001 initial schema · 002 auth & profiles · 003 project status · 004 activity log · 005 collections · 006 project location · 007 project share token · 008 clients & engagements · 009 AI settings · 010 collection enhancements / collection groups · 012 filter presets · 013 case study drafts · 014 collection templates · 015 collection views · 016 published version (draft/published split) · 017 client2 + agency · 018 split combined clients · 019 add content_reader role.
+
+(Migration 011 was skipped or renumbered — worth verifying if migration sequencing matters for a clean re-import.)

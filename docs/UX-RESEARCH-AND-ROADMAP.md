@@ -4,9 +4,17 @@ Based on extensive work on this codebase, this document presents a structured an
 
 ---
 
+> **Status as of 2026-04-21.** This document was written to drive a focused development sprint (Bands A/B/C). Most of it shipped. See the **Priority Recommendations** table at the bottom for the crisp status on the top 5 items; markers (✅ / ⏸ / 🔲) have also been added inline to the detailed sections below.
+>
+> This doc now reads as a historical record of the research → sprint pipeline, not a live roadmap. The current roadmap is maintained in `CLAUDE.md` and `ARCHITECTURE.md §11`.
+
+---
+
 ## Part 1: Refactoring Opportunities (Code + UX)
 
-### 1.1 The Project Detail Page is a 600-line "god component"
+### 1.1 The Project Detail Page is a 600-line "god component" ✅ shipped
+
+> Refactor complete as of 2026-04-21. `src/components/project/` now contains 18 sub-components including `ProjectMediaSection`, `ProjectAIBar`, `ProjectSidebar`, `ProjectHero`, `ProjectTagsSection`, `ProjectLinksSection`, `ProjectDescriptions`, `ProjectMetadata` — matching the recommended decomposition. Field-level editing shipped as `src/components/edit/InlineEditableField.tsx` + `InlineEditableArray.tsx`. `page.tsx` is still ~610 lines but is now an orchestrator composing sub-components rather than a monolith.
 
 **Current state:** `src/app/(app)/project/[id]/page.tsx` handles view mode, edit mode, media upload, AI generation, PDF management, history, keyboard navigation, and more — all in one file.
 
@@ -20,7 +28,9 @@ Based on extensive work on this codebase, this document presents a structured an
 - **Introduce "field-level editing"**: instead of a global edit mode, each field becomes click-to-edit (like the client page already does for name). Users can edit one field, save, edit another. Lower cognitive load, no "am I in edit mode or not?" confusion.
 - **Keep the "Edit All" mode** as a secondary path for bulk edits — but make single-field editing the primary interaction.
 
-### 1.2 Filter system is powerful but buried
+### 1.2 Filter system is powerful but buried ✅ mostly shipped
+
+> URL-sync filters ✅ (`src/hooks/use-url-filters.ts`). Saved filter presets ✅ (migration 012). Default filter badge + `Esc` to clear — status less clear, worth a quick UX pass.
 
 **Current state:** The filter accordion collapses/expands. New users don't discover filters exist.
 
@@ -35,7 +45,9 @@ Based on extensive work on this codebase, this document presents a structured an
 3. **Saved filter presets**: let users create named presets ("My pitch-ready projects", "Everything from 2024"). Stored per-user in Supabase.
 4. **Keyboard shortcut to clear all filters**: `Esc` when a filter is active.
 
-### 1.3 Search is invisible and not progressive
+### 1.3 Search is invisible and not progressive ⏸ partial
+
+> Fuzzy search via Fuse.js ✅ shipped. Match-source indicator / highlighting / Supabase full-text search — not shipped. Semantic search (pgvector) is in the backlog, see §3.1.
 
 **Current state:** Search filters the list but there's no indication of *why* a project matched. If you search "climate", you don't know if it's in the description, tags, or client name.
 
@@ -50,7 +62,9 @@ Based on extensive work on this codebase, this document presents a structured an
 3. **Fuzzy search** via Fuse.js (~10KB) for typo tolerance.
 4. **Supabase full-text search** (Postgres `ts_vector`) for content-heavy search — moves search to the server, enables ranking.
 
-### 1.4 The "Missing Media / Description" filter is the most-used but least accessible
+### 1.4 The "Missing Media / Description" filter is the most-used but least accessible ✅ shipped (B2)
+
+> `/needs-attention` dashboard shipped with drafts ready to publish, incomplete projects, missing media views. Inline "publish" action also shipped.
 
 **Current state:** The missing filter is one of many inside the accordion. Status is a separate filter. There's no "Show me what needs attention" quick view.
 
@@ -62,7 +76,9 @@ Based on extensive work on this codebase, this document presents a structured an
    - Projects with completeness <50%
 2. **Inline "publish" action**: when a project is draft + complete, surface a "Ready to publish?" prompt right on the project card.
 
-### 1.5 Case Study Writer is powerful but modal-locked
+### 1.5 Case Study Writer is powerful but modal-locked ⏸ partial
+
+> Drafts persistence ✅ shipped (migration 013 `case_study_drafts` + versioning in migration 016). Side-drawer conversion and "reference project" picker — not shipped.
 
 **Current state:** The writer is a modal over the project detail page. Users can't reference other projects while writing.
 
@@ -76,7 +92,9 @@ Based on extensive work on this codebase, this document presents a structured an
 2. **Drafts persistence**: save generation attempts to a `case_study_drafts` table. Users can return to them, compare, pick the best.
 3. **"Reference project" picker**: when refining, let the user explicitly say "write this like the IBM Watson case study" — the AI loads that project's description as a style anchor.
 
-### 1.6 The Engagements ↔ Projects linking is manual and one-directional
+### 1.6 The Engagements ↔ Projects linking is manual and one-directional ✅ shipped (B3)
+
+> Fuzzy auto-match on import, bi-directional batch linker, and unlinked-revenue warnings all shipped.
 
 **Current state:** You can link from engagements to projects but suggestion algorithms are basic.
 
@@ -85,7 +103,9 @@ Based on extensive work on this codebase, this document presents a structured an
 2. **Bi-directional batch linker**: "Show me all engagements for IBM that don't have a linked project yet" — batch-link them from a single view.
 3. **Unlinked revenue warning**: on the engagements dashboard, show "€X of revenue is not linked to any case study" as a call to action.
 
-### 1.7 Collections lack hierarchy
+### 1.7 Collections lack hierarchy ✅ mostly shipped
+
+> Collection groups ✅ (migration 010). Collection templates ✅ (migration 014). Presentation mode ✅ (`(public)/collection/[token]/presentation/`). Collection analytics — not shipped.
 
 **Current state:** Collections are flat. Groups provide one level of subdivision. Share links exist but there's no "pitch deck mode".
 
@@ -98,7 +118,9 @@ Based on extensive work on this codebase, this document presents a structured an
 
 ## Part 2: Overall Improvements
 
-### 2.1 Onboarding is nonexistent
+### 2.1 Onboarding is nonexistent ✅ shipped (B4)
+
+> Interactive product tour + ⌘K command palette both shipped (`cmdk` dep, `src/components/onboarding/`).
 
 There's no first-run experience. New team members joining Accurat would have to learn the app by exploring. The nav is dense (9+ items) and unfamiliar.
 
@@ -107,7 +129,9 @@ There's no first-run experience. New team members joining Accurat would have to 
 2. **Empty states with action prompts**: already done on some pages but not consistently. Every "no X yet" should suggest what to do next.
 3. **`/help` or `⌘K` command palette**: searchable list of all actions ("Create project", "Import CSV", "Generate in-use image") with keyboard shortcuts shown.
 
-### 2.2 Mobile experience is likely poor
+### 2.2 Mobile experience is likely poor 🔲 open
+
+> Not specifically addressed during the sprint. Worth revisiting in the upcoming codebase review.
 
 The codebase has `sm:` and `md:` breakpoints but the primary design target is clearly desktop. Many views (table, timeline, map) don't work well on mobile.
 
@@ -118,7 +142,9 @@ The codebase has `sm:` and `md:` breakpoints but the primary design target is cl
   3. Sharing a project with a client → should work on mobile
 - Everything else (editing, bulk operations, CSV import) can remain desktop-only.
 
-### 2.3 Color/status semantics are inconsistent
+### 2.3 Color/status semantics are inconsistent ✅ shipped (B5)
+
+> `docs/DESIGN-SYSTEM.md` added, WCAG AA gray-scale fix applied, in-app design system docs shipped.
 
 The app uses colors like `--c-ai` for AI-generated content, amber/rose dots for missing fields, green for "linked", red for "error". But there's no documented system.
 
@@ -126,13 +152,17 @@ The app uses colors like `--c-ai` for AI-generated content, amber/rose dots for 
 - **Design tokens document**: formalize what each color means. `docs/DESIGN-SYSTEM.md` exists but may not cover semantic tokens.
 - **Accessibility pass**: verify WCAG AA contrast on all text + backgrounds. With Tailwind v4 custom properties, this is easy to audit.
 
-### 2.4 Loading states are inconsistent
+### 2.4 Loading states are inconsistent ✅ shipped (B6)
+
+> Skeleton loading states standardized across pages.
 
 Some pages have skeletons (recently added), some show "Loading..." text, some show nothing. The three levels of UX quality are visible.
 
 **Recommendation:** Standardize on skeletons everywhere there's a `loading.tsx` or Suspense boundary. Remove all bare "Loading..." strings.
 
-### 2.5 Error handling is silent
+### 2.5 Error handling is silent ✅ mostly shipped
+
+> Global toast infrastructure ✅ shipped (`src/lib/toast.ts` + `sonner` used in 14+ components). Full audit of silent `catch` blocks may still be partial — worth flagging in the upcoming review.
 
 Many try/catch blocks swallow errors (`catch { /* ignore */ }`). Users see nothing when something fails — the button just stops working.
 
@@ -140,7 +170,9 @@ Many try/catch blocks swallow errors (`catch { /* ignore */ }`). Users see nothi
 - **Global toast notification system** (sonner or similar, ~3KB). Every error becomes a non-blocking toast with a "Retry" action.
 - Replace every silent `catch` with a toast.
 
-### 2.6 History/audit is underused
+### 2.6 History/audit is underused ✅ shipped (B7)
+
+> Last-edited badge on project detail + activity feed on home shipped. Undo toast after destructive actions — status less clear.
 
 The `project_history` table exists but the History panel is buried in edit mode. No one will find it.
 
@@ -155,7 +187,9 @@ The `project_history` table exists but the History panel is buried in edit mode.
 
 These are grounded in Accurat's goals: preserving + showcasing case studies, supporting business development, enabling internal knowledge sharing.
 
-### 3.1 Smart Search and Discovery ⭐ (High Impact)
+### 3.1 Smart Search and Discovery ⭐ (High Impact) ⏸ backlog
+
+> Fuzzy search via Fuse.js shipped. Semantic search via pgvector **not shipped — explicitly moved to backlog** for future consideration.
 
 Use Claude to embed every project description into a vector. Store embeddings in Supabase (pgvector). Then:
 - **Semantic search**: "projects that use AI to visualize scientific data" works even if no project uses those exact words.
@@ -164,7 +198,9 @@ Use Claude to embed every project description into a vector. Store embeddings in
 
 **Effort**: medium. Supabase supports pgvector natively. Anthropic doesn't offer embeddings but OpenAI's are cheap (~$0.02 per 1000 texts). One-time backfill script + a hook on project save.
 
-### 3.2 Pitch Deck Generator
+### 3.2 Pitch Deck Generator ✅ shipped (B1)
+
+> PPTX Pitch Deck Generator with per-project image picker shipped (`pptxgenjs`, `src/components/collections/PitchDeckExporter.tsx`).
 
 Build on the existing PPTX export. Let users select a collection + template and generate a branded pitch deck:
 - Cover slide with client name and challenge
@@ -175,7 +211,9 @@ Build on the existing PPTX export. Let users select a collection + template and 
 
 **Effort**: low-medium. `pptxgenjs` is already planned. The heavy lifting is the template + layout code + image picker UI.
 
-### 3.3 AI-Assisted Collection Builder (integrated with "New Collection")
+### 3.3 AI-Assisted Collection Builder (integrated with "New Collection") ✅ shipped
+
+> AI Collection Builder integrated into the New Collection wizard (`src/components/collections/NewCollectionWizard.tsx`). Generates collection subtitle, section titles, and per-project relevance paragraphs from a pasted brief.
 
 Instead of a separate "Proposal Writer" page, integrate AI suggestions directly into the **New Collection** flow. When creating a collection, the user has the option to paste an RFP or prospect description, and the system suggests case studies + auto-builds the collection structure.
 
@@ -195,7 +233,9 @@ Workflow:
 
 **Effort**: medium. Builds on semantic search (3.1), the existing collection groups feature, and the existing AI infrastructure.
 
-### 3.4 Skill / Capability Inventory
+### 3.4 Skill / Capability Inventory ✅ shipped (C1/C2)
+
+> Capability inventory dashboard shipped at `(app)/capabilities`.
 
 Infer Accurat's capabilities from the archive itself:
 - Auto-extract technologies, methods, outputs from project descriptions
@@ -204,7 +244,9 @@ Infer Accurat's capabilities from the archive itself:
 
 **Effort**: medium. One-time AI analysis + a nice dashboard.
 
-### 3.5 Client Intelligence Dashboard
+### 3.5 Client Intelligence Dashboard ✅ shipped (C3)
+
+> Client intelligence dashboard shipped at `(app)/clients`.
 
 Building on the engagements data + client relationship focus:
 - **Client health score**: last engagement date, revenue trend, project count, description completeness
@@ -214,7 +256,9 @@ Building on the engagements data + client relationship focus:
 
 **Effort**: low. Pure SQL over existing data.
 
-### 3.6 Team Contribution View
+### 3.6 Team Contribution View ✅ shipped (C4)
+
+> Team contribution view shipped at `(app)/team`.
 
 The `team` field already exists on projects. Build:
 - Individual contributor pages: "Projects worked on by Person X"
@@ -223,7 +267,9 @@ The `team` field already exists on projects. Build:
 
 **Effort**: low. Mostly a view over existing data.
 
-### 3.7 Versioned Case Studies (Draft/Published Separation)
+### 3.7 Versioned Case Studies (Draft/Published Separation) ✅ shipped (C5)
+
+> Draft/published split shipped (migrations 013 `case_study_drafts`, 016 `published_version`).
 
 Currently, editing a case study updates it live. There's no way to have a "working draft" while the "published" version is visible to shared links.
 
@@ -231,7 +277,9 @@ Currently, editing a case study updates it live. There's no way to have a "worki
 
 **Effort**: medium. DB migration + UI changes.
 
-### 3.8 Auto-tag Suggestions from Content
+### 3.8 Auto-tag Suggestions from Content ✅ shipped (C6)
+
+> AI-powered tag suggestions shipped (`src/components/edit/SuggestedTags.tsx`).
 
 When a user writes a case study description, suggest tags based on content (domains, services, technologies). Use Claude for this.
 
@@ -241,14 +289,14 @@ When a user writes a case study description, suggest tags based on content (doma
 
 ## Priority Recommendations
 
-Top 5 things to tackle next:
+**Status reconciled 2026-04-21.** Of the top 5 items, four shipped, one is in the backlog.
 
-| Priority | Feature | Why | Effort |
-|----------|---------|-----|--------|
-| 1 | **URL-sync filters** | Instant shareability + bookmarkability, foundational UX fix | Low |
-| 2 | **Semantic search (pgvector)** | Transforms discovery; highest strategic value | Medium |
-| 3 | **Global toast + error handling** | Fixes a critical invisible failure mode | Low |
-| 4 | **Client Intelligence Dashboard** | Uses data you already have, huge BD value | Low |
-| 5 | **Pitch Deck Generator** | Direct business tool, builds on existing infrastructure | Medium |
+| # | Feature | Status | Evidence |
+|---|---------|--------|----------|
+| 1 | **URL-sync filters** | ✅ shipped | `src/hooks/use-url-filters.ts` + `useSearchParams` across 10+ files |
+| 2 | **Semantic search (pgvector)** | ⏸ backlog | Not shipped; moved to backlog. `accurat-archive-web/CLAUDE.md` and `ARCHITECTURE.md §11`. |
+| 3 | **Global toast + error handling** | ✅ shipped | `src/lib/toast.ts` + `sonner` used in 14+ components |
+| 4 | **Client Intelligence Dashboard** | ✅ shipped | `(app)/clients` dashboard (commit C3) |
+| 5 | **Pitch Deck Generator** | ✅ shipped | `src/components/collections/PitchDeckExporter.tsx` (commit B1) |
 
-These five would compound — better filtering + search + discovery + business tooling would turn the archive from a "records system" into a "strategic asset that actively helps win work".
+The compounding effect predicted above is now live: better filtering + search + discovery + business tooling have turned the archive from a records system into a strategic asset. Next strategic leap (when/if pursued): semantic search to unlock true content-based discovery across the 200+ projects.

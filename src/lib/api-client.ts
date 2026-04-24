@@ -288,6 +288,20 @@ export const api = {
       body: JSON.stringify({ projectIds })
     }).then(r => r.blob()),
 
+  exportMediaZip: (projectIds: string[]): Promise<Blob> =>
+    fetch('/api/zip/media', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectIds })
+    }).then(r => r.blob()),
+
+  exportVideosZip: (projectIds: string[]): Promise<Blob> =>
+    fetch('/api/zip/videos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectIds })
+    }).then(r => r.blob()),
+
   // Tags
   getAllTags: (): Promise<{ domains: string[]; services: string[]; outputs: string[] }> =>
     fetch('/api/tags').then(r => json(r)),

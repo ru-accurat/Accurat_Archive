@@ -3,8 +3,8 @@ import { createServiceClient } from '@/lib/supabase'
 import { requireBusinessAccess } from '@/lib/api-auth'
 import { buildProjectsZip } from '@/lib/zip-export'
 
-// POST /api/zip/export — "Export content and media"
-// Includes per-project project.json + every file in project-media
+// POST /api/zip/videos — "Download all videos as ZIP"
+// Videos + gifs from project-media. No images, no JSON, no PDFs.
 export async function POST(request: Request) {
   const deny = await requireBusinessAccess()
   if (deny) return deny
@@ -17,15 +17,15 @@ export async function POST(request: Request) {
   const stream = buildProjectsZip({
     supabase,
     projectIds,
-    includeJson: true,
-    scope: null,
+    includeJson: false,
+    scope: 'videos_and_gifs',
   })
 
   const date = new Date().toISOString().slice(0, 10)
   return new Response(stream, {
     headers: {
       'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="accurat-archive-export-${date}.zip"`,
+      'Content-Disposition': `attachment; filename="accurat-archive-videos-${date}.zip"`,
     },
   })
 }

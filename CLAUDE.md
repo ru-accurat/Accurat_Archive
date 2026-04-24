@@ -1,5 +1,16 @@
 # Accurat Archive Web
 
+## Second Brain
+
+This project's living knowledge layer is maintained in Gabriele's Second Brain vault at
+`~/Desktop/Claude/Claude_Projects/Second Brain/`. The canonical project entry is
+`01 - Projects/Accurat Archive/README.md` and the broader context lives in
+`02 - Areas/Accurat/README.md`, `05 - Notes/Accurat Voice Guide.md`, `Accurat Market View.md`,
+`Accurat Company Profile.md`, `Accurat Case Study Writing Guidelines.md`, `Accurat Case Study Examples.md`.
+
+**Protocol:** read the vault entry at the start of structural work. When material decisions,
+conventions, or lessons emerge in a session, propose an update to the vault before the session ends.
+
 ## Project Overview
 Next.js 16 portfolio/archive app for Accurat studio. ~200 projects stored in Supabase PostgreSQL.
 Deployed on Vercel Pro at https://accurat-archive.vercel.app/
@@ -46,43 +57,60 @@ Deployed on Vercel Pro at https://accurat-archive.vercel.app/
 - No RLS currently — all access via service role key
 - Env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 
-## Integration Plan
+## Docs
 
-### ✅ Phase 1 — Complete
-- **1A** Auth & Roles: Login page, auth hook, middleware, profiles table, RLS
-- **1B** Project Status: draft/internal/public column with filter + edit support
-- **1C** Smart Search: Result count hint when filters are active
-- **1D** Activity Log: activity_log table, logActivity helper, feed page
+The full spec lives in `docs/` — read those before this file for anything beyond quick reference:
 
-### ✅ Phase 2 — Complete
-- **2A** Related Projects: Similarity-scored related projects on project detail
-- **2B** Timeline: Horizontal scrollable timeline visualization
-- **2C** Collections: Full CRUD collections with picker modal in bulk actions
-- **2D** Map: MapLibre GL map with B&W CARTO tiles, clustered location markers
+- **`docs/ARCHITECTURE.md`** — primary tech reference (stack, routing, data model, state, API surface, CSS, gotchas).
+- **`docs/DESIGN-SYSTEM.md`** — design tokens, semantic colors, WCAG AA.
+- **`docs/USER-GUIDE.md`** — end-user documentation.
+- **`docs/UX-RESEARCH-AND-ROADMAP.md`** — UX analysis that drove the Bands A/B/C sprint (mostly shipped).
+- **`docs/phase-3-engagements-plan.md`** — plan for the Engagements system (shipped).
 
-### 🔲 Phase 3 — Shelved (awaiting user input)
-- **3A** Engagements DB — shelved, needs more exploration
-- **3B** Dashboard — shelved, needs more exploration
-- **3C** Client View & Capability Matrix — shelved, needs more exploration
+## Current state (as of 2026-04-21)
 
-### 🔲 Phase 4 — Next Up
-- **4A** Public Portfolio
-- **4B** Shareable Project Links
-- **4C** Shared Collection Links
+The original Phase 1–6 plan is obsolete. Reconciled roadmap:
 
-### 🔲 Phase 5
-- **5A** AI Case Study Writer (Claude Sonnet)
-- **5B** Multi-Language (EN/IT)
-- **5C** PPTX Export
+**Shipped (former phases):**
+- **Phase 1** — Auth & Roles, Project Status, Search, Activity Log.
+- **Phase 2** — Related Projects, Timeline, Collections, Map.
+- **Phase 3** (was shelved, got built) — Engagements, Client Intelligence Dashboard (C3), Capability Inventory (C1/C2), Team Contribution (C4).
+- **Phase 4** — Public Portfolio (`(public)/portfolio`), Shareable Project Links (share tokens), Shared Collection Links.
+- **Phase 5A** — AI Case Study Writer with draft persistence and versioning (draft/published separation).
+- **Phase 5C** — PPTX Pitch Deck Generator.
 
-### 🔲 Phase 6
-- **6A** Automated Backups
-- **6B** Video Thumbnails
-- **6C** Asset Tagging
+**Shipped beyond the original plan (Bands A/B/C sprint, Mar–Apr 2026):**
 
-### SQL Migrations Applied
-- `002_auth_and_profiles.sql` — profiles, trigger, RLS
-- `003_project_status.sql` — status column
-- `004_activity_log.sql` — activity_log table
-- `005_collections.sql` — collections + collection_items
-- `006_project_location.sql` — location_name, latitude, longitude
+| Band | Feature |
+|---|---|
+| A | Client matching, CSV import, collection polish |
+| B1 | Pitch Deck generator (PPTX) |
+| B2 | `/needs-attention` dashboard |
+| B3 | Engagement linking (import suggestions, batch linker, unlinked revenue) |
+| B4 | Onboarding (command palette + product tour) |
+| B5 | Design system docs + WCAG AA gray scale fix |
+| B6 | Standardized skeleton loading states |
+| B7 | History/audit surfacing (last-edited badge + activity feed) |
+| C2 | Capability inventory dashboard |
+| C3 | Client intelligence dashboard |
+| C4 | Team contribution view |
+| C5 | Versioned case studies (draft/published) |
+| C6 | Auto-tag suggestions from description content |
+
+The band structure is retired as of 2026-04-21.
+
+**Active work:** None. Codebase review planned; roadmap will be revisited after.
+
+**Backlog (no commitment, no ordering):**
+- **Semantic search (pgvector)** — the only major UX research item that never shipped. Enables semantic discovery, "more like this," question-answering over the archive.
+- **Automated backups** — scheduled off-platform export of projects + media.
+- **Video thumbnails** — auto-generate poster frames for video media.
+- **Asset tagging** — per-media tagging beyond project-level taxonomy.
+
+**Dropped:** Multi-language (EN/IT). Do not resurface without explicit re-scoping.
+
+## SQL Migrations Applied (001–019)
+
+001 initial · 002 auth & profiles · 003 project status · 004 activity log · 005 collections · 006 project location · 007 share tokens · 008 clients & engagements · 009 AI settings · 010 collection enhancements / collection groups · 012 filter presets · 013 case study drafts · 014 collection templates · 015 collection views · 016 published version (draft/published) · 017 client2 + agency · 018 split combined clients · 019 add content_reader role
+
+(Migration 011 was skipped or renumbered — worth verifying if migration ordering matters for a future clean import.)
