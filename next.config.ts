@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // Bypass Vercel's image optimizer. Supabase Storage is already a CDN;
+    // routing through /_next/image was hitting the monthly optimization
+    // quota and returning 402 Payment Required for ALL images, plus 400
+    // for filenames with apostrophes (e.g. "Knight Foundation -
+    // Disinformation, 'Fake News,' …"). Disabling optimization fixes both.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -9,9 +15,6 @@ const nextConfig: NextConfig = {
         pathname: '/storage/v1/object/public/**',
       },
     ],
-    formats: ['image/webp'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
-    imageSizes: [64, 96, 128, 256, 384],
   },
   experimental: {
     optimizePackageImports: [
