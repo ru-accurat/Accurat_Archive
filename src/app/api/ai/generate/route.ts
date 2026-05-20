@@ -41,7 +41,7 @@ Prefer: "data-native" over "data-driven", "deployable" over "deliverable", "Data
 Avoid: "cutting-edge", "leverage", "storytelling" without telling a story, "AI-powered" as standalone, "holistic/synergy/transformative"`
 
 const FIELD_PROMPTS: Record<string, string> = {
-  tagline: 'Write a concise tagline (one sentence) for this project.',
+  tagline: 'Write a concise tagline (one sentence) for this project. Start with a present participle (Designing, Visualizing, Building, Mapping, Turning, etc.). Do NOT name the client, co-client, or agency anywhere in the tagline; instead replace any client mention with a short generic descriptor of what the client is (e.g., "a real estate services company", "a global payments platform", "a major modern art museum"). The client is named in the Description, Challenge, and Solution fields, not here.',
   description: 'Write a 2-3 paragraph project description (100-200 words).',
   challenge: 'Write the challenge (1-2 sentences, 15-35 words). Frame as tension or unmet need from the client\'s perspective.',
   solution: 'Write the solution (1-2 sentences, 15-35 words). Lead with the approach, connect back to the challenge.',
