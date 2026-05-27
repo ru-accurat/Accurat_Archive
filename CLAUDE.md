@@ -4,8 +4,8 @@
 
 This project's living knowledge layer is maintained in Gabriele's Second Brain vault at
 `~/Desktop/Claude/Claude_Projects/Second Brain/`. The canonical project entry is
-`01 - Projects/Accurat Archive/README.md` and the broader context lives in
-`02 - Areas/Accurat/README.md`, `05 - Notes/Accurat Voice Guide.md`, `Accurat Market View.md`,
+`01 - Projects/Accurat Archive/Accurat Archive.md` and the broader context lives in
+`02 - Areas/Accurat/Accurat.md`, `05 - Notes/Accurat Voice Guide.md`, `Accurat Market View.md`,
 `Accurat Company Profile.md`, `Accurat Case Study Writing Guidelines.md`, `Accurat Case Study Examples.md`.
 
 **Protocol:** read the vault entry at the start of structural work. When material decisions,
