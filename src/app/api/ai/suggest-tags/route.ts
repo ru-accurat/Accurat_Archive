@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import Anthropic from '@anthropic-ai/sdk'
 import { requireEditor } from '@/lib/api-auth'
+import { CLAUDE_SONNET } from '@/lib/ai-models'
 
 const FALLBACK_GUIDELINES = `Accurat tag guidelines: choose 3-5 concise, reusable tags for domains (industries/topics like "Finance", "Climate", "Culture") and services (capabilities like "Data Visualization", "Dashboard", "Research"). Prefer reusing existing tags from the available lists when they fit. Only add new tags when nothing in the existing list fits.`
 
@@ -118,7 +119,7 @@ Rules:
   try {
     const anthropic = new Anthropic({ apiKey })
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_SONNET,
       max_tokens: 512,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],

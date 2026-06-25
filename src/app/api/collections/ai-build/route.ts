@@ -7,6 +7,7 @@ import {
   loadStyleGuide,
 } from '@/lib/ai-collection-prompts'
 import { requireEditor } from '@/lib/api-auth'
+import { CLAUDE_SONNET } from '@/lib/ai-models'
 
 interface InputProject {
   id: string
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
   try {
     const anthropic = new Anthropic({ apiKey })
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_SONNET,
       max_tokens: 2048,
       system,
       messages: [{ role: 'user', content: user }],

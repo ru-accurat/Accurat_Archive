@@ -6,6 +6,7 @@ import type { Project } from '@/lib/types'
 import Anthropic from '@anthropic-ai/sdk'
 import { scoreSimilarity } from '@/lib/similarity'
 import { requireEditor } from '@/lib/api-auth'
+import { CLAUDE_OPUS, CLAUDE_SONNET } from '@/lib/ai-models'
 
 // Fallback guidelines used when ai_settings table is empty
 const FALLBACK_GUIDELINES = `# Accurat Case Study Writing Guidelines
@@ -182,7 +183,7 @@ export async function POST(request: Request) {
   }
 
   // Build prompt
-  const model = quality === 'premium' ? 'claude-opus-4-20250514' : 'claude-sonnet-4-20250514'
+  const model = quality === 'premium' ? CLAUDE_OPUS : CLAUDE_SONNET
   const notesSection = notes ? `\n\nAdditional notes/context from the team (may be in Italian — translate and incorporate):\n${notes}` : ''
 
   // Detect if project already has content (iterative mode)
