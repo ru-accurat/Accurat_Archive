@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { DEVICES, PRINT_KEYS, SURFACES, FRAMINGS, type FramingKey } from '@/components/edit/in-use-options'
+import type { FramingKey } from '@/components/edit/in-use-options'
 import { requireEditor } from '@/lib/api-auth'
+import { buildInUsePrompt } from '@/lib/inuse-prompt'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
@@ -42,51 +43,6 @@ interface InUseBody {
   environment?: string
 }
 
-function buildPrompt(
-  styleTemplate: string,
-  deviceKey: string,
-  surfaceKey: string | undefined,
-  includeHuman: boolean,
-  framingKey: FramingKey | undefined,
-  environment: string
-): string {
-  const device = DEVICES.find((d) => d.key === deviceKey)
-  const deviceLabel = device ? device.label.toLowerCase() : deviceKey
-  const isPrint = PRINT_KEYS.has(deviceKey)
-
-  const parts: string[] = []
-  parts.push(styleTemplate.trim())
-  parts.push('\n---\n')
-  parts.push(
-    `Generate a photorealistic 16:9 image of a ${deviceLabel} showing the project screen.`
-  )
-
-  if (isPrint && surfaceKey) {
-    const surface = SURFACES.find((s) => s.key === surfaceKey)
-    if (surface) {
-      parts.push(`The ${deviceLabel} is ${surface.phrasing}.`)
-    }
-  }
-
-  if (includeHuman) {
-    const framing = FRAMINGS.find((f) => f.key === (framingKey ?? 'hands_only'))
-    if (framing) {
-      parts.push(`Composition: ${framing.phrasing}`)
-    }
-  } else {
-    parts.push('No people in the frame. The device sits in the environment alone.')
-  }
-
-  if (environment && environment.trim()) {
-    parts.push(`Setting: ${environment.trim()}.`)
-  }
-
-  parts.push(
-    'CRITICAL: The image content on the screen must match the source image provided exactly. Do not modify, recolor, or reinterpret the screen content.'
-  )
-
-  return parts.join('\n\n')
-}
 
 // POST /api/ai/generate-inuse
 export async function POST(request: Request) {
@@ -103,12 +59,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'device required' }, { status: 400 })
   }
 
-  // Get Google API key from config
-  const { data: configData } = await supabase.from('config').select('*').eq('key', 'googleApiKey').single()
-  const googleApiKey = configData?.value
+  // Get Google API key + model ID from config
+  const { data: configRows } = await supabase.from('config').select('key, value').in('key', ['googleApiKey', 'inuseImageModel'])
+  const configMap = new Map<string, unknown>((configRows || []).map(r => [r.key as string, r.value]))
+  const googleApiKey = configMap.get('googleApiKey') as string | undefined
   if (!googleApiKey) {
     return NextResponse.json({ error: 'Google API key not configured. Set it in Settings.' }, { status: 500 })
   }
+  const modelId = (configMap.get('inuseImageModel') as string | undefined) || 'gemini-3-pro-image'
 
   // Get project folder
   const { data: project } = await supabase
@@ -138,17 +96,17 @@ export async function POST(request: Request) {
   const base64Image = imageBuffer.toString('base64')
   const mimeType = imageFilename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg'
 
-  const prompt = buildPrompt(
+  const prompt = buildInUsePrompt({
     styleTemplate,
     device,
     surface,
-    includeHuman !== false,
+    includeHuman: includeHuman !== false,
     framing,
-    environment || ''
-  )
+    environment: environment || '',
+  })
 
   const genai = new GoogleGenerativeAI(googleApiKey)
-  const model = genai.getGenerativeModel({ model: 'gemini-2.5-flash-image' })
+  const model = genai.getGenerativeModel({ model: modelId })
 
   const generateOne = async () => {
     try {
