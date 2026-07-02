@@ -17,7 +17,7 @@
 
 // Env is loaded via `node --env-file=.env.local` at run time.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenAI, Modality } from '@google/genai'
 import { rowToProject } from '@/lib/db-utils'
 import type { ProjectRow } from '@/lib/db-utils'
 import type { Project } from '@/lib/types'
@@ -184,16 +184,20 @@ async function fetchSourceImage(sb: SupabaseClient, folder: string, filename: st
 
 type GenResultT = { success: true; base64: string; mime: string } | { success: false; error: string }
 
-async function generateOne(model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>, mime: string, base64: string, prompt: string): Promise<GenResultT> {
+async function generateOne(ai: GoogleGenAI, modelId: string, mime: string, base64: string, prompt: string): Promise<GenResultT> {
   try {
-    const res = await model.generateContent({
+    const res = await ai.models.generateContent({
+      model: modelId,
       contents: [{
         role: 'user',
         parts: [{ inlineData: { mimeType: mime, data: base64 } }, { text: prompt }],
       }],
-      generationConfig: { responseModalities: ['IMAGE', 'TEXT'] as unknown as undefined } as Record<string, unknown>,
+      config: {
+        responseModalities: [Modality.TEXT, Modality.IMAGE],
+        imageConfig: { aspectRatio: '16:9' },
+      },
     })
-    for (const cand of res.response.candidates || []) {
+    for (const cand of res.candidates || []) {
       for (const part of cand.content?.parts || []) {
         if (part.inlineData?.data) {
           return { success: true, base64: part.inlineData.data, mime: part.inlineData.mimeType || 'image/webp' }
@@ -239,7 +243,8 @@ interface ProcessOutcome {
 
 async function processProject(
   sb: SupabaseClient,
-  model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>,
+  ai: GoogleGenAI,
+  modelId: string,
   apiKey: string,
   styleTemplate: string,
   project: Project,
@@ -312,9 +317,9 @@ async function processProject(
   // Step 1: generate. Nothing has been mutated yet. If this fails we skip
   // cleanly without touching storage.
   const t0 = Date.now()
-  const r1 = await generateOne(model, srcImg.mime, srcImg.base64, prompt)
+  const r1 = await generateOne(ai, modelId, srcImg.mime, srcImg.base64, prompt)
   await sleep(REQUEST_DELAY_MS)
-  const r2 = await generateOne(model, srcImg.mime, srcImg.base64, prompt)
+  const r2 = await generateOne(ai, modelId, srcImg.mime, srcImg.base64, prompt)
   console.log(`  gen 2 variants in ${((Date.now()-t0)/1000).toFixed(1)}s — r1=${r1.success} r2=${r2.success}`)
 
   const successes = [r1, r2].filter((r): r is Extract<GenResultT, { success: true }> => r.success)
@@ -378,8 +383,7 @@ async function main() {
   const sb = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
   const { apiKey, model: modelId } = await loadConfig(sb)
   const styleTemplate = await loadStyleTemplate(sb)
-  const genai = new GoogleGenerativeAI(apiKey)
-  const model = genai.getGenerativeModel({ model: modelId })
+  const ai = new GoogleGenAI({ apiKey })
 
   console.log(`RUN ${RUN_ID}${DRY_RUN ? ' (DRY-RUN)' : ''}`)
   console.log(`model: ${modelId}`)
@@ -409,7 +413,7 @@ async function main() {
 
     let outcome: ProcessOutcome
     try {
-      outcome = await processProject(sb, model, apiKey, styleTemplate, p)
+      outcome = await processProject(sb, ai, modelId, apiKey, styleTemplate, p)
     } catch (e) {
       outcome = { status: 'failed', reason: e instanceof Error ? e.message : String(e) }
     }

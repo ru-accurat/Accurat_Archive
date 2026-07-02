@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenAI } from '@google/genai'
 
 /** Classification of a candidate source image. Only `ui` and `mockup` are
  *  usable as reference material for an in-use shot. */
@@ -18,8 +18,7 @@ export async function classifySourceImage(
   mime: string,
   base64: string,
 ): Promise<ClassifyResult> {
-  const genai = new GoogleGenerativeAI(apiKey)
-  const model = genai.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const ai = new GoogleGenAI({ apiKey })
 
   // Extract dimensions from the image bytes locally (no extra API call).
   const dims = await extractDimensions(mime, base64)
@@ -36,7 +35,8 @@ Look at the provided image and answer with ONE word, no explanation, from this l
 Answer with only the single word.`
 
   try {
-    const res = await model.generateContent({
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
       contents: [{
         role: 'user',
         parts: [
@@ -45,7 +45,7 @@ Answer with only the single word.`
         ],
       }],
     })
-    const text = (res.response.candidates?.[0]?.content?.parts || [])
+    const text = (res.candidates?.[0]?.content?.parts || [])
       .map(p => (p.text || '')).join(' ')
       .trim().toLowerCase().replace(/[^a-z]/g, '')
     const kind: SourceKind = (['ui', 'mockup', 'photo', 'other'] as SourceKind[]).includes(text as SourceKind)

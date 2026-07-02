@@ -9,6 +9,7 @@ import {
   type TrimmedProject,
 } from '@/lib/ai-collection-prompts'
 import { requireEditor } from '@/lib/api-auth'
+import { CLAUDE_SONNET } from '@/lib/ai-models'
 
 // POST /api/collections/ai-relevance — { brief, projectId } → { relevance }
 export async function POST(request: Request) {
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
   try {
     const anthropic = new Anthropic({ apiKey })
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_SONNET,
       max_tokens: 512,
       system,
       messages: [{ role: 'user', content: user }],
