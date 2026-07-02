@@ -1,4 +1,5 @@
 import { DEVICES, PRINT_KEYS, SURFACES, FRAMINGS, type FramingKey } from '@/components/edit/in-use-options'
+import type { FramingRecipe, PhotoStyle } from './inuse-auto-params'
 
 /** Hard technical requirements baked into every in-use prompt. Not editable
  *  via ai_settings — these must survive any style-template rewrite. */
@@ -24,6 +25,7 @@ const HARD_RULES = [
   'Anti-artifact:',
   '- No AI watermarks, no visible upscaling seams, no oversharpened edges, no plastic skin, no repeated pattern noise, no phantom or ghost text.',
   '- No text overlays, UI chrome, or extra devices in the frame beyond what is described.',
+  '- Modern digital photography only. No visible film grain, no vintage color filters, no cross-processed looks. Keep the rendering contemporary and clean.',
 ].join('\n')
 
 export interface BuildPromptInput {
@@ -31,8 +33,13 @@ export interface BuildPromptInput {
   device: string
   surface?: string
   includeHuman: boolean
+  /** Legacy framing key (kept for backwards compat with the API route). */
   framing?: FramingKey
   environment: string
+  /** New extended fields — optional so the API route can call this with just the basics. */
+  cast?: string
+  framingRecipe?: FramingRecipe
+  photoStyle?: PhotoStyle
 }
 
 export function buildInUsePrompt({
@@ -42,6 +49,9 @@ export function buildInUsePrompt({
   includeHuman,
   framing,
   environment,
+  cast,
+  framingRecipe,
+  photoStyle,
 }: BuildPromptInput): string {
   const deviceOpt = DEVICES.find(d => d.key === device)
   const deviceLabel = deviceOpt ? deviceOpt.label.toLowerCase() : device
@@ -58,14 +68,32 @@ export function buildInUsePrompt({
   }
 
   if (includeHuman) {
-    const f = FRAMINGS.find(x => x.key === (framing ?? 'hands_only'))
-    if (f) parts.push(`Composition: ${f.phrasing}`)
+    if (framingRecipe) {
+      parts.push(`Framing: ${framingRecipe.phrasing}`)
+    } else {
+      const f = FRAMINGS.find(x => x.key === (framing ?? 'hands_only'))
+      if (f) parts.push(`Framing: ${f.phrasing}`)
+    }
+    if (cast) {
+      parts.push(`Person in the frame: ${cast}. Only their hands, forearms, shoulder, or partial back are visible — no face, no smile, no eye contact. They are engaged with the device naturally, mid-use, not posing.`)
+    }
   } else {
     parts.push('No people in the frame. The device sits in the environment alone.')
   }
 
   if (environment && environment.trim()) {
     parts.push(`Setting: ${environment.trim()}.`)
+  }
+
+  if (photoStyle) {
+    parts.push([
+      'Photographic treatment (all modern digital, no film grain or vintage filters):',
+      `- Camera: ${photoStyle.camera}.`,
+      `- Lens: ${photoStyle.focal}.`,
+      `- Color grade: ${photoStyle.grade}.`,
+      `- Light quality: ${photoStyle.light}.`,
+      `- Time of day: ${photoStyle.time}.`,
+    ].join('\n'))
   }
 
   parts.push(HARD_RULES)

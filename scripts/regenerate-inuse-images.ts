@@ -25,9 +25,11 @@ import { buildInUsePrompt } from '@/lib/inuse-prompt'
 import {
   checkEligibility,
   inferInUseParams,
-  pickSourceImage,
+  candidateSourceImages,
+  deviceFromAspectRatio,
   type InferredParams,
 } from '@/lib/inuse-auto-params'
+import { classifySourceImage } from '@/lib/inuse-classify'
 
 const ARGV = process.argv.slice(2)
 const DRY_RUN = ARGV.includes('--dry-run')
@@ -71,31 +73,104 @@ async function loadConfig(sb: SupabaseClient) {
 }
 
 async function listProjectMedia(sb: SupabaseClient, folder: string): Promise<string[]> {
-  const { data, error } = await sb.storage.from(SOURCE_BUCKET).list(folder, { limit: 200 })
-  if (error) return []
-  return (data || []).map(f => f.name)
+  // Retry transient failures — a network blip that returns an empty list
+  // would otherwise cause spurious "no source image" skips for the rest of
+  // the batch. This bit us on the first run.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const { data, error } = await sb.storage.from(SOURCE_BUCKET).list(folder, { limit: 200 })
+      if (error) {
+        console.warn(`  ! list("${folder}") error attempt ${attempt+1}: ${error.message}`)
+        await sleep(2000 * (attempt + 1))
+        continue
+      }
+      return (data || []).map(f => f.name)
+    } catch (e) {
+      console.warn(`  ! list("${folder}") threw attempt ${attempt+1}: ${e instanceof Error ? e.message : e}`)
+      await sleep(2000 * (attempt + 1))
+    }
+  }
+  throw new Error(`listProjectMedia("${folder}") failed after 3 attempts — aborting to avoid false skips`)
 }
 
-async function backupExistingInUse(sb: SupabaseClient, folder: string, runId: string): Promise<string[]> {
-  const files = await listProjectMedia(sb, folder)
-  const inuse = files.filter(f => /_inuse[_.]/i.test(f))
+/** Retryable storage upload — 3 attempts with exponential backoff.
+ *  Throws only after all attempts fail. */
+async function uploadWithRetry(
+  sb: SupabaseClient,
+  bucket: string,
+  path: string,
+  buffer: Buffer,
+  contentType: string,
+): Promise<void> {
+  let lastErr: unknown = null
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const { error } = await sb.storage.from(bucket).upload(path, buffer, {
+        upsert: true,
+        contentType,
+      })
+      if (!error) return
+      lastErr = error
+      console.warn(`  ! upload ${bucket}/${path} attempt ${attempt+1}: ${error.message}`)
+    } catch (e) {
+      lastErr = e
+      console.warn(`  ! upload ${bucket}/${path} threw attempt ${attempt+1}: ${e instanceof Error ? e.message : e}`)
+    }
+    await sleep(2000 * Math.pow(2, attempt))
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(`upload failed: ${String(lastErr)}`)
+}
+
+/** Retryable storage download. */
+async function downloadWithRetry(sb: SupabaseClient, bucket: string, path: string): Promise<Blob> {
+  let lastErr: unknown = null
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const { data, error } = await sb.storage.from(bucket).download(path)
+      if (!error && data) return data
+      lastErr = error
+    } catch (e) {
+      lastErr = e
+    }
+    await sleep(1500 * (attempt + 1))
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(`download failed: ${String(lastErr)}`)
+}
+
+/** List existing inuse files (used as a pre-upload snapshot). */
+function existingInUseFrom(mediaFilenames: string[]): string[] {
+  return mediaFilenames.filter(f => /_inuse[_.]/i.test(f))
+}
+
+/** Copy the given filenames from the live bucket into the archive bucket.
+ *  Does NOT delete from the live bucket — that happens in finalizeArchive
+ *  only after new variants are safely uploaded. */
+async function stageArchiveOfInUse(sb: SupabaseClient, folder: string, runId: string, oldInuseFiles: string[]): Promise<string[]> {
   const archivedTo: string[] = []
-  for (const f of inuse) {
-    const src = `${folder}/${f}`
-    const dst = `${folder}/${runId}/${f}`
-    // Download
-    const { data: dl, error: dlErr } = await sb.storage.from(SOURCE_BUCKET).download(src)
-    if (dlErr || !dl) { console.warn(`  ! could not download ${src}: ${dlErr?.message}`); continue }
-    const buffer = Buffer.from(await dl.arrayBuffer())
-    // Upload to archive
-    const { error: upErr } = await sb.storage.from(ARCHIVE_BUCKET).upload(dst, buffer, { upsert: true, contentType: dl.type || 'image/webp' })
-    if (upErr) { console.warn(`  ! could not upload ${dst}: ${upErr.message}`); continue }
-    // Delete from source
-    const { error: rmErr } = await sb.storage.from(SOURCE_BUCKET).remove([src])
-    if (rmErr) { console.warn(`  ! could not remove ${src}: ${rmErr.message}`); continue }
-    archivedTo.push(f)
+  for (const f of oldInuseFiles) {
+    try {
+      const dl = await downloadWithRetry(sb, SOURCE_BUCKET, `${folder}/${f}`)
+      const buffer = Buffer.from(await dl.arrayBuffer())
+      await uploadWithRetry(sb, ARCHIVE_BUCKET, `${folder}/${runId}/${f}`, buffer, dl.type || 'image/webp')
+      archivedTo.push(f)
+    } catch (e) {
+      console.warn(`  ! could not archive ${folder}/${f}: ${e instanceof Error ? e.message : e}`)
+    }
   }
   return archivedTo
+}
+
+/** Delete already-archived old inuse files from the live bucket. Only called
+ *  once the new variants are safely uploaded. */
+async function finalizeArchive(sb: SupabaseClient, folder: string, archivedFiles: string[]) {
+  if (archivedFiles.length === 0) return
+  const paths = archivedFiles.map(f => `${folder}/${f}`)
+  try {
+    const { error } = await sb.storage.from(SOURCE_BUCKET).remove(paths)
+    if (error) console.warn(`  ! could not remove archived-from-live ${paths.join(', ')}: ${error.message}`)
+  } catch (e) {
+    console.warn(`  ! remove threw: ${e instanceof Error ? e.message : e}`)
+  }
 }
 
 async function fetchSourceImage(sb: SupabaseClient, folder: string, filename: string): Promise<{ mime: string; base64: string } | null> {
@@ -132,15 +207,9 @@ async function generateOne(model: ReturnType<GoogleGenerativeAI['getGenerativeMo
 }
 
 async function uploadVariant(sb: SupabaseClient, folder: string, seqLabel: string, base64: string, mime: string): Promise<string> {
-  // Force .webp filename regardless of source mime — matches naming convention.
   const filename = `${folder}_inuse_${seqLabel}.webp`
-  const path = `${folder}/${filename}`
   const buffer = Buffer.from(base64, 'base64')
-  const { error } = await sb.storage.from(SOURCE_BUCKET).upload(path, buffer, {
-    upsert: true,
-    contentType: mime,
-  })
-  if (error) throw error
+  await uploadWithRetry(sb, SOURCE_BUCKET, `${folder}/${filename}`, buffer, mime)
   return filename
 }
 
@@ -171,6 +240,7 @@ interface ProcessOutcome {
 async function processProject(
   sb: SupabaseClient,
   model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>,
+  apiKey: string,
   styleTemplate: string,
   project: Project,
 ): Promise<ProcessOutcome> {
@@ -179,36 +249,54 @@ async function processProject(
   const elig = checkEligibility(project, files)
   if (!elig.eligible) return { status: 'skipped', reason: elig.reason }
 
-  const source = pickSourceImage(project, files)
-  if (!source) return { status: 'skipped', reason: 'no eligible source image' }
+  // Walk candidate sources, classify each, pick the first `ui` or `mockup`.
+  const candidates = candidateSourceImages(project, files)
+  if (candidates.length === 0) return { status: 'skipped', reason: 'no eligible source image' }
 
-  // Load per-project override, else auto-infer.
+  const params0 = inferInUseParams(project)
+
+  let chosenSource: string | null = null
+  let srcImg: Awaited<ReturnType<typeof fetchSourceImage>> = null
+  let deviceOverride: string | null = null
+  let classifyReason = ''
+
+  for (const cand of candidates.slice(0, 4)) {
+    const img = await fetchSourceImage(sb, folder, cand)
+    if (!img) continue
+    const cls = await classifySourceImage(apiKey, img.mime, img.base64)
+    if (cls.kind === 'ui' || cls.kind === 'mockup') {
+      chosenSource = cand
+      srcImg = img
+      deviceOverride = deviceFromAspectRatio(cls.width, cls.height, params0.device)
+      classifyReason = `${cls.kind} (${cls.width}x${cls.height}, ratio ${cls.aspectRatio.toFixed(2)})`
+      break
+    } else {
+      console.log(`  ~ skipped source ${cand}: classified as ${cls.kind}`)
+    }
+  }
+
+  if (!chosenSource || !srcImg) {
+    return { status: 'skipped', reason: 'no candidate source classified as UI or mockup' }
+  }
+
+  // Load per-project override, else use auto-inferred params (with device possibly overridden by source aspect).
   const { data: ov } = await sb.from('inuse_overrides').select('*').eq('project_id', project.id).maybeSingle()
   const params: InferredParams = ov
     ? {
-        device: (ov.device as string) || inferInUseParams(project).device,
-        surface: ov.surface as string | undefined,
+        ...params0,
+        device: (ov.device as string) || deviceOverride || params0.device,
+        surface: (ov.surface as string) ?? params0.surface,
         includeHuman: ov.include_human ?? true,
-        framing: (ov.framing as InferredParams['framing']) || 'hands_only',
-        environment: (ov.environment as string) || inferInUseParams(project).environment,
+        environment: (ov.environment as string) || params0.environment,
         reason: `override: ${ov.notes || 'manual'}`,
       }
-    : inferInUseParams(project)
+    : { ...params0, device: deviceOverride || params0.device }
 
-  console.log(`  device=${params.device} env="${params.environment.slice(0, 60)}..." source=${source}`)
-  console.log(`  reason: ${params.reason}`)
+  console.log(`  device=${params.device} env-category=${params.reason.match(/environment:\s*([a-z_]+)/)?.[1] || '?'} framing=${params.framingRecipe.key} source=${chosenSource} (${classifyReason})`)
 
-  if (DRY_RUN) return { status: 'done', reason: 'dry-run', params, source }
+  if (DRY_RUN) return { status: 'done', reason: 'dry-run', params, source: chosenSource }
 
-  // Backup existing inuse files
-  const archivedFiles = await backupExistingInUse(sb, folder, RUN_ID)
-  if (archivedFiles.length) console.log(`  backed up ${archivedFiles.length} existing inuse file(s) → ${ARCHIVE_BUCKET}/${folder}/${RUN_ID}/`)
-
-  // Fetch source
-  const srcImg = await fetchSourceImage(sb, folder, source)
-  if (!srcImg) return { status: 'failed', reason: `could not fetch source ${source}` }
-
-  // Build prompt
+  // Build prompt with the full new pool (cast + framing recipe + photo style)
   const prompt = buildInUsePrompt({
     styleTemplate,
     device: params.device,
@@ -216,9 +304,13 @@ async function processProject(
     includeHuman: params.includeHuman,
     framing: params.framing,
     environment: params.environment,
+    cast: params.cast,
+    framingRecipe: params.framingRecipe,
+    photoStyle: params.photoStyle,
   })
 
-  // Generate two variants sequentially (respect rate limits).
+  // Step 1: generate. Nothing has been mutated yet. If this fails we skip
+  // cleanly without touching storage.
   const t0 = Date.now()
   const r1 = await generateOne(model, srcImg.mime, srcImg.base64, prompt)
   await sleep(REQUEST_DELAY_MS)
@@ -230,15 +322,34 @@ async function processProject(
     return { status: 'failed', reason: `both variants failed: ${(r1 as { error: string }).error} | ${(r2 as { error: string }).error}` }
   }
 
+  // Step 2: upload new variants first (before touching old inuse files).
+  // If upload fails, old files stay live — project keeps its previous inuse image.
   const kept: string[] = []
-  for (let i = 0; i < successes.length; i++) {
-    const label = i === 0 ? String(Date.now()) : `${Date.now()}_alt`
-    const fn = await uploadVariant(sb, folder, label, successes[i].base64, successes[i].mime)
-    kept.push(fn)
+  try {
+    for (let i = 0; i < successes.length; i++) {
+      const label = i === 0 ? String(Date.now()) : `${Date.now()}_alt`
+      const fn = await uploadVariant(sb, folder, label, successes[i].base64, successes[i].mime)
+      kept.push(fn)
+    }
+  } catch (e) {
+    return { status: 'failed', reason: `upload new variant failed: ${e instanceof Error ? e.message : e}` }
   }
 
-  // Repoint DB references from archived files to the first new variant.
+  // Step 3: copy the pre-upload inuse files (snapshot taken at the top of
+  // processProject, before any new files were uploaded) to the archive
+  // bucket. Passing this snapshot is critical — otherwise we'd also archive
+  // the new variants we just uploaded and then delete them in finalizeArchive.
+  const oldInuseFiles = existingInUseFrom(files)
+  const archivedFiles = await stageArchiveOfInUse(sb, folder, RUN_ID, oldInuseFiles)
+  if (archivedFiles.length) console.log(`  archived ${archivedFiles.length} old inuse file(s) → ${ARCHIVE_BUCKET}/${folder}/${RUN_ID}/`)
+
+  // Step 4: repoint DB references from the old (soon-deleted) inuse filenames
+  // to the first new variant.
   await repointDbReferences(sb, project.id, archivedFiles, kept[0])
+
+  // Step 5: only NOW delete the old inuse files from the live bucket, since
+  // both new variants are live and DB refs are updated.
+  await finalizeArchive(sb, folder, archivedFiles)
 
   // Log to activity_log
   await sb.from('activity_log').insert({
@@ -248,14 +359,15 @@ async function processProject(
       run_id: RUN_ID,
       model: 'gemini-3-pro-image',
       params,
-      source,
+      source: chosenSource,
+      classify: classifyReason,
       kept,
       archived_files: archivedFiles,
       archive_path: `${ARCHIVE_BUCKET}/${folder}/${RUN_ID}/`,
     },
   })
 
-  return { status: 'done', kept, archivedFolder: `${folder}/${RUN_ID}`, params, source }
+  return { status: 'done', kept, archivedFolder: `${folder}/${RUN_ID}`, params, source: chosenSource }
 }
 
 async function main() {
@@ -297,7 +409,7 @@ async function main() {
 
     let outcome: ProcessOutcome
     try {
-      outcome = await processProject(sb, model, styleTemplate, p)
+      outcome = await processProject(sb, model, apiKey, styleTemplate, p)
     } catch (e) {
       outcome = { status: 'failed', reason: e instanceof Error ? e.message : String(e) }
     }
