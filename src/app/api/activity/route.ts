@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireSignedIn } from '@/lib/api-auth'
 
 // GET /api/activity?limit=50&offset=0
 export async function GET(request: Request) {
+  const deny = await requireSignedIn()
+  if (deny) return deny
+
   const { searchParams } = new URL(request.url)
   const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
   const offset = parseInt(searchParams.get('offset') || '0')

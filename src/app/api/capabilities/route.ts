@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireSignedIn } from '@/lib/api-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +60,9 @@ function aggregate(
 }
 
 export async function GET() {
+  const deny = await requireSignedIn()
+  if (deny) return deny
+
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('projects')

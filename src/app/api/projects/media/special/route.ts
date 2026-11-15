@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { IMAGE_EXTS } from '@/lib/media-types'
+import { requireSignedIn } from '@/lib/api-auth'
 
 // GET /api/projects/media/special?folder=FolderName  — single project (with storage listing)
 // GET /api/projects/media/special                     — all projects (fast, DB-only)
 export async function GET(request: Request) {
+  const deny = await requireSignedIn()
+  if (deny) return deny
+
   const supabase = createServiceClient()
   const { searchParams } = new URL(request.url)
   const folder = searchParams.get('folder')

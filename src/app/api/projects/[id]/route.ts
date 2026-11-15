@@ -3,10 +3,13 @@ import { createServiceClient } from '@/lib/supabase'
 import { rowToProject, projectToRow } from '@/lib/db-utils'
 import type { ProjectRow } from '@/lib/db-utils'
 import { logActivity } from '@/lib/activity'
-import { requireEditor, requireRole } from '@/lib/api-auth'
+import { requireEditor, requireRole, requireSignedIn } from '@/lib/api-auth'
 
 // GET /api/projects/[id]
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireSignedIn()
+  if (deny) return deny
+
   const { id } = await params
   const supabase = createServiceClient()
 

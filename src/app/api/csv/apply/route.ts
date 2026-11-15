@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireEditor } from '@/lib/api-auth'
 
 function parseDomains(raw: string): string[] {
   if (!raw?.trim()) return []
@@ -70,6 +71,9 @@ function fieldToDbUpdate(field: string, value: string): Record<string, unknown> 
 
 // POST /api/csv/apply — apply parsed CSV data to matched projects
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
+
   const supabase = createServiceClient()
   const body = await request.json()
 

@@ -6,6 +6,8 @@ import dynamic from 'next/dynamic'
 import { useProjectStore } from '@/stores/project-store'
 import { api } from '@/lib/api-client'
 
+type SecretStatus = { set: boolean; last4: string }
+
 const CsvImportModal = dynamic(
   () => import('@/components/import/CsvImportModal').then(m => m.CsvImportModal),
   { ssr: false }
@@ -21,6 +23,10 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
+  // Saved keys are never sent to the browser: only whether one is set and its last 4 characters.
+  const [anthropicStatus, setAnthropicStatus] = useState<SecretStatus | null>(null)
+  const [googleStatus, setGoogleStatus] = useState<SecretStatus | null>(null)
+  const [keysLocked, setKeysLocked] = useState(false)
 
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [importData, setImportData] = useState<{
@@ -33,20 +39,36 @@ export default function SettingsPage() {
   const csvInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    api.getConfig().then((config) => {
-      if (config.anthropicApiKey) setApiKey(config.anthropicApiKey as string)
-      if (config.googleApiKey) setGoogleKey(config.googleApiKey as string)
-      setLoading(false)
-    })
+    api.getConfig()
+      .then((config) => {
+        setAnthropicStatus(config.anthropicApiKey as SecretStatus)
+        setGoogleStatus(config.googleApiKey as SecretStatus)
+      })
+      .catch(() => setKeysLocked(true)) // only admins can read or change API keys
+      .finally(() => setLoading(false))
   }, [])
 
   const handleSave = async () => {
     setSaving(true)
-    await api.setConfig({ anthropicApiKey: apiKey.trim(), googleApiKey: googleKey.trim() })
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    try {
+      // Empty fields are left out, so a stored key is only replaced when a new one is pasted.
+      const update: Record<string, string> = {}
+      if (apiKey.trim()) update.anthropicApiKey = apiKey.trim()
+      if (googleKey.trim()) update.googleApiKey = googleKey.trim()
+      const config = await api.setConfig(update)
+      setAnthropicStatus(config.anthropicApiKey as SecretStatus)
+      setGoogleStatus(config.googleApiKey as SecretStatus)
+      setApiKey('')
+      setGoogleKey('')
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } finally {
+      setSaving(false)
+    }
   }
+
+  const keyPlaceholder = (status: SecretStatus | null, example: string) =>
+    status?.set ? `Saved${status.last4 ? `, ends in ${status.last4}` : ''}. Paste a new key to replace it.` : example
 
   const handleImportCsv = () => { csvInputRef.current?.click() }
 
@@ -113,48 +135,56 @@ export default function SettingsPage() {
 
         <div className="border-t border-[var(--c-gray-100)] mb-10" />
 
-        <div className="mb-8">
-          <label className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] block mb-3">Anthropic API Key</label>
-          <p className="text-[12px] font-[400] text-[var(--c-gray-500)] mb-4 leading-[1.6]">
-            Required for AI content generation. Get your key from{' '}
-            <span className="text-[var(--c-gray-700)] font-[450]">console.anthropic.com</span>
+        {keysLocked ? (
+          <p className="text-[12px] font-[400] text-[var(--c-gray-500)] leading-[1.6]">
+            API keys can only be viewed and changed by an admin.
           </p>
-          <div className="flex items-center gap-3">
-            <input
-              type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-ant-..."
-              className="flex-1 px-0 py-2 text-[14px] font-[350] bg-transparent border-b border-[var(--c-gray-200)] focus:border-[var(--c-gray-900)] focus:outline-none transition-colors duration-200 text-[var(--c-gray-800)] placeholder:text-[var(--c-gray-300)] font-mono"
-            />
-            <button onClick={() => setShowKey(!showKey)} className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors duration-200">
-              {showKey ? 'Hide' : 'Show'}
-            </button>
+        ) : (
+          <>
+          <div className="mb-8">
+            <label className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] block mb-3">Anthropic API Key</label>
+            <p className="text-[12px] font-[400] text-[var(--c-gray-500)] mb-4 leading-[1.6]">
+              Required for AI content generation. Get your key from{' '}
+              <span className="text-[var(--c-gray-700)] font-[450]">console.anthropic.com</span>
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)}
+                placeholder={keyPlaceholder(anthropicStatus, 'sk-ant-...')}
+                className="flex-1 px-0 py-2 text-[14px] font-[350] bg-transparent border-b border-[var(--c-gray-200)] focus:border-[var(--c-gray-900)] focus:outline-none transition-colors duration-200 text-[var(--c-gray-800)] placeholder:text-[var(--c-gray-300)] font-mono"
+              />
+              <button onClick={() => setShowKey(!showKey)} className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors duration-200">
+                {showKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="mb-8">
-          <label className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] block mb-3">Google AI Studio API Key</label>
-          <p className="text-[12px] font-[400] text-[var(--c-gray-500)] mb-4 leading-[1.6]">
-            Required for in-use image generation (Gemini). Get your key from{' '}
-            <span className="text-[var(--c-gray-700)] font-[450]">aistudio.google.com/apikey</span>
-          </p>
-          <div className="flex items-center gap-3">
-            <input
-              type={showGoogleKey ? 'text' : 'password'} value={googleKey} onChange={(e) => setGoogleKey(e.target.value)}
-              placeholder="AIza..."
-              className="flex-1 px-0 py-2 text-[14px] font-[350] bg-transparent border-b border-[var(--c-gray-200)] focus:border-[var(--c-gray-900)] focus:outline-none transition-colors duration-200 text-[var(--c-gray-800)] placeholder:text-[var(--c-gray-300)] font-mono"
-            />
-            <button onClick={() => setShowGoogleKey(!showGoogleKey)} className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors duration-200">
-              {showGoogleKey ? 'Hide' : 'Show'}
-            </button>
+          <div className="mb-8">
+            <label className="text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)] block mb-3">Google AI Studio API Key</label>
+            <p className="text-[12px] font-[400] text-[var(--c-gray-500)] mb-4 leading-[1.6]">
+              Required for in-use image generation (Gemini). Get your key from{' '}
+              <span className="text-[var(--c-gray-700)] font-[450]">aistudio.google.com/apikey</span>
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                type={showGoogleKey ? 'text' : 'password'} value={googleKey} onChange={(e) => setGoogleKey(e.target.value)}
+                placeholder={keyPlaceholder(googleStatus, 'AIza...')}
+                className="flex-1 px-0 py-2 text-[14px] font-[350] bg-transparent border-b border-[var(--c-gray-200)] focus:border-[var(--c-gray-900)] focus:outline-none transition-colors duration-200 text-[var(--c-gray-800)] placeholder:text-[var(--c-gray-300)] font-mono"
+              />
+              <button onClick={() => setShowGoogleKey(!showGoogleKey)} className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-700)] transition-colors duration-200">
+                {showGoogleKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-4">
-          <button onClick={handleSave} disabled={saving} className="text-[12px] font-[500] px-6 py-2 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors duration-200 disabled:opacity-40">
-            {saving ? 'Saving...' : 'Save'}
-          </button>
-          {saved && <span className="text-[12px] font-[400] text-[var(--c-success)]">Saved!</span>}
-        </div>
+          <div className="flex items-center gap-4">
+            <button onClick={handleSave} disabled={saving} className="text-[12px] font-[500] px-6 py-2 rounded-[var(--radius-sm)] bg-[var(--c-gray-900)] text-white hover:bg-[var(--c-gray-800)] transition-colors duration-200 disabled:opacity-40">
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            {saved && <span className="text-[12px] font-[400] text-[var(--c-success)]">Saved!</span>}
+          </div>
+          </>
+        )}
       </div>
 
       <CsvImportModal

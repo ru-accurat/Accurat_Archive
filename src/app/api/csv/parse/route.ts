@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import Papa from 'papaparse'
+import { requireEditor } from '@/lib/api-auth'
 
 function toSlug(fullName: string): string {
   return fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
@@ -8,6 +9,9 @@ function toSlug(fullName: string): string {
 
 // POST /api/csv/parse — parse a CSV file, match rows to existing projects
 export async function POST(request: Request) {
+  const deny = await requireEditor()
+  if (deny) return deny
+
   const formData = await request.formData()
   const file = formData.get('file')
 

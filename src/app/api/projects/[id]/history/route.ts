@@ -3,9 +3,13 @@ import { createServiceClient } from '@/lib/supabase'
 import { rowToProject } from '@/lib/db-utils'
 import type { ProjectRow } from '@/lib/db-utils'
 import type { HistoryEntry } from '@/lib/types'
+import { requireSignedIn } from '@/lib/api-auth'
 
 // GET /api/projects/[id]/history
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireSignedIn()
+  if (deny) return deny
+
   const { id } = await params
   const supabase = createServiceClient()
 

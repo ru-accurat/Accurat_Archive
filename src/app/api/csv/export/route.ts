@@ -3,9 +3,13 @@ import { createServiceClient } from '@/lib/supabase'
 import { rowToProject } from '@/lib/db-utils'
 import type { ProjectRow } from '@/lib/db-utils'
 import Papa from 'papaparse'
+import { requireBusinessAccess } from '@/lib/api-auth'
 
 // POST /api/csv/export — export selected projects as CSV
 export async function POST(request: Request) {
+  const deny = await requireBusinessAccess()
+  if (deny) return deny
+
   const supabase = createServiceClient()
   const { projectIds } = await request.json()
 

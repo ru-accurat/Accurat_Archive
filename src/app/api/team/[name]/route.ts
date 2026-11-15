@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { rowToProject, type ProjectRow } from '@/lib/db-utils'
+import { requireSignedIn } from '@/lib/api-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,6 +9,9 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ name: string }> }
 ) {
+  const deny = await requireSignedIn()
+  if (deny) return deny
+
   const { name: rawName } = await params
   const name = decodeURIComponent(rawName).trim()
   if (!name) return NextResponse.json({ error: 'Missing name' }, { status: 400 })

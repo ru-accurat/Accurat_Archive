@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { requireSignedIn } from '@/lib/api-auth'
 
 // GET /api/activity/recent — last 10 activity entries joined with project info
 export async function GET() {
+  const deny = await requireSignedIn()
+  if (deny) return deny
+
   const supabase = createServiceClient()
 
   const { data: activities, error } = await supabase

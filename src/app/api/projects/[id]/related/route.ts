@@ -2,9 +2,13 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { rowToProject } from '@/lib/db-utils'
 import type { ProjectRow } from '@/lib/db-utils'
+import { requireSignedIn } from '@/lib/api-auth'
 
 // GET /api/projects/[id]/related — returns up to 5 similar projects
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deny = await requireSignedIn()
+  if (deny) return deny
+
   const { id } = await params
   const supabase = createServiceClient()
 

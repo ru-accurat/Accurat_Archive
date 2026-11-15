@@ -50,3 +50,6 @@ export const requireEditor = () => requireRole(['admin', 'editor'])
 /** Shortcut for routes content_reader must never see. */
 export const requireBusinessAccess = () =>
   requireRole(['admin', 'editor', 'viewer'])
+/** Shortcut for internal routes: any signed-in role, including content_reader. */
+export const requireSignedIn = () =>
+  requireRole(['admin', 'editor', 'viewer', 'content_reader'])

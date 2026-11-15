@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { rowToProjectSummary } from '@/lib/db-utils'
 import type { ProjectSummaryRow } from '@/lib/db-utils'
+import { requireSignedIn } from '@/lib/api-auth'
 
 // Columns needed to compute ProjectSummary. We select challenge/solution/etc
 // only for the completeness count, not to ship them to the client.
@@ -16,6 +17,9 @@ const SUMMARY_COLUMNS = [
 
 // GET /api/projects/summaries — list all projects as lightweight summaries
 export async function GET() {
+  const deny = await requireSignedIn()
+  if (deny) return deny
+
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('projects')
