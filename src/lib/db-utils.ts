@@ -1,4 +1,4 @@
-import type { Project, ProjectSummary, Client, Engagement, ImportBatch } from './types'
+import type { Project, ProjectSummary, Client, Engagement, ImportBatch, Offering } from './types'
 
 // Database row type (snake_case columns)
 export interface ProjectRow {
@@ -38,6 +38,15 @@ export interface ProjectRow {
   share_token: string | null
   published_version: Record<string, unknown> | null
   published_at: string | null
+  ongoing?: boolean | null
+  deck_no?: number | null
+  category_id?: number | null
+  offerings?: string[] | null
+  what_we_made?: string | null
+  deck_challenge?: string | null
+  role_and_process?: string | null
+  outcome?: string | null
+  hero_video?: string | null
   created_at?: string
   updated_at?: string
 }
@@ -103,6 +112,15 @@ export function rowToProject(row: ProjectRow): Project {
     updatedAt: row.updated_at,
     publishedAt: row.published_at,
     hasUnpublishedChanges: computeHasUnpublishedChanges(row),
+    ongoing: row.ongoing ?? false,
+    deckNo: row.deck_no ?? null,
+    categoryId: row.category_id ?? null,
+    offerings: (row.offerings || []) as Offering[],
+    whatWeMade: row.what_we_made || '',
+    deckChallenge: row.deck_challenge || '',
+    roleAndProcess: row.role_and_process || '',
+    outcome: row.outcome || '',
+    heroVideo: row.hero_video ?? null,
   }
 }
 
@@ -271,6 +289,17 @@ export function projectToRow(project: Partial<Project>): Partial<ProjectRow> {
   if (project.locationName !== undefined) row.location_name = project.locationName
   if (project.latitude !== undefined) row.latitude = project.latitude
   if (project.longitude !== undefined) row.longitude = project.longitude
+  if (project.ongoing !== undefined) row.ongoing = project.ongoing
+  // The database requires end_year to be empty for ongoing projects (projects_ongoing_no_end_year).
+  if (project.ongoing === true) row.end_year = null
+  if (project.categoryId !== undefined) row.category_id = project.categoryId
+  if (project.offerings !== undefined) row.offerings = project.offerings
+  if (project.whatWeMade !== undefined) row.what_we_made = project.whatWeMade
+  if (project.deckChallenge !== undefined) row.deck_challenge = project.deckChallenge
+  if (project.roleAndProcess !== undefined) row.role_and_process = project.roleAndProcess
+  if (project.outcome !== undefined) row.outcome = project.outcome
+  // deck_no and hero_video are read-only in the app: deck_no is the website's Library number,
+  // hero_video is set by the consolidation scripts.
 
   return row as Partial<ProjectRow>
 }

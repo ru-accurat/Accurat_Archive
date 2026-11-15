@@ -2,6 +2,7 @@
 
 import type { Project, MediaFile } from '@/lib/types'
 import { GalleryGrid } from '@/components/project/GalleryGrid'
+import { MediaRoleSections } from '@/components/project/MediaRoleSections'
 import { pdfUrl } from '@/lib/media-url'
 
 interface Props {
@@ -11,9 +12,13 @@ interface Props {
   onDeleteMedia?: (filename: string) => void
   onSetHero?: (filename: string) => void
   onSetThumb?: (filename: string) => void
+  onSetRole?: (ids: string[], role: 'selected' | 'backup') => Promise<boolean>
+  onSetSpecial?: (file: MediaFile, kind: 'hero' | 'thumbnail') => Promise<void>
+  onSaveCaption?: (file: MediaFile, caption: string) => Promise<void>
 }
 
-export function ProjectMediaSection({ project, galleryMedia, onAddMedia, onDeleteMedia, onSetHero, onSetThumb }: Props) {
+export function ProjectMediaSection({ project, galleryMedia, onAddMedia, onDeleteMedia, onSetHero, onSetThumb, onSetRole, onSetSpecial, onSaveCaption }: Props) {
+  const hasRoles = galleryMedia.some((m) => m.role)
   return (
     <>
       {(project.pdfFiles?.length ?? 0) > 0 && (
@@ -39,6 +44,19 @@ export function ProjectMediaSection({ project, galleryMedia, onAddMedia, onDelet
           </div>
         </div>
       )}
+      {hasRoles ? (
+        <MediaRoleSections
+          media={galleryMedia}
+          onWebsite={project.deckNo != null}
+          heroFilename={project.heroImage || null}
+          thumbFilename={project.thumbImage || null}
+          onSetRole={onSetRole}
+          onSetSpecial={onSetSpecial}
+          onSaveCaption={onSaveCaption}
+          onDeleteMedia={onDeleteMedia}
+          onAddMedia={onAddMedia}
+        />
+      ) : (
       <GalleryGrid
         media={galleryMedia}
         folderName={project.folderName}
@@ -49,6 +67,7 @@ export function ProjectMediaSection({ project, galleryMedia, onAddMedia, onDelet
         onSetHero={onSetHero}
         onSetThumb={onSetThumb}
       />
+      )}
     </>
   )
 }

@@ -12,7 +12,7 @@ import { api } from '@/lib/api-client'
 import { toast } from '@/lib/toast'
 import { projectToSummary } from '@/lib/db-utils'
 import { pdfUrl } from '@/lib/media-url'
-import type { Project, HistoryEntry } from '@/lib/types'
+import type { Project, HistoryEntry, Category, MediaFile } from '@/lib/types'
 
 import { ProjectHero } from '@/components/project/ProjectHero'
 import { ProjectMetadata } from '@/components/project/ProjectMetadata'
@@ -22,6 +22,8 @@ import { ProjectLinksSection } from '@/components/project/ProjectLinksSection'
 import { ProjectMediaSection } from '@/components/project/ProjectMediaSection'
 import { ProjectSidebar } from '@/components/project/ProjectSidebar'
 import { ProjectAIBar } from '@/components/project/ProjectAIBar'
+import { ProjectDeckFacts } from '@/components/project/ProjectDeckFacts'
+import { ProjectDeckTexts } from '@/components/project/ProjectDeckTexts'
 
 import { EditableField } from '@/components/edit/EditableField'
 import { EditableTagsField } from '@/components/edit/EditableTagsField'
@@ -63,6 +65,7 @@ export default function ProjectPage() {
   const [sharePopover, setSharePopover] = useState(false)
   const [sharingLoading, setSharingLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
   const pdfInputRef = useRef<HTMLInputElement>(null)
@@ -73,6 +76,10 @@ export default function ProjectPage() {
       api.getAllTags().then(setAllTags).catch(console.error)
     }
   }, [editMode])
+
+  useEffect(() => {
+    api.getCategories().then(setCategories).catch(console.error)
+  }, [])
 
   useKeyboardNav(editMode ? [] : filteredProjects, id)
 
@@ -194,6 +201,48 @@ export default function ProjectPage() {
       console.error('Reorder error:', err)
     }
   }, [id, setField])
+
+  // Batch Selected <-> Backup. Returns true when saved.
+  const handleSetMediaRole = useCallback(async (ids: string[], role: 'selected' | 'backup') => {
+    if (!id) return false
+    try {
+      const result = await api.setMediaRole(id, ids, role)
+      await refreshMedia()
+      toast.success(`${result.changed} file${result.changed === 1 ? '' : 's'} ${role === 'selected' ? 'made selected' : 'moved to backup'}`)
+      return true
+    } catch (err) {
+      console.error('Media role change failed:', err)
+      toast.error('Nothing changed. ' + (err instanceof Error ? err.message : String(err)))
+      return false
+    }
+  }, [id, refreshMedia])
+
+  // Website hero / thumbnail: sets project_media.is_hero / is_thumbnail and the project's hero_image / thumb_image
+  const handleSetMediaSpecial = useCallback(async (file: MediaFile, kind: 'hero' | 'thumbnail') => {
+    if (!id || !file.mediaId) return
+    try {
+      await api.setMediaSpecial(id, file.mediaId, kind)
+      await refreshMedia()
+      const updated = await api.getProject(id)
+      updateProjectInStore(id, projectToSummary(updated))
+      toast.success(kind === 'hero' ? 'Hero updated' : 'Thumbnail updated')
+    } catch (err) {
+      toast.error('Not changed: ' + (err instanceof Error ? err.message : String(err)))
+    }
+  }, [id, refreshMedia, updateProjectInStore])
+
+  const handleSaveCaption = useCallback(async (file: MediaFile, caption: string) => {
+    if (!id || !file.mediaId) return
+    const prev = file.caption || ''
+    setMedia((list) => list.map((m) => (m.mediaId === file.mediaId ? { ...m, caption } : m)))
+    try {
+      await api.setMediaCaption(id, file.mediaId, caption)
+      toast.success('Caption saved')
+    } catch (err) {
+      setMedia((list) => list.map((m) => (m.mediaId === file.mediaId ? { ...m, caption: prev } : m)))
+      toast.error('Caption not saved: ' + (err instanceof Error ? err.message : String(err)))
+    }
+  }, [id, setMedia])
 
   const handleUploadLogo = useCallback(() => { logoInputRef.current?.click() }, [])
 
@@ -374,6 +423,16 @@ export default function ProjectPage() {
             onLocationNameChange={(v) => setField('locationName', v)} onLatitudeChange={(v) => setField('latitude', v)} onLongitudeChange={(v) => setField('longitude', v)}
             outputOptions={allTags.outputs}
           />
+          <div className="mt-6 p-4 rounded-[var(--radius-md)] border border-[var(--c-gray-200)]">
+            <ProjectDeckFacts
+              project={p}
+              categories={categories}
+              onUpdate={(field, value) => {
+                setField(field, value as never)
+                if (field === 'ongoing' && value === true) setField('end', null)
+              }}
+            />
+          </div>
           <div className="mt-6">
             <ChecklistTagField title="Domains" tags={p.domains} onChange={(v) => setField('domains', v)} allTags={allTags.domains} />
             <ChecklistTagField title="Services" tags={p.services} onChange={(v) => setField('services', v)} allTags={allTags.services} />
@@ -381,6 +440,12 @@ export default function ProjectPage() {
           <div className="mt-8">
             <EditableField title="Tagline" value={p.tagline} onChange={(v) => setField('tagline', v)} large isAiGenerated={isAi('tagline')} />
           </div>
+          <h3 className="mt-10 mb-4 text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)]">Deck texts (used by the website)</h3>
+          <EditableField title="What we made" value={p.whatWeMade || ''} onChange={(v) => setField('whatWeMade', v)} isAiGenerated={isAi('whatWeMade') || isAi('what_we_made')} />
+          <EditableField title="How we worked: Challenge" value={p.deckChallenge || ''} onChange={(v) => setField('deckChallenge', v)} isAiGenerated={isAi('deckChallenge') || isAi('deck_challenge')} />
+          <EditableField title="How we worked: Our role and process" value={p.roleAndProcess || ''} onChange={(v) => setField('roleAndProcess', v)} isAiGenerated={isAi('roleAndProcess') || isAi('role_and_process')} />
+          <EditableField title="How we worked: Outcome" value={p.outcome || ''} onChange={(v) => setField('outcome', v)} isAiGenerated={isAi('outcome')} />
+          <h3 className="mt-10 mb-4 text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(--c-gray-400)]">Archive texts</h3>
           <EditableField title="Description" value={p.description} onChange={(v) => setField('description', v)} isAiGenerated={isAi('description')} />
           <EditableField title="Challenge" value={p.challenge} onChange={(v) => setField('challenge', v)} isAiGenerated={isAi('challenge')} />
           <EditableField title="Solution" value={p.solution} onChange={(v) => setField('solution', v)} isAiGenerated={isAi('solution')} />
@@ -540,10 +605,23 @@ export default function ProjectPage() {
 
         <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] pb-12 space-y-6">
           <ProjectMetadata project={p} onUpdate={handleFieldUpdate} />
+          <div className="pt-2">
+            <ProjectDeckFacts
+              project={p}
+              categories={categories}
+              dark
+              onUpdate={userCanEdit ? (field, value) => (
+                field === 'ongoing' && value === true && p.end != null
+                  ? handleFieldUpdate('end', null).then(() => handleFieldUpdate('ongoing', true))
+                  : handleFieldUpdate(field, value)
+              ) : undefined}
+            />
+          </div>
           <ProjectTagsSection project={p} onUpdate={handleFieldUpdate} dark />
         </div>
       </div>
 
+      <ProjectDeckTexts project={p} onUpdate={handleFieldUpdate} />
       <ProjectDescriptions project={p} onUpdate={handleFieldUpdate} />
 
       <div className="bg-[var(--c-white)]">
@@ -558,6 +636,9 @@ export default function ProjectPage() {
             onDeleteMedia={userCanEdit ? (filename) => handleDeleteMedia([filename]) : undefined}
             onSetHero={userCanEdit ? (filename) => handleFieldUpdate('heroImage', filename) : undefined}
             onSetThumb={userCanEdit ? (filename) => handleFieldUpdate('thumbImage', filename) : undefined}
+            onSetRole={userCanEdit ? handleSetMediaRole : undefined}
+            onSetSpecial={userCanEdit ? handleSetMediaSpecial : undefined}
+            onSaveCaption={userCanEdit ? handleSaveCaption : undefined}
           />
           <ProjectSidebar project={p} />
         </div>

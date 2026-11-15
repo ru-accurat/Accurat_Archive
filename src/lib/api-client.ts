@@ -1,4 +1,4 @@
-import type { Project, ProjectSummary, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow, FilterPreset, CaseStudyDraft } from './types'
+import type { Category, Project, ProjectSummary, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow, FilterPreset, CaseStudyDraft } from './types'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -91,6 +91,36 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ filenames })
     }).then(r => json(r)),
+
+  setMediaRole: async (projectId: string, ids: string[], role: 'selected' | 'backup'): Promise<{ success: boolean; changed: number }> => {
+    const res = await fetch(`/api/projects/${projectId}/media/role`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, role }),
+    })
+    if (res.status === 409) {
+      const data = await res.json() as { problems: { filename: string; reason: string }[] }
+      throw new Error(data.problems.map((p) => `${p.filename}: ${p.reason}`).join('\n'))
+    }
+    return json(res)
+  },
+
+  setMediaCaption: (projectId: string, mediaId: string, caption: string): Promise<{ success: boolean; caption: string }> =>
+    fetch(`/api/projects/${projectId}/media/caption`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mediaId, caption }),
+    }).then(r => json(r)),
+
+  setMediaSpecial: (projectId: string, mediaId: string, kind: 'hero' | 'thumbnail'): Promise<{ success: boolean; filename: string }> =>
+    fetch(`/api/projects/${projectId}/media/special-flag`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mediaId, kind }),
+    }).then(r => json(r)),
+
+  getCategories: (): Promise<Category[]> =>
+    fetch('/api/categories').then(r => json(r)),
 
   reorderMedia: (projectId: string, mediaOrder: string[]): Promise<{ success: boolean }> =>
     fetch(`/api/projects/${projectId}/media/reorder`, {

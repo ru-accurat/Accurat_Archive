@@ -42,6 +42,32 @@ export interface Project {
   updatedAt?: string
   publishedAt?: string | null
   hasUnpublishedChanges?: boolean
+  // Deck consolidation fields (migrations 021 and 024)
+  ongoing?: boolean
+  deckNo?: number | null
+  categoryId?: number | null
+  offerings?: Offering[]
+  whatWeMade?: string
+  deckChallenge?: string
+  roleAndProcess?: string
+  outcome?: string
+  heroVideo?: string | null
+}
+
+export const OFFERINGS = ['digital-products', 'reporting-products', 'immersive-experiences'] as const
+export type Offering = (typeof OFFERINGS)[number]
+export const OFFERING_LABELS: Record<Offering, string> = {
+  'digital-products': 'Digital products',
+  'reporting-products': 'Reporting products',
+  'immersive-experiences': 'Immersive experiences',
+}
+
+export interface Category {
+  id: number
+  number: number
+  name: string
+  slug: string
+  shortDescription: string
 }
 
 /**
@@ -86,11 +112,30 @@ export interface HistoryEntry {
   project: Project
 }
 
+export type MediaRole = 'selected' | 'backup' | 'inuse'
+
 export interface MediaFile {
   filename: string
   path: string
   type: 'image' | 'video' | 'gif'
   size?: number
+  /** project_media row, when the file has one */
+  mediaId?: string
+  role?: MediaRole
+  source?: 'deck' | 'archive'
+  position?: number | null
+  caption?: string
+  isHero?: boolean
+  isThumbnail?: boolean
+  width?: number | null
+  height?: number | null
+  duration?: number | null
+  deckSlide?: number | null
+  flags?: string[]
+  hasWebCopy?: boolean
+  playback?: 'ambient' | 'player' | null
+  /** Why this backup file can't be made selected (missing dimensions, no web copy). Null when it can. */
+  promoteBlock?: string | null
 }
 
 export const SCORED_FIELDS = [

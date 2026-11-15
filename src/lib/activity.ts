@@ -7,6 +7,8 @@ export type ActivityAction =
   | 'media.uploaded'
   | 'media.deleted'
   | 'media.reordered'
+  | 'media.role_changed'
+  | 'media.captioned'
   | 'logo.uploaded'
   | 'logo.deleted'
   | 'pdf.uploaded'

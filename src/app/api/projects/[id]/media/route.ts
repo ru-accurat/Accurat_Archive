@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { MEDIA_EXTS, getMediaType } from '@/lib/media-types'
 import type { MediaFile } from '@/lib/types'
 import { requireEditor } from '@/lib/api-auth'
+import { PROJECT_MEDIA_COLUMNS, ROLE_ORDER, promoteBlockReason, type ProjectMediaRow } from '@/lib/project-media'
 
 // GET /api/projects/[id]/media — list media files
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -27,18 +28,60 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Role, caption and order come from project_media (one row per file, keyed by bucket + path)
+  const { data: rows } = await supabase
+    .from('project_media')
+    .select(PROJECT_MEDIA_COLUMNS)
+    .eq('project_id', id)
+    .eq('bucket', 'project-media')
+  const byPath = new Map<string, ProjectMediaRow>()
+  for (const r of (rows || []) as ProjectMediaRow[]) byPath.set(r.path, r)
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const mediaFiles: MediaFile[] = (files || [])
     .filter(f => {
       const ext = '.' + f.name.split('.').pop()?.toLowerCase()
       return MEDIA_EXTS.has(ext)
     })
-    .map(f => ({
-      filename: f.name,
-      path: `${supabaseUrl}/storage/v1/object/public/project-media/${encodeURIComponent(project.folder_name)}/${encodeURIComponent(f.name)}`,
-      type: getMediaType(f.name),
-      size: (f.metadata as Record<string, unknown>)?.size as number | undefined ?? undefined,
-    }))
+    .map(f => {
+      const row = byPath.get(`${project.folder_name}/${f.name}`)
+      const file: MediaFile = {
+        filename: f.name,
+        path: `${supabaseUrl}/storage/v1/object/public/project-media/${encodeURIComponent(project.folder_name)}/${encodeURIComponent(f.name)}`,
+        type: getMediaType(f.name),
+        size: (f.metadata as Record<string, unknown>)?.size as number | undefined ?? undefined,
+      }
+      if (row) {
+        Object.assign(file, {
+          mediaId: row.id,
+          role: row.role,
+          source: row.source,
+          position: row.position,
+          caption: row.caption || '',
+          isHero: row.is_hero,
+          isThumbnail: row.is_thumbnail,
+          width: row.width,
+          height: row.height,
+          duration: row.duration != null ? Number(row.duration) : null,
+          deckSlide: row.deck_slide,
+          flags: row.flags || [],
+          hasWebCopy: !!row.web_path,
+          playback: row.playback,
+          promoteBlock: row.role === 'backup' ? promoteBlockReason(row) : null,
+        } satisfies Partial<MediaFile>)
+      }
+      return file
+    })
+
+  // With roles: selected, then backup, then in-use, each by position. Files without a row go last.
+  if (byPath.size > 0) {
+    mediaFiles.sort((a, b) => {
+      const ra = a.role ? ROLE_ORDER[a.role] : 9
+      const rb = b.role ? ROLE_ORDER[b.role] : 9
+      if (ra !== rb) return ra - rb
+      return (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) || a.filename.localeCompare(b.filename)
+    })
+  }
 
   return NextResponse.json(mediaFiles)
 }
