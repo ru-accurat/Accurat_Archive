@@ -21,6 +21,13 @@ function parseFloat_(raw: string): number | null {
   return isNaN(n) ? null : n
 }
 
+// "Client - Project" (or the older em-dash form): split at the first separator only,
+// so project names that contain " - " stay whole.
+function splitFullName(fullName: string): [string, string] {
+  const m = fullName.match(/^(.*?) [-\u2014] (.*)$/)
+  return m ? [m[1], m[2]] : [fullName, fullName]
+}
+
 // Map a project field name + raw CSV value to a DB column update
 function fieldToDbUpdate(field: string, value: string): Record<string, unknown> {
   switch (field) {
@@ -28,7 +35,7 @@ function fieldToDbUpdate(field: string, value: string): Record<string, unknown> 
     case 'client': return { client: value.trim() }
     case 'projectName': return { project_name: value.trim() }
     case 'tier': return { tier: parseInt(value, 10) || 3 }
-    case 'section': return { section: value.trim() }
+    case 'partners': return { partners: parseList(value) }
     case 'start': return { start_year: parseYear(value) }
     case 'end': return { end_year: parseYear(value) }
     case 'domains': return { domains: parseDomains(value) }
@@ -79,7 +86,7 @@ export async function POST(request: Request) {
   // Default mapping if none provided
   const mapping = columnMap || {
     'Full Name': 'fullName', 'Client': 'client', 'Project Name': 'projectName',
-    'Tier': 'tier', 'Unit': 'section', 'Start': 'start', 'End': 'end',
+    'Tier': 'tier', 'Partners': 'partners', 'Start': 'start', 'End': 'end',
     'Domains and Sectors': 'domains', 'Services': 'services', 'Tagline': 'tagline',
     'Description': 'description', 'Challenge': 'challenge', 'Solution': 'solution',
     'Deliverables': 'deliverables', 'Client Quotes': 'clientQuotes',
@@ -144,8 +151,9 @@ export async function POST(request: Request) {
       if (!fullName) continue
 
       const id = fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-      const client = ((dbUpdates.client as string) || fullName.split(' — ')[0] || fullName).trim()
-      const projectName = ((dbUpdates.project_name as string) || fullName.split(' — ')[1] || fullName).trim()
+      const [nameClient, nameProject] = splitFullName(fullName)
+      const client = ((dbUpdates.client as string) || nameClient).trim()
+      const projectName = ((dbUpdates.project_name as string) || nameProject).trim()
       const folderName = ((dbUpdates.folder_name as string) || fullName.replace(/\s+/g, '_')).trim()
 
       const insertData: Record<string, unknown> = {
@@ -155,7 +163,6 @@ export async function POST(request: Request) {
         project_name: projectName,
         folder_name: folderName,
         tier: 3,
-        section: '',
         domains: [],
         services: [],
         tagline: '',
@@ -219,11 +226,10 @@ export async function POST(request: Request) {
         const insertData: Record<string, unknown> = {
           id,
           full_name: fullName,
-          client: client || fullName.split(' — ')[0] || fullName,
-          project_name: projectName || fullName.split(' — ')[1] || fullName,
+          client: client || splitFullName(fullName)[0],
+          project_name: projectName || splitFullName(fullName)[1],
           folder_name: folderName,
           tier: 3,
-          section: '',
           domains: [],
           services: [],
           tagline: '',

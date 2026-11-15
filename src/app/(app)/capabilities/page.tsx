@@ -7,7 +7,6 @@ type Row = {
   id: string
   client: string | null
   project_name: string | null
-  section: string | null
   output: string | null
   domains: string[] | null
   services: string[] | null
@@ -46,14 +45,13 @@ async function fetchCapabilities() {
   const supabase = createServiceClient()
   const { data } = await supabase
     .from('projects')
-    .select('id, client, project_name, section, output, domains, services')
+    .select('id, client, project_name, output, domains, services')
   const rows = (data || []) as Row[]
   return {
     totalProjects: rows.length,
     domains: aggregate(rows, (r) => r.domains || []),
     services: aggregate(rows, (r) => r.services || []),
     outputs: aggregate(rows, (r) => [r.output]),
-    sections: aggregate(rows, (r) => [r.section]),
   }
 }
 
@@ -111,7 +109,7 @@ function Section({
 }
 
 export default async function CapabilitiesPage() {
-  const { totalProjects, domains, services, outputs, sections } = await fetchCapabilities()
+  const { totalProjects, domains, services, outputs } = await fetchCapabilities()
 
   return (
     <div className="h-full overflow-y-auto bg-[var(--c-white)]">
@@ -139,11 +137,6 @@ export default async function CapabilitiesPage() {
           title="By Output"
           description="Final deliverable formats produced."
           entries={outputs}
-        />
-        <Section
-          title="By Unit"
-          description="Studio vs Tech split across sections."
-          entries={sections}
         />
       </div>
     </div>

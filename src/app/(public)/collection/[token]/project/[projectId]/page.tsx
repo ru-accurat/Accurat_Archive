@@ -99,7 +99,6 @@ function SharedProjectPageInner() {
           <p className="text-[15px] font-[350] text-[var(--c-gray-600)] mt-3 leading-relaxed">{project.tagline}</p>
         )}
         <div className="flex flex-wrap gap-3 mt-4 text-[11px] text-[var(--c-gray-400)]">
-          {project.section && <span>{project.section}</span>}
           {project.start && <span>{project.start}{project.end ? `–${project.end}` : ''}</span>}
           {project.output && <span>{project.output}</span>}
         </div>

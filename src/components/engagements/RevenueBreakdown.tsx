@@ -10,14 +10,13 @@ interface AnalyticsData {
   byYear: Record<string, number>
   byDomain: Record<string, number>
   byService: Record<string, number>
-  byUnit: Record<string, number>
   byOutput: Record<string, number>
   topClients: { name: string; revenue: number; percentage: number }[]
   concentration: number
   totalRevenue: number
 }
 
-type BreakdownTab = 'domain' | 'service' | 'unit' | 'output' | 'clients'
+type BreakdownTab = 'domain' | 'service' | 'output' | 'clients'
 
 export function RevenueBreakdown() {
   const [data, setData] = useState<AnalyticsData | null>(null)
@@ -40,7 +39,6 @@ export function RevenueBreakdown() {
   const tabs: { key: BreakdownTab; label: string }[] = [
     { key: 'domain', label: 'Domain' },
     { key: 'service', label: 'Service' },
-    { key: 'unit', label: 'Unit' },
     { key: 'output', label: 'Category' },
     { key: 'clients', label: 'Top Clients' },
   ]
@@ -48,8 +46,7 @@ export function RevenueBreakdown() {
   const breakdownData: Record<string, number> =
     tab === 'domain' ? data.byDomain
       : tab === 'service' ? data.byService
-        : tab === 'unit' ? data.byUnit
-          : tab === 'output' ? data.byOutput
+        : tab === 'output' ? data.byOutput
             : {}
 
   const maxBreakdown = Math.max(...Object.values(breakdownData), 1)

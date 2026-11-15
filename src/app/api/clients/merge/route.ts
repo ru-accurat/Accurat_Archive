@@ -40,6 +40,21 @@ export async function POST(request: Request) {
     .eq('client_id', sourceId)
     .select('id')
 
+  // Re-point second-client and partner references too
+  await supabase
+    .from('projects')
+    .update({ client_id_2: targetId })
+    .eq('client_id_2', sourceId)
+
+  const { data: partnerRows } = await supabase
+    .from('projects')
+    .select('id, partner_ids')
+    .contains('partner_ids', [sourceId])
+  for (const row of (partnerRows || []) as { id: string; partner_ids: string[] }[]) {
+    const ids = [...new Set(row.partner_ids.map((pid) => (pid === sourceId ? targetId : pid)))]
+    await supabase.from('projects').update({ partner_ids: ids }).eq('id', row.id)
+  }
+
   // Add source name and aliases to target's aliases (deduped)
   const newAliases = new Set<string>([
     ...(target.aliases || []),

@@ -6,7 +6,6 @@ export interface Filters {
   domains: string[]
   services: string[]
   output: string[]
-  section: string[]
   yearRange: [number | null, number | null]
   tier: number[]
   missing: string[]
@@ -40,7 +39,6 @@ const defaultFilters: Filters = {
   domains: [],
   services: [],
   output: [],
-  section: [],
   yearRange: [null, null],
   tier: [],
   missing: [],

@@ -31,7 +31,6 @@ export function serializeState(
   if (filters.domains.length > 0) params.set('domains', filters.domains.join(','))
   if (filters.services.length > 0) params.set('services', filters.services.join(','))
   if (filters.output.length > 0) params.set('output', filters.output.join(','))
-  if (filters.section.length > 0) params.set('section', filters.section.join(','))
   if (filters.tier.length > 0) params.set('tier', filters.tier.map(String).join(','))
   if (filters.missing.length > 0) params.set('missing', filters.missing.join(','))
   if (!arraysEqual(filters.status, DEFAULT_STATUS)) {
@@ -76,8 +75,6 @@ export function deserializeState(searchParams: URLSearchParams): {
   const output = searchParams.get('output')
   if (output) filters.output = output.split(',').filter(Boolean)
 
-  const section = searchParams.get('section')
-  if (section) filters.section = section.split(',').filter(Boolean)
 
   const tier = searchParams.get('tier')
   if (tier) filters.tier = tier.split(',').map((v) => parseInt(v, 10)).filter((v) => !isNaN(v))
@@ -142,7 +139,6 @@ export function useUrlFilters() {
     if (parsed.filters.domains) setFilter('domains', parsed.filters.domains)
     if (parsed.filters.services) setFilter('services', parsed.filters.services)
     if (parsed.filters.output) setFilter('output', parsed.filters.output)
-    if (parsed.filters.section) setFilter('section', parsed.filters.section)
     if (parsed.filters.tier) setFilter('tier', parsed.filters.tier)
     if (parsed.filters.missing) setFilter('missing', parsed.filters.missing)
     if (parsed.filters.status) setFilter('status', parsed.filters.status)

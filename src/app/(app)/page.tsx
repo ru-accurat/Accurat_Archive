@@ -6,7 +6,7 @@ import { IndexPageClient } from './client'
 export const dynamic = 'force-dynamic'
 
 const SUMMARY_COLUMNS = [
-  'id', 'full_name', 'client', 'project_name', 'tier', 'section',
+  'id', 'full_name', 'client', 'client_2', 'partners', 'project_name', 'tier',
   'start_year', 'end_year', 'domains', 'services', 'tagline', 'description',
   'challenge', 'solution', 'deliverables', 'client_quotes',
   'team', 'urls', 'output', 'folder_name', 'media_order', 'hero_image',

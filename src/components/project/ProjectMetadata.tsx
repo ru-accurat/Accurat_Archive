@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { Project } from '@/lib/types'
 import { InlineEditCell } from '@/components/shared/InlineEditCell'
 import { LocationAutocomplete } from '@/components/edit/LocationAutocomplete'
+import { parsePartners } from '@/lib/partners'
 
 interface ProjectMetadataProps {
   project: Project
@@ -43,9 +44,9 @@ export function ProjectMetadata({ project, onUpdate }: ProjectMetadataProps) {
       </div>
       <div className="min-w-[120px]">
         <InlineEditCell
-          value={project.agency || ''}
-          onSave={(v) => onUpdate('agency', v || null)}
-          placeholder="+ Agency"
+          value={(project.partners || []).join(', ')}
+          onSave={(v) => onUpdate('partners', parsePartners(v))}
+          placeholder="+ Partners"
           className="!text-[13px] !text-white/60 !font-[400] !bg-transparent hover:!bg-white/5"
         />
       </div>
@@ -65,14 +66,6 @@ export function ProjectMetadata({ project, onUpdate }: ProjectMetadataProps) {
           type="number"
           placeholder="End"
           className="!text-white/50 !bg-transparent hover:!bg-white/5"
-        />
-      </div>
-      <div className="w-[120px]">
-        <InlineEditCell
-          value={project.section}
-          onSave={(v) => onUpdate('section', v)}
-          placeholder="Section"
-          className="!text-white/50 !bg-transparent hover:!bg-white/5 uppercase"
         />
       </div>
       <div className="w-[90px]">

@@ -112,11 +112,6 @@ export function ProjectGrid() {
                   matched: {matches.get(project.id)}
                 </div>
               )}
-              {project.section && (
-                <div className="text-[9px] font-[450] uppercase tracking-[0.08em] text-[var(--c-gray-400)] mt-1">
-                  {project.section}
-                </div>
-              )}
             </div>
           )
         })}

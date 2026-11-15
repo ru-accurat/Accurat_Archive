@@ -39,7 +39,6 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     domains: current.domains,
     services: current.services,
     tier: current.tier,
-    section: current.section,
     status: 'public',
     output: current.output,
   }

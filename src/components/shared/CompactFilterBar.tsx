@@ -15,7 +15,6 @@ interface CompactFilterBarProps {
     domains: string[]
     services: string[]
     outputs: string[]
-    sections: string[]
   }
   onToggle: (key: keyof Omit<SharedFilters, 'search'>, value: string) => void
   onSearchChange: (search: string) => void
@@ -38,7 +37,6 @@ export function CompactFilterBar({
   const [expanded, setExpanded] = useState<string | null>(null)
 
   const filterGroups: FilterOption[] = [
-    { key: 'section', label: 'Unit', values: options.sections },
     { key: 'domains', label: 'Domain', values: options.domains },
     { key: 'services', label: 'Service', values: options.services },
     { key: 'output', label: 'Category', values: options.outputs },

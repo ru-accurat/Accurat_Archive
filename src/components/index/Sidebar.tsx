@@ -14,13 +14,6 @@ export function Sidebar() {
       </h3>
 
       <FilterSection
-        title="Unit"
-        options={options.sections}
-        selected={filters.section}
-        onChange={(v) => setFilter('section', v)}
-      />
-
-      <FilterSection
         title="Domains"
         options={options.domains}
         selected={filters.domains}

@@ -19,15 +19,15 @@ export async function GET() {
 
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, domains, services, section, output')
+    .select('id, domains, services, output')
 
   if (!engagements) {
-    return NextResponse.json({ byYear: {}, byDomain: {}, byService: {}, byUnit: {}, byOutput: {}, topClients: [], concentration: 0 })
+    return NextResponse.json({ byYear: {}, byDomain: {}, byService: {}, byOutput: {}, topClients: [], concentration: 0 })
   }
 
   // Build project lookup
-  const projectMap = new Map<string, { domains: string[]; services: string[]; section: string; output: string }>()
-  for (const p of (projects || []) as { id: string; domains: string[]; services: string[]; section: string; output: string }[]) {
+  const projectMap = new Map<string, { domains: string[]; services: string[]; output: string }>()
+  for (const p of (projects || []) as { id: string; domains: string[]; services: string[]; output: string }[]) {
     projectMap.set(p.id, p)
   }
 
@@ -40,10 +40,9 @@ export async function GET() {
 
   // Revenue by year
   const byYear: Record<number, number> = {}
-  // Revenue by domain/service/unit/output (from linked projects)
+  // Revenue by domain/service/output (from linked projects)
   const byDomain: Record<string, number> = {}
   const byService: Record<string, number> = {}
-  const byUnit: Record<string, number> = {}
   const byOutput: Record<string, number> = {}
   // Revenue by client
   const byClient: Record<string, { name: string; revenue: number }> = {}
@@ -78,9 +77,6 @@ export async function GET() {
       for (const s of proj.services) {
         byService[s] = (byService[s] || 0) + share
       }
-      if (proj.section) {
-        byUnit[proj.section] = (byUnit[proj.section] || 0) + share
-      }
       if (proj.output) {
         byOutput[proj.output] = (byOutput[proj.output] || 0) + share
       }
@@ -109,7 +105,6 @@ export async function GET() {
     byYear,
     byDomain: round(byDomain),
     byService: round(byService),
-    byUnit: round(byUnit),
     byOutput: round(byOutput),
     topClients,
     concentration,

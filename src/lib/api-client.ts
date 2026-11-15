@@ -470,6 +470,5 @@ export const api = {
     domains: { value: string; count: number; examples: { id: string; client: string; projectName: string }[] }[]
     services: { value: string; count: number; examples: { id: string; client: string; projectName: string }[] }[]
     outputs: { value: string; count: number; examples: { id: string; client: string; projectName: string }[] }[]
-    sections: { value: string; count: number; examples: { id: string; client: string; projectName: string }[] }[]
   }> => fetch('/api/capabilities').then(r => json(r)),
 }

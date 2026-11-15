@@ -20,14 +20,12 @@ export type CapabilitiesPayload = {
   domains: CapabilityEntry[]
   services: CapabilityEntry[]
   outputs: CapabilityEntry[]
-  sections: CapabilityEntry[]
 }
 
 type Row = {
   id: string
   client: string | null
   project_name: string | null
-  section: string | null
   output: string | null
   domains: string[] | null
   services: string[] | null
@@ -64,7 +62,7 @@ export async function GET() {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('projects')
-    .select('id, client, project_name, section, output, domains, services')
+    .select('id, client, project_name, output, domains, services')
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -77,7 +75,6 @@ export async function GET() {
     domains: aggregate(rows, (r) => r.domains || []),
     services: aggregate(rows, (r) => r.services || []),
     outputs: aggregate(rows, (r) => [r.output]),
-    sections: aggregate(rows, (r) => [r.section]),
   }
 
   return NextResponse.json(payload, {

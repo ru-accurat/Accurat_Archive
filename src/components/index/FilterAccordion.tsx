@@ -11,7 +11,7 @@ import type { FilterPreset } from '@/lib/types'
 interface FilterDef {
   key: string
   label: string
-  storeKey: 'section' | 'domains' | 'services' | 'output' | 'tier' | 'missing' | 'status'
+  storeKey: 'domains' | 'services' | 'output' | 'tier' | 'missing' | 'status'
   options: string[]
   selected: string[]
   onChange: (v: string[]) => void
@@ -23,7 +23,6 @@ const DEFAULT_FILTERS: Filters = {
   domains: [],
   services: [],
   output: [],
-  section: [],
   yearRange: [null, null],
   tier: [],
   missing: [],
@@ -36,7 +35,6 @@ function isDefaultFilters(filters: Filters): boolean {
     filters.domains.length === 0 &&
     filters.services.length === 0 &&
     filters.output.length === 0 &&
-    filters.section.length === 0 &&
     filters.tier.length === 0 &&
     filters.missing.length === 0 &&
     filters.status.length === 2 &&
@@ -115,7 +113,6 @@ export function FilterAccordion() {
           domains: filters.domains.length ? filters.domains : undefined,
           services: filters.services.length ? filters.services : undefined,
           output: filters.output.length ? filters.output : undefined,
-          section: filters.section.length ? filters.section : undefined,
           tier: filters.tier.length ? filters.tier : undefined,
           missing: filters.missing.length ? filters.missing : undefined,
           status: filters.status,
@@ -145,7 +142,6 @@ export function FilterAccordion() {
     if (f.domains) setFilter('domains', f.domains)
     if (f.services) setFilter('services', f.services)
     if (f.output) setFilter('output', f.output)
-    if (f.section) setFilter('section', f.section)
     if (f.tier) setFilter('tier', f.tier)
     if (f.missing) setFilter('missing', f.missing)
     if (f.status) setFilter('status', f.status)
@@ -169,14 +165,6 @@ export function FilterAccordion() {
   }, [presets])
 
   const defs: FilterDef[] = [
-    {
-      key: 'section',
-      label: 'Unit',
-      storeKey: 'section',
-      options: options.sections,
-      selected: filters.section,
-      onChange: (v) => setFilter('section', v)
-    },
     {
       key: 'domains',
       label: 'Domains',

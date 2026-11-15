@@ -22,7 +22,7 @@ function formatUsd(val: number | null | undefined): string {
 interface ClientDetail extends Client {
   revenueByYear: Record<number, number>
   engagements: Engagement[]
-  projects: (Pick<Project, 'id' | 'fullName' | 'client' | 'projectName' | 'folderName' | 'start' | 'section'> & { thumbImage?: string; heroImage?: string })[]
+  projects: (Pick<Project, 'id' | 'fullName' | 'client' | 'projectName' | 'folderName' | 'start'> & { thumbImage?: string; heroImage?: string })[]
 }
 
 export default function ClientDetailPage() {
@@ -275,7 +275,7 @@ export default function ClientDetailPage() {
                       )}
                     </div>
                     <p className="text-[11px] font-[500] text-[var(--c-gray-800)] truncate">{p.projectName}</p>
-                    <p className="text-[10px] text-[var(--c-gray-400)]">{p.section} {p.start ? `· ${p.start}` : ''}</p>
+                    <p className="text-[10px] text-[var(--c-gray-400)]">{p.start ?? ''}</p>
                   </button>
                 )
               })}

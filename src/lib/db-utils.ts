@@ -7,11 +7,10 @@ export interface ProjectRow {
   client: string
   client_2: string | null
   client_id_2: string | null
-  agency: string | null
-  agency_id: string | null
+  partners: string[] | null
+  partner_ids: string[] | null
   project_name: string
   tier: number
-  section: string
   start_year: number | null
   end_year: number | null
   domains: string[]
@@ -61,7 +60,6 @@ function computeHasUnpublishedChanges(row: ProjectRow): boolean {
     eq(pv.domains, row.domains) &&
     eq(pv.services, row.services) &&
     eq(pv.tier, row.tier) &&
-    eq(pv.section, row.section) &&
     eq(pv.status, row.status) &&
     eq(pv.output, row.output)
   )
@@ -74,10 +72,9 @@ export function rowToProject(row: ProjectRow): Project {
     fullName: row.full_name,
     client: row.client,
     client2: row.client_2,
-    agency: row.agency,
+    partners: row.partners || [],
     projectName: row.project_name,
     tier: row.tier,
-    section: row.section,
     start: row.start_year,
     end: row.end_year,
     domains: row.domains || [],
@@ -115,10 +112,9 @@ export interface ProjectSummaryRow {
   full_name: string
   client: string
   client_2: string | null
-  agency: string | null
+  partners: string[] | null
   project_name: string
   tier: number
-  section: string
   start_year: number | null
   end_year: number | null
   domains: string[] | null
@@ -169,10 +165,9 @@ export function rowToProjectSummary(row: ProjectSummaryRow): ProjectSummary {
     fullName: row.full_name,
     client: row.client,
     client2: row.client_2,
-    agency: row.agency,
+    partners: row.partners || [],
     projectName: row.project_name,
     tier: row.tier,
-    section: row.section,
     start: row.start_year,
     end: row.end_year,
     domains: row.domains || [],
@@ -215,10 +210,9 @@ export function projectToSummary(p: Project): ProjectSummary {
     fullName: p.fullName,
     client: p.client,
     client2: p.client2 ?? null,
-    agency: p.agency ?? null,
+    partners: p.partners || [],
     projectName: p.projectName,
     tier: p.tier,
-    section: p.section,
     start: p.start,
     end: p.end,
     domains: p.domains || [],
@@ -250,10 +244,9 @@ export function projectToRow(project: Partial<Project>): Partial<ProjectRow> {
   if (project.fullName !== undefined) row.full_name = project.fullName
   if (project.client !== undefined) row.client = project.client
   if (project.client2 !== undefined) row.client_2 = project.client2
-  if (project.agency !== undefined) row.agency = project.agency
+  if (project.partners !== undefined) row.partners = project.partners
   if (project.projectName !== undefined) row.project_name = project.projectName
   if (project.tier !== undefined) row.tier = project.tier
-  if (project.section !== undefined) row.section = project.section
   if (project.start !== undefined) row.start_year = project.start
   if (project.end !== undefined) row.end_year = project.end
   if (project.domains !== undefined) row.domains = project.domains

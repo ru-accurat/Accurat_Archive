@@ -42,7 +42,7 @@ export async function GET(
   // Revenue above is unaffected (engagements only reference primary client_id).
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, full_name, client, client_2, project_name, folder_name, thumb_image, hero_image, start_year, section')
+    .select('id, full_name, client, client_2, project_name, folder_name, thumb_image, hero_image, start_year')
     .or(`client_id.eq.${id},client_id_2.eq.${id}`)
 
   return NextResponse.json({
@@ -72,7 +72,6 @@ export async function GET(
       thumbImage: p.thumb_image,
       heroImage: p.hero_image,
       start: p.start_year,
-      section: p.section,
     })),
   })
 }

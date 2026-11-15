@@ -10,10 +10,9 @@ export interface Project {
   fullName: string
   client: string
   client2?: string | null
-  agency?: string | null
+  partners?: string[]
   projectName: string
   tier: number
-  section: string
   start: number | null
   end: number | null
   domains: string[]
@@ -57,10 +56,9 @@ export interface ProjectSummary {
   fullName: string
   client: string
   client2?: string | null
-  agency?: string | null
+  partners?: string[]
   projectName: string
   tier: number
-  section: string
   start: number | null
   end: number | null
   domains: string[]
@@ -176,7 +174,6 @@ export interface FilterPreset {
     domains?: string[]
     services?: string[]
     output?: string[]
-    section?: string[]
     yearRange?: [number | null, number | null]
     tier?: number[]
     missing?: string[]

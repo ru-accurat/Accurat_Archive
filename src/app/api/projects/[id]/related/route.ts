@@ -47,8 +47,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     if (row.client === current.client) score += 4
     // Same output/category (weight: 1)
     if (row.output === current.output && row.output) score += 1
-    // Same section (weight: 1)
-    if (row.section === current.section && row.section) score += 1
 
     return { row, score }
   })

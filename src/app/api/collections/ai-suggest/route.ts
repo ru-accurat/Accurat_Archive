@@ -12,7 +12,7 @@ import { requireEditor } from '@/lib/api-auth'
 import { CLAUDE_SONNET } from '@/lib/ai-models'
 
 const SUMMARY_COLUMNS = [
-  'id', 'full_name', 'client', 'project_name', 'tier', 'section',
+  'id', 'full_name', 'client', 'project_name', 'tier',
   'start_year', 'end_year', 'domains', 'services', 'tagline', 'description',
   'challenge', 'solution', 'deliverables', 'client_quotes',
   'team', 'urls', 'output', 'folder_name', 'media_order', 'hero_image',
@@ -58,7 +58,6 @@ export async function POST(request: Request) {
     domains: p.domains?.length ? p.domains : undefined,
     services: p.services?.length ? p.services : undefined,
     output: p.output || undefined,
-    section: p.section || undefined,
   }))
 
   const styleGuide = await loadStyleGuide(supabase)

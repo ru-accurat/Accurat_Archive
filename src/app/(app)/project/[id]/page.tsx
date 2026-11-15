@@ -342,7 +342,7 @@ export default function ProjectPage() {
             <div className="flex items-center gap-4">
               <Breadcrumb items={[
                 { label: 'Projects', href: '/' },
-                { label: `${p.client} — ${p.projectName}` },
+                { label: `${p.client} - ${p.projectName}` },
               ]} />
               <button onClick={cancelEdit} className="text-[11px] font-[400] text-[var(--c-gray-400)] hover:text-[var(--c-gray-900)] transition-colors duration-200">Cancel</button>
             </div>
@@ -363,13 +363,13 @@ export default function ProjectPage() {
         <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-10">
           <EditableField title="Project Name" value={p.projectName} onChange={(v) => setField('projectName', v)} large multiline={false} />
           <EditableMetadata
-            client={p.client} client2={p.client2 || ''} agency={p.agency || ''} start={p.start} end={p.end} section={p.section} tier={p.tier} output={p.output} status={p.status}
+            client={p.client} client2={p.client2 || ''} partners={p.partners || []} start={p.start} end={p.end} tier={p.tier} output={p.output} status={p.status}
             locationName={p.locationName || ''} latitude={p.latitude ?? null} longitude={p.longitude ?? null}
             onClientChange={(v) => setField('client', v)}
             onClient2Change={(v) => setField('client2', v || null)}
-            onAgencyChange={(v) => setField('agency', v || null)}
+            onPartnersChange={(v) => setField('partners', v)}
             onStartChange={(v) => setField('start', v)} onEndChange={(v) => setField('end', v)}
-            onSectionChange={(v) => setField('section', v)} onTierChange={(v) => setField('tier', v)} onOutputChange={(v) => setField('output', v)}
+            onTierChange={(v) => setField('tier', v)} onOutputChange={(v) => setField('output', v)}
             onStatusChange={(v) => setField('status', v)}
             onLocationNameChange={(v) => setField('locationName', v)} onLatitudeChange={(v) => setField('latitude', v)} onLongitudeChange={(v) => setField('longitude', v)}
             outputOptions={allTags.outputs}
@@ -478,7 +478,7 @@ export default function ProjectPage() {
           <div className="max-w-[1040px] px-4 sm:px-6 md:px-[48px] py-3 flex items-center justify-between">
             <Breadcrumb dark items={[
               { label: 'Projects', href: '/' },
-              { label: `${p.client} — ${p.projectName}` },
+              { label: `${p.client} - ${p.projectName}` },
             ]} />
             <div className="flex items-center gap-3">
               <div className="relative">

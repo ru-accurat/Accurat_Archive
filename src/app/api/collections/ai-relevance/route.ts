@@ -47,7 +47,6 @@ export async function POST(request: Request) {
     domains: summary.domains?.length ? summary.domains : undefined,
     services: summary.services?.length ? summary.services : undefined,
     output: summary.output || undefined,
-    section: summary.section || undefined,
   }
 
   const styleGuide = await loadStyleGuide(supabase)

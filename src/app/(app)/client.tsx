@@ -49,7 +49,7 @@ export function IndexPageClient({ initialProjects }: Props) {
 
   // Status default is ['internal', 'public'] — only count as active filter if different from default
   const isStatusNonDefault = filters.status.length !== 2 || !filters.status.includes('internal') || !filters.status.includes('public')
-  const hasActiveFilters = !!(filters.search || filters.domains.length || filters.services.length || filters.output.length || filters.section.length || filters.tier.length || filters.missing.length || isStatusNonDefault)
+  const hasActiveFilters = !!(filters.search || filters.domains.length || filters.services.length || filters.output.length || filters.tier.length || filters.missing.length || isStatusNonDefault)
 
   return (
     <div className="flex flex-col h-full bg-[var(--c-white)]">

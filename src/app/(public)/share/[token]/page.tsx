@@ -79,9 +79,6 @@ export default function SharedProjectPage() {
                 {p.start}{p.end && p.end !== p.start ? `\u2013${p.end}` : ''}
               </span>
             )}
-            {p.section && (
-              <span className="text-[12px] font-[450] tracking-[0.06em] uppercase text-white/40">{p.section}</span>
-            )}
           </div>
           <TagChips domains={p.domains} services={p.services} output={p.output} dark />
         </div>

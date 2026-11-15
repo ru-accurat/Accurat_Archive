@@ -35,9 +35,6 @@ function matchesFilters(project: ProjectSummary, filters: Filters): boolean {
   if (filters.output.length > 0) {
     if (!filters.output.includes(project.output)) return false
   }
-  if (filters.section.length > 0) {
-    if (!filters.section.some((s) => project.section.includes(s))) return false
-  }
   if (filters.tier.length > 0) {
     if (!filters.tier.includes(project.tier)) return false
   }
@@ -87,10 +84,6 @@ function sortProjects(projects: ProjectSummary[], field: string, direction: 'asc
       case 'output':
         aVal = a.output.toLowerCase()
         bVal = b.output.toLowerCase()
-        break
-      case 'section':
-        aVal = a.section.toLowerCase()
-        bVal = b.section.toLowerCase()
         break
       case 'tier':
         aVal = a.tier
@@ -167,14 +160,12 @@ export function useFilterOptions() {
     const domains = new Set<string>()
     const services = new Set<string>()
     const outputs = new Set<string>()
-    const sections = new Set<string>()
     const years: number[] = []
 
     for (const p of projects) {
       p.domains.forEach((d) => domains.add(d))
       p.services.forEach((s) => services.add(s))
       if (p.output) outputs.add(p.output)
-      if (p.section) sections.add(p.section)
       if (p.start) years.push(p.start)
     }
 
@@ -182,7 +173,6 @@ export function useFilterOptions() {
       domains: [...domains].sort(),
       services: [...services].sort(),
       outputs: [...outputs].sort(),
-      sections: [...sections].sort(),
       yearRange: years.length > 0 ? [Math.min(...years), Math.max(...years)] as [number, number] : [2011, 2026] as [number, number]
     }
   }, [projects])

@@ -9,7 +9,6 @@ export function FilterBar() {
     filters.domains.length +
     filters.services.length +
     filters.output.length +
-    filters.section.length +
     filters.tier.length +
     filters.missing.length +
     filters.status.length +
@@ -46,14 +45,6 @@ export function FilterBar() {
           key={o}
           label={o}
           onRemove={() => setFilter('output', filters.output.filter((x) => x !== o))}
-        />
-      ))}
-
-      {filters.section.map((s) => (
-        <Chip
-          key={s}
-          label={s}
-          onRemove={() => setFilter('section', filters.section.filter((x) => x !== s))}
         />
       ))}
 

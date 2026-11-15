@@ -27,7 +27,7 @@ async function fetchAttentionData(): Promise<{
   const { data, error } = await supabase
     .from('projects')
     .select(
-      'id, full_name, client, project_name, tier, section, start_year, end_year, domains, services, tagline, description, challenge, solution, deliverables, client_quotes, team, urls, output, folder_name, media_order, hero_image, thumb_image, ai_generated, client_logo, status, location_name, latitude, longitude'
+      'id, full_name, client, client_2, partners, project_name, tier, start_year, end_year, domains, services, tagline, description, challenge, solution, deliverables, client_quotes, team, urls, output, folder_name, media_order, hero_image, thumb_image, ai_generated, client_logo, status, location_name, latitude, longitude'
     )
     .order('client', { ascending: true })
     .order('project_name', { ascending: true })

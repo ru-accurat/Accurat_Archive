@@ -8,7 +8,6 @@ export interface SharedFilters {
   domains: string[]
   services: string[]
   output: string[]
-  section: string[]
   status: string[]
 }
 
@@ -17,7 +16,6 @@ const EMPTY_FILTERS: SharedFilters = {
   domains: [],
   services: [],
   output: [],
-  section: [],
   status: [],
 }
 
@@ -37,7 +35,6 @@ function matchesFilters(project: ProjectSummary, filters: SharedFilters): boolea
   if (filters.domains.length > 0 && !filters.domains.some((d) => project.domains.includes(d))) return false
   if (filters.services.length > 0 && !filters.services.some((s) => project.services.includes(s))) return false
   if (filters.output.length > 0 && !filters.output.includes(project.output)) return false
-  if (filters.section.length > 0 && !filters.section.some((s) => project.section.includes(s))) return false
   if (filters.status.length > 0 && !filters.status.includes(project.status)) return false
   return true
 }
@@ -54,18 +51,15 @@ export function useSharedFilters(projects: ProjectSummary[]) {
     const domains = new Set<string>()
     const services = new Set<string>()
     const outputs = new Set<string>()
-    const sections = new Set<string>()
     for (const p of projects) {
       p.domains.forEach((d) => domains.add(d))
       p.services.forEach((s) => services.add(s))
       if (p.output) outputs.add(p.output)
-      if (p.section) sections.add(p.section)
     }
     return {
       domains: [...domains].sort(),
       services: [...services].sort(),
       outputs: [...outputs].sort(),
-      sections: [...sections].sort(),
     }
   }, [projects])
 
@@ -89,7 +83,6 @@ export function useSharedFilters(projects: ProjectSummary[]) {
     filters.domains.length ||
     filters.services.length ||
     filters.output.length ||
-    filters.section.length ||
     filters.status.length
   )
 

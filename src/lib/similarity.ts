@@ -36,7 +36,6 @@ export function scoreSimilarity(a: Project, b: Project): number {
   for (const d of a.domains) { if (b.domains.includes(d)) score += 3 }
   for (const s of a.services) { if (b.services.includes(s)) score += 2 }
   if (a.output === b.output && a.output) score += 1
-  if (a.section === b.section && a.section) score += 1
   return score
 }
 

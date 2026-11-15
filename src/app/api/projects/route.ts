@@ -41,11 +41,10 @@ export async function POST(request: Request) {
 
   const row = projectToRow({
     id,
-    fullName: `${client} — ${projectName}`,
+    fullName: `${client} - ${projectName}`,
     client,
     projectName,
     tier: 3,
-    section: '',
     start: null,
     end: null,
     domains: [],

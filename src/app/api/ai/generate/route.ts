@@ -52,7 +52,6 @@ const FIELD_PROMPTS: Record<string, string> = {
 function formatProjectContext(project: Project): string {
   return `Client: ${project.client}
 Project: ${project.projectName}
-Unit: ${project.section}
 Domains: ${project.domains.join(', ') || 'Not specified'}
 Services: ${project.services.join(', ') || 'Not specified'}
 Category: ${project.output || 'Not specified'}
@@ -66,7 +65,7 @@ ${project.deliverables ? `Current Deliverables: ${project.deliverables}` : ''}`
 
 function formatExampleProject(p: Project): string {
   return `---
-Client: ${p.client} | Project: ${p.projectName} | ${p.section} | ${p.start || ''}
+Client: ${p.client} | Project: ${p.projectName} | ${p.start || ''}
 ${p.tagline ? `Tagline: ${p.tagline}` : ''}
 ${p.description ? `Description: ${p.description}` : ''}
 ${p.challenge ? `Challenge: ${p.challenge}` : ''}

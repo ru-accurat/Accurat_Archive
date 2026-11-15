@@ -41,7 +41,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
       domains: (pv.domains as string[]) ?? project.domains,
       services: (pv.services as string[]) ?? project.services,
       tier: (pv.tier as number) ?? project.tier,
-      section: (pv.section as string) ?? project.section,
       status: (pv.status as 'draft' | 'internal' | 'public') ?? project.status,
       output: (pv.output as string) ?? project.output,
     })

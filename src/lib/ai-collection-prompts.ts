@@ -9,7 +9,6 @@ export interface TrimmedProject {
   domains?: string[]
   services?: string[]
   output?: string
-  section?: string
 }
 
 const FALLBACK_STYLE = `# Accurat Voice

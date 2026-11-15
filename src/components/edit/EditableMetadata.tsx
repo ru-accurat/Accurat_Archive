@@ -1,14 +1,15 @@
 'use client'
 
+import { useState } from 'react'
 import { LocationAutocomplete } from './LocationAutocomplete'
+import { parsePartners } from '@/lib/partners'
 
 interface Props {
   client: string
   client2: string
-  agency: string
+  partners: string[]
   start: number | null
   end: number | null
-  section: string
   tier: number
   output: string
   status: 'draft' | 'internal' | 'public'
@@ -17,10 +18,9 @@ interface Props {
   longitude: number | null
   onClientChange: (v: string) => void
   onClient2Change: (v: string) => void
-  onAgencyChange: (v: string) => void
+  onPartnersChange: (v: string[]) => void
   onStartChange: (v: number | null) => void
   onEndChange: (v: number | null) => void
-  onSectionChange: (v: string) => void
   onTierChange: (v: number) => void
   onOutputChange: (v: string) => void
   onStatusChange: (v: 'draft' | 'internal' | 'public') => void
@@ -37,10 +37,9 @@ const labelClass = "text-[10px] font-[500] uppercase tracking-[0.1em] text-[var(
 export function EditableMetadata({
   client,
   client2,
-  agency,
+  partners,
   start,
   end,
-  section,
   tier,
   output,
   status,
@@ -49,10 +48,9 @@ export function EditableMetadata({
   longitude,
   onClientChange,
   onClient2Change,
-  onAgencyChange,
+  onPartnersChange,
   onStartChange,
   onEndChange,
-  onSectionChange,
   onTierChange,
   onOutputChange,
   onStatusChange,
@@ -61,6 +59,9 @@ export function EditableMetadata({
   onLongitudeChange,
   outputOptions
 }: Props) {
+  // Local text so commas and spaces survive while typing; the parsed list goes up.
+  const [partnersText, setPartnersText] = useState(() => partners.join(', '))
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-5">
       <div>
@@ -85,12 +86,15 @@ export function EditableMetadata({
       </div>
 
       <div>
-        <label className={labelClass}>Agency</label>
+        <label className={labelClass}>Partners</label>
         <input
           type="text"
-          value={agency}
-          onChange={(e) => onAgencyChange(e.target.value)}
-          placeholder="—"
+          value={partnersText}
+          onChange={(e) => {
+            setPartnersText(e.target.value)
+            onPartnersChange(parsePartners(e.target.value))
+          }}
+          placeholder="Comma-separated"
           className={inputClass}
         />
       </div>
@@ -119,19 +123,6 @@ export function EditableMetadata({
       </div>
 
       <div className="flex gap-4">
-        <div className="flex-1">
-          <label className={labelClass}>Unit</label>
-          <select
-            value={section}
-            onChange={(e) => onSectionChange(e.target.value)}
-            className={selectClass}
-          >
-            <option value="">—</option>
-            <option value="Studio">Studio</option>
-            <option value="Tech">Tech</option>
-            <option value="Studio, Tech">Studio, Tech</option>
-          </select>
-        </div>
         <div className="w-20">
           <label className={labelClass}>Tier</label>
           <select

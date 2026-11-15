@@ -9,11 +9,7 @@ import { MobileOnlyNotice } from '@/components/shared/MobileOnlyNotice'
 import { useRouter } from 'next/navigation'
 import { useMemo, useRef, useState } from 'react'
 
-const UNIT_COLORS: Record<string, string> = {
-  'Studio': '#3b82f6',
-  'Tech': '#22c55e',
-  'Studio, Tech': '#a78bfa',
-}
+const BAR_COLOR = 'var(--c-gray-800)'
 
 const ROW_H = 28
 const YEAR_W = 120
@@ -107,7 +103,7 @@ export default function TimelinePage() {
             {sorted.map((p) => {
               const startOffset = ((p.start || minYear) - minYear) * YEAR_W
               const duration = ((p.end || p.start || minYear) - (p.start || minYear) + 1) * YEAR_W
-              const color = UNIT_COLORS[p.section] || '#94a3b8'
+              const color = BAR_COLOR
               const isHovered = hoveredId === p.id
 
               return (
@@ -122,7 +118,7 @@ export default function TimelinePage() {
                   <div
                     className="shrink-0 px-3 truncate text-[11px] font-[400] text-[var(--c-gray-600)]"
                     style={{ width: LEFT_W }}
-                    title={`${p.client} — ${p.projectName}`}
+                    title={`${p.client} - ${p.projectName}`}
                   >
                     <span className="font-[500] text-[var(--c-gray-800)]">{p.client}</span>
                     <span className="text-[var(--c-gray-400)]"> — {p.projectName}</span>

@@ -59,8 +59,7 @@ export function ProjectTable() {
 
   const columns = [
     { key: 'client', label: 'Client', width: '18%', mobile: true },
-    { key: 'projectName', label: 'Project', width: '20%', mobile: true },
-    { key: 'section', label: 'Unit', width: '8%', mobile: false },
+    { key: 'projectName', label: 'Project', width: '28%', mobile: true },
     { key: 'tier', label: 'Tier', width: '6%', mobile: false },
     { key: 'year', label: 'Year', width: '10%', mobile: false },
     { key: 'output', label: 'Category', width: '20%', mobile: false },
@@ -177,30 +176,9 @@ export function ProjectTable() {
                   )}
                 </td>
 
-                {/* Unit (section) */}
-                <td className={`hidden md:table-cell py-3.5 ${tdPad(2)}`}>
-                  {editMode ? (
-                    <select
-                      defaultValue={project.section}
-                      onChange={(e) => saveField(project.id, 'section', e.target.value)}
-                      className={cellSelectClass + ' text-[11px]'}
-                    >
-                      <option value="">—</option>
-                      <option value="Studio">Studio</option>
-                      <option value="Tech">Tech</option>
-                      <option value="Studio, Tech">Studio, Tech</option>
-                    </select>
-                  ) : project.section ? (
-                    <span className="text-[10px] font-[450] tracking-[0.04em] uppercase text-[var(--c-gray-500)]">
-                      {project.section}
-                    </span>
-                  ) : (
-                    <span className="text-[var(--c-gray-300)]">&mdash;</span>
-                  )}
-                </td>
 
                 {/* Tier */}
-                <td className={`hidden md:table-cell py-3.5 ${tdPad(3)}`}>
+                <td className={`hidden md:table-cell py-3.5 ${tdPad(2)}`}>
                   {editMode ? (
                     <select
                       defaultValue={project.tier}
@@ -219,7 +197,7 @@ export function ProjectTable() {
                 </td>
 
                 {/* Year */}
-                <td className={`hidden md:table-cell py-3.5 text-[var(--c-gray-500)] font-[400] text-[13px] tabular-nums ${tdPad(4)}`}>
+                <td className={`hidden md:table-cell py-3.5 text-[var(--c-gray-500)] font-[400] text-[13px] tabular-nums ${tdPad(3)}`}>
                   {editMode ? (
                     <div className="flex gap-1 items-center">
                       <input
@@ -250,7 +228,7 @@ export function ProjectTable() {
                 </td>
 
                 {/* Category (output) */}
-                <td className={`hidden md:table-cell py-3.5 text-[12px] text-[var(--c-gray-400)] font-[400] ${tdPad(5)}`}>
+                <td className={`hidden md:table-cell py-3.5 text-[12px] text-[var(--c-gray-400)] font-[400] ${tdPad(4)}`}>
                   {editMode ? (
                     <select
                       defaultValue={project.output}
@@ -270,7 +248,7 @@ export function ProjectTable() {
                 </td>
 
                 {/* Completeness */}
-                <td className={`hidden md:table-cell py-3.5 ${tdPad(6)}`}>
+                <td className={`hidden md:table-cell py-3.5 ${tdPad(5)}`}>
                   <CompletenessIndicator percentage={completeness.percentage} />
                 </td>
               </tr>
