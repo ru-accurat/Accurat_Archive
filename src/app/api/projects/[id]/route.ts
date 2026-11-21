@@ -4,6 +4,8 @@ import { rowToProject, projectToRow } from '@/lib/db-utils'
 import type { ProjectRow } from '@/lib/db-utils'
 import { logActivity } from '@/lib/activity'
 import { requireEditor, requireRole, requireSignedIn } from '@/lib/api-auth'
+import { applyStatusChange } from '@/lib/project-status-server'
+import { isProjectStatus, normalizeStatus, STATUS_LABELS } from '@/lib/status'
 
 // GET /api/projects/[id]
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -40,6 +42,30 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .select('*')
     .eq('id', id)
     .single()
+
+  // Status has its own rules (the website, Library numbers): it goes through applyStatusChange.
+  // A status equal to the current one (Edit All sends every field) is not a change.
+  if ('status' in body) {
+    const requested = body.status
+    delete body.status
+    if (!isProjectStatus(requested)) {
+      return NextResponse.json({ error: 'Status must be draft, archive_only, private or public' }, { status: 400 })
+    }
+    if (current && requested !== normalizeStatus(current.status)) {
+      try {
+        const result = await applyStatusChange(supabase, [id], requested, `Archive app: set to ${STATUS_LABELS[requested]}`)
+        if (result.skipped.length > 0) {
+          return NextResponse.json({ error: `${result.skipped[0].reason}. Nothing changed.` }, { status: 409 })
+        }
+      } catch (err) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
+      }
+    }
+    if (Object.keys(body).length === 0) {
+      const { data: fresh } = await supabase.from('projects').select('*').eq('id', id).single()
+      return NextResponse.json(rowToProject(fresh as ProjectRow))
+    }
+  }
 
   if (current) {
     await supabase.from('project_history').insert({

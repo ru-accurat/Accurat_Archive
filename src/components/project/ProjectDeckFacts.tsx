@@ -3,16 +3,16 @@
 import { useState } from 'react'
 import type { Category, Offering, Project } from '@/lib/types'
 import { OFFERINGS, OFFERING_LABELS } from '@/lib/types'
-import { WebsiteCell, WebsitePanel, type WebsitePanelMode } from './WebsiteControl'
+import { WebsiteCell, WebsitePanel } from './WebsiteControl'
 
 interface Props {
   project: Project
   categories: Category[]
   /** Saves one field. Omit for read-only. */
   onUpdate?: (field: keyof Project, value: unknown) => void | Promise<void>
-  /** Puts the project on the website, changes its Library number, or (null) removes it.
-   *  Saves immediately, so omit it where edits are drafts (Edit mode). Resolves true on success. */
-  onSetWebsiteNumber?: (deckNo: number | null) => Promise<boolean>
+  /** Changes the Library number. Saves immediately, so omit it where edits are drafts (Edit mode).
+   *  Resolves true on success. Status, not this, decides whether the project is on the website. */
+  onSetWebsiteNumber?: (deckNo: number) => Promise<boolean>
   dark?: boolean
 }
 
@@ -21,7 +21,7 @@ interface Props {
  * Used in the dark view-mode header and, with dark=false, in Edit mode.
  */
 export function ProjectDeckFacts({ project, categories, onUpdate, onSetWebsiteNumber, dark = false }: Props) {
-  const [websitePanel, setWebsitePanel] = useState<WebsitePanelMode>(null)
+  const [numberPanel, setNumberPanel] = useState(false)
   const label = dark ? 'text-white/40' : 'text-[var(--c-gray-400)]'
   const value = dark ? 'text-white/80' : 'text-[var(--c-gray-800)]'
   const muted = dark ? 'text-white/40' : 'text-[var(--c-gray-400)]'
@@ -47,13 +47,7 @@ export function ProjectDeckFacts({ project, categories, onUpdate, onSetWebsiteNu
       <WebsiteCell
         project={project}
         dark={dark}
-        onOpen={onSetWebsiteNumber ? setWebsitePanel : undefined}
-        onRemove={onSetWebsiteNumber ? () => {
-          const name = `${project.client} - ${project.projectName}`
-          if (confirm(`Remove ${name} from the website?\n\nIts Library number ${String(project.deckNo).padStart(3, '0')} becomes free. Media roles, hero and thumbnail stay as they are, so you can put it back later. The change is logged.`)) {
-            void onSetWebsiteNumber(null)
-          }
-        } : undefined}
+        onChangeNumber={onSetWebsiteNumber ? () => setNumberPanel(true) : undefined}
       />
 
       <div>
@@ -139,12 +133,11 @@ export function ProjectDeckFacts({ project, categories, onUpdate, onSetWebsiteNu
         </dd>
       </div>
 
-      {websitePanel && onSetWebsiteNumber && (
+      {numberPanel && onSetWebsiteNumber && project.deckNo != null && (
         <WebsitePanel
           project={project}
-          mode={websitePanel}
           dark={dark}
-          onClose={() => setWebsitePanel(null)}
+          onClose={() => setNumberPanel(false)}
           onSubmit={(n) => onSetWebsiteNumber(n)}
         />
       )}

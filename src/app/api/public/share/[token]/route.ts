@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { rowToProject } from '@/lib/db-utils'
 import type { ProjectRow } from '@/lib/db-utils'
+import { normalizeStatus } from '@/lib/status'
 
 // GET /api/public/share/[token] — shared project by token
 export async function GET(_req: Request, { params }: { params: Promise<{ token: string }> }) {
@@ -36,7 +37,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
       domains: (pv.domains as string[]) ?? project.domains,
       services: (pv.services as string[]) ?? project.services,
       tier: (pv.tier as number) ?? project.tier,
-      status: (pv.status as 'draft' | 'internal' | 'public') ?? project.status,
+      status: pv.status != null ? normalizeStatus(pv.status) : project.status,
       output: (pv.output as string) ?? project.output,
     })
   }

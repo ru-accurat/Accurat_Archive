@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { rowToProject } from '@/lib/db-utils'
 import type { ProjectRow } from '@/lib/db-utils'
 import { toSlug } from '@/lib/slug'
+import { normalizeStatus } from '@/lib/status'
 
 // GET /api/public/portfolio/[slug] — single public project by slug
 export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
@@ -41,7 +42,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
       domains: (pv.domains as string[]) ?? project.domains,
       services: (pv.services as string[]) ?? project.services,
       tier: (pv.tier as number) ?? project.tier,
-      status: (pv.status as 'draft' | 'internal' | 'public') ?? project.status,
+      status: pv.status != null ? normalizeStatus(pv.status) : project.status,
       output: (pv.output as string) ?? project.output,
     })
   }

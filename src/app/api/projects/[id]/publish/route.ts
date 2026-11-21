@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { logActivity } from '@/lib/activity'
 import { requireEditor } from '@/lib/api-auth'
+import { applyStatusChange } from '@/lib/project-status-server'
+import { normalizeStatus } from '@/lib/status'
 
 // POST /api/projects/[id]/publish
-// Two things happen on publish:
-// 1. Snapshot current case-study content fields into `published_version` with a `published_at` timestamp
-//    (so shared links and the public portfolio freeze at this version)
-// 2. Promote `status` to 'public' so the project appears in non-admin views
+// 1. Snapshot the current case-study content fields into `published_version` with a
+//    `published_at` timestamp (shared links and the public portfolio freeze at this version).
+// 2. A Draft becomes Archive only. Publishing never puts a project on the website: that is a
+//    deliberate status choice (Public or Private), with its own checks.
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const deny = await requireEditor()
   if (deny) return deny
@@ -22,6 +24,19 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   if (fetchError || !current) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+  }
+
+  let status = normalizeStatus(current.status)
+  if (status === 'draft') {
+    try {
+      const result = await applyStatusChange(supabase, [id], 'archive_only', 'Archive app: published, Draft becomes Archive only')
+      if (result.skipped.length > 0) {
+        return NextResponse.json({ error: `${result.skipped[0].reason}. Nothing published.` }, { status: 409 })
+      }
+    } catch (err) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
+    }
+    status = 'archive_only'
   }
 
   // Only snapshot case-study content fields (text + tags + metadata).
@@ -39,7 +54,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     domains: current.domains,
     services: current.services,
     tier: current.tier,
-    status: 'public',
+    status,
     output: current.output,
   }
 
@@ -47,11 +62,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   const { error: updateError } = await supabase
     .from('projects')
-    .update({
-      published_version: snapshot,
-      published_at: publishedAt,
-      status: 'public',
-    })
+    .update({ published_version: snapshot, published_at: publishedAt })
     .eq('id', id)
 
   if (updateError) {
@@ -60,9 +71,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   await logActivity(
     'project.updated',
-    { projectName: current.full_name, fields: ['published_version', 'status'], value: 'public' },
+    { projectName: current.full_name, fields: ['published_version'], status },
     id
   )
 
-  return NextResponse.json({ success: true, publishedAt, status: 'public' })
+  return NextResponse.json({ success: true, publishedAt, status })
 }

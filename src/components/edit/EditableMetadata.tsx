@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { LocationAutocomplete } from './LocationAutocomplete'
 import { parsePartners } from '@/lib/partners'
+import { STATUS_HINTS, STATUS_OPTIONS, type ProjectStatus } from '@/lib/status'
 
 interface Props {
   client: string
@@ -12,7 +13,7 @@ interface Props {
   end: number | null
   tier: number
   output: string
-  status: 'draft' | 'internal' | 'public'
+  status: ProjectStatus
   locationName: string
   latitude: number | null
   longitude: number | null
@@ -23,7 +24,7 @@ interface Props {
   onEndChange: (v: number | null) => void
   onTierChange: (v: number) => void
   onOutputChange: (v: string) => void
-  onStatusChange: (v: 'draft' | 'internal' | 'public') => void
+  onStatusChange: (v: ProjectStatus) => void
   onLocationNameChange: (v: string) => void
   onLatitudeChange: (v: number | null) => void
   onLongitudeChange: (v: number | null) => void
@@ -157,13 +158,12 @@ export function EditableMetadata({
         <label className={labelClass}>Status</label>
         <select
           value={status}
-          onChange={(e) => onStatusChange(e.target.value as 'draft' | 'internal' | 'public')}
+          onChange={(e) => onStatusChange(e.target.value as ProjectStatus)}
           className={selectClass}
         >
-          <option value="draft">Draft</option>
-          <option value="internal">Internal</option>
-          <option value="public">Public</option>
+          {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
+        <p className="mt-1 text-[11px] text-[var(--c-gray-500)]">{STATUS_HINTS[status]}</p>
       </div>
 
       <div className="sm:col-span-2 md:col-span-2">

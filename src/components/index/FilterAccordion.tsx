@@ -7,17 +7,20 @@ import { useFilterOptions } from '@/hooks/use-filters'
 import { api } from '@/lib/api-client'
 import { toast } from '@/lib/toast'
 import type { FilterPreset } from '@/lib/types'
+import { DEFAULT_STATUS_FILTER, PROJECT_STATUSES, STATUS_LABELS, isProjectStatus, normalizeStatus } from '@/lib/status'
 
 interface FilterDef {
   key: string
   label: string
   storeKey: 'domains' | 'services' | 'output' | 'tier' | 'missing' | 'status'
   options: string[]
+  /** Display text per option; the option value is shown when missing */
+  labels?: Record<string, string>
   selected: string[]
   onChange: (v: string[]) => void
 }
 
-const DEFAULT_STATUS = ['internal', 'public']
+const DEFAULT_STATUS: string[] = DEFAULT_STATUS_FILTER
 const DEFAULT_FILTERS: Filters = {
   search: '',
   domains: [],
@@ -37,9 +40,8 @@ function isDefaultFilters(filters: Filters): boolean {
     filters.output.length === 0 &&
     filters.tier.length === 0 &&
     filters.missing.length === 0 &&
-    filters.status.length === 2 &&
-    filters.status.includes('internal') &&
-    filters.status.includes('public') &&
+    filters.status.length === DEFAULT_STATUS.length &&
+    DEFAULT_STATUS.every((s) => filters.status.includes(s)) &&
     filters.yearRange[0] == null &&
     filters.yearRange[1] == null
   )
@@ -99,7 +101,7 @@ export function FilterAccordion() {
   }, [presetsOpen])
 
   const showDrafts = useCallback(() => {
-    setFilter('status', ['draft', 'internal', 'public'])
+    setFilter('status', [...PROJECT_STATUSES])
   }, [setFilter])
 
   const handleSavePreset = useCallback(async () => {
@@ -144,7 +146,7 @@ export function FilterAccordion() {
     if (f.output) setFilter('output', f.output)
     if (f.tier) setFilter('tier', f.tier)
     if (f.missing) setFilter('missing', f.missing)
-    if (f.status) setFilter('status', f.status)
+    if (f.status) setFilter('status', [...new Set(f.status.map((s: string) => (isProjectStatus(s) || s === 'internal' ? normalizeStatus(s) : s)))])
     if (f.yearRange) setFilter('yearRange', f.yearRange as [number | null, number | null])
     if (preset.sortField) setSort(preset.sortField, preset.sortDirection || 'asc')
     if (preset.viewMode) setViewMode(preset.viewMode)
@@ -201,7 +203,8 @@ export function FilterAccordion() {
       key: 'status',
       label: 'Status',
       storeKey: 'status',
-      options: ['draft', 'internal', 'public'],
+      options: [...PROJECT_STATUSES],
+      labels: STATUS_LABELS,
       selected: filters.status,
       onChange: (v) => setFilter('status', v)
     },
@@ -404,7 +407,7 @@ export function FilterAccordion() {
                           : 'bg-[var(--c-gray-50)] text-[var(--c-gray-600)] hover:bg-[var(--c-gray-100)] hover:text-[var(--c-gray-900)]'
                       }`}
                     >
-                      {option}
+                      {def.labels?.[option] ?? option}
                     </button>
                   )
                 })}

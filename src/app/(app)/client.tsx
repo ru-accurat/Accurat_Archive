@@ -10,6 +10,7 @@ import { ProjectTable } from '@/components/index/ProjectTable'
 import { ProjectGrid } from '@/components/index/ProjectGrid'
 import { FilterAccordion } from '@/components/index/FilterAccordion'
 import { FilterBar } from '@/components/index/FilterBar'
+import { DEFAULT_STATUS_FILTER } from '@/lib/status'
 import { BulkActions } from '@/components/index/BulkActions'
 import { ActivityFeed } from '@/components/index/ActivityFeed'
 import type { ProjectSummary } from '@/lib/types'
@@ -47,8 +48,8 @@ export function IndexPageClient({ initialProjects }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Status default is ['internal', 'public'] — only count as active filter if different from default
-  const isStatusNonDefault = filters.status.length !== 2 || !filters.status.includes('internal') || !filters.status.includes('public')
+  // The default status filter (everything but drafts) does not count as an active filter
+  const isStatusNonDefault = filters.status.length !== DEFAULT_STATUS_FILTER.length || !DEFAULT_STATUS_FILTER.every((s) => filters.status.includes(s))
   const hasActiveFilters = !!(filters.search || filters.domains.length || filters.services.length || filters.output.length || filters.tier.length || filters.missing.length || isStatusNonDefault)
 
   return (

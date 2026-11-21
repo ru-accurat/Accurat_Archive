@@ -1,9 +1,16 @@
-import type { Category, Project, ProjectSummary, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow, FilterPreset, CaseStudyDraft, WebsiteStatus } from './types'
+import type { Category, Project, ProjectSummary, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow, FilterPreset, CaseStudyDraft, WebsiteStatus, StatusChangeResponse } from './types'
+import type { ProjectStatus } from './status'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`API error ${res.status}: ${text}`)
+    // Routes answer { error: "..." }: surface that sentence rather than raw JSON
+    let message = text
+    try {
+      const parsed = JSON.parse(text) as { error?: unknown }
+      if (typeof parsed.error === 'string') message = parsed.error
+    } catch { /* not JSON */ }
+    throw new Error(res.status === 409 ? message : `API error ${res.status}: ${message}`)
   }
   return res.json()
 }
@@ -122,19 +129,24 @@ export const api = {
   getWebsiteStatus: (projectId: string): Promise<WebsiteStatus> =>
     fetch(`/api/projects/${projectId}/website`).then(r => json(r)),
 
-  /** A number puts the project on the website (or changes its Library number); null removes it. */
-  setWebsiteNumber: async (projectId: string, deckNo: number | null): Promise<Project> => {
+  /** Changes the Library number of a project that has one. */
+  setWebsiteNumber: async (projectId: string, deckNo: number): Promise<Project> => {
     const res = await fetch(`/api/projects/${projectId}/website`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ deckNo }),
     })
-    if (res.status === 409) {
-      const data = await res.json() as { error: string; problems?: string[] }
-      throw new Error(data.problems ? `${data.error}. Missing: ${data.problems.join('; ')}` : data.error)
-    }
+    if (res.status === 409) throw new Error((await res.json() as { error: string }).error)
     return json(res)
   },
+
+  /** Batch status change: projects that can't change come back in `skipped` with a reason. */
+  setProjectsStatus: (ids: string[], status: ProjectStatus): Promise<StatusChangeResponse> =>
+    fetch('/api/projects/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, status }),
+    }).then(r => json(r)),
 
   getCategories: (): Promise<Category[]> =>
     fetch('/api/categories').then(r => json(r)),

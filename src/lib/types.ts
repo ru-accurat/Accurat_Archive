@@ -1,3 +1,5 @@
+import type { ProjectStatus } from './status'
+
 export interface UserProfile {
   id: string
   email: string
@@ -34,7 +36,7 @@ export interface Project {
   folderName: string
   clientLogo?: string
   pdfFiles?: string[]
-  status: 'draft' | 'internal' | 'public'
+  status: ProjectStatus
   locationName?: string
   latitude?: number | null
   longitude?: number | null
@@ -70,14 +72,22 @@ export interface Category {
   shortDescription: string
 }
 
-/** Whether a project is on the website (deck_no set AND status public), from /api/projects/[id]/website. */
+/** A project's website state, from /api/projects/[id]/website. */
 export interface WebsiteStatus {
   deckNo: number | null
+  /** Status is public or private and the project has a Library number */
   live: boolean
   /** The first Library number after the highest one in use */
   nextFree: number
   /** What a project needs before it can go on the website */
   checks: { key: string; label: string; ok: boolean }[]
+}
+
+/** Result of a batch status change (/api/projects/status). */
+export interface StatusChangeResponse {
+  changed: { id: string; status: ProjectStatus; deckNo: number | null; name: string }[]
+  skipped: { id: string; name: string; reason: string }[]
+  unchanged: number
 }
 
 /**
@@ -108,7 +118,7 @@ export interface ProjectSummary {
   aiGenerated?: string[]
   folderName: string
   clientLogo?: string
-  status: 'draft' | 'internal' | 'public'
+  status: ProjectStatus
   locationName?: string
   latitude?: number | null
   longitude?: number | null

@@ -1,6 +1,7 @@
 'use client'
 
 import { useProjectStore } from '@/stores/project-store'
+import { STATUS_LABELS, isProjectStatus } from '@/lib/status'
 
 export function FilterBar() {
   const { filters, setFilter, setSearch, clearFilters } = useProjectStore()
@@ -51,7 +52,7 @@ export function FilterBar() {
       {filters.status.map((s) => (
         <Chip
           key={`status-${s}`}
-          label={s}
+          label={isProjectStatus(s) ? STATUS_LABELS[s] : s}
           onRemove={() => setFilter('status', filters.status.filter((x) => x !== s))}
         />
       ))}

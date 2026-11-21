@@ -50,8 +50,10 @@ function fieldToDbUpdate(field: string, value: string): Record<string, unknown> 
     case 'team': return { team: parseList(value) }
     case 'output': return { output: value.trim() }
     case 'status': {
-      const v = value.trim().toLowerCase()
-      if (['draft', 'internal', 'public'].includes(v)) return { status: v }
+      // Only the off-website statuses: Public and Private need the website checks and a
+      // Library number, so they are set in the app (project page or batch), never by CSV.
+      const v = value.trim().toLowerCase().replace(/[\s-]+/g, '_')
+      if (v === 'draft' || v === 'archive_only') return { status: v }
       return {}
     }
     case 'locationName': return { location_name: value.trim() }

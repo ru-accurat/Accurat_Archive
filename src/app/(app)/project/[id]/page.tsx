@@ -135,7 +135,7 @@ export default function ProjectPage() {
       console.error('Field update failed:', err)
       // Revert on failure
       setProject((prev) => prev ? ({ ...prev, [field]: prevValue } as Project) : prev)
-      toast.error('Failed to save: ' + String(err))
+      toast.error('Not saved. ' + (err instanceof Error ? err.message : String(err)))
     }
   }, [id, project, setProject, updateProjectInStore, userCanEdit])
 
@@ -217,15 +217,14 @@ export default function ProjectPage() {
     }
   }, [id, refreshMedia])
 
-  // Website listing: a number puts the project on the website (or renumbers it), null removes it
-  const handleSetWebsiteNumber = useCallback(async (deckNo: number | null) => {
+  // Library number change (status decides whether the project is on the website)
+  const handleSetWebsiteNumber = useCallback(async (deckNo: number) => {
     if (!id) return false
     try {
       const updated = await api.setWebsiteNumber(id, deckNo)
       setProject(updated)
       updateProjectInStore(id, projectToSummary(updated))
-      const n = updated.deckNo != null ? String(updated.deckNo).padStart(3, '0') : ''
-      toast.success(deckNo == null ? 'Removed from the website' : updated.status === 'public' ? `On the website as Library ${n}` : `Library ${n} set; set status to Public to show it`)
+      toast.success(`Library number set to ${String(deckNo).padStart(3, '0')}`)
       return true
     } catch (err) {
       console.error('Website change failed:', err)

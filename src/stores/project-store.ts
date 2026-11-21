@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { DEFAULT_STATUS_FILTER } from '@/lib/status'
 import type { ProjectSummary } from '../lib/types'
 
 export interface Filters {
@@ -42,7 +43,7 @@ const defaultFilters: Filters = {
   yearRange: [null, null],
   tier: [],
   missing: [],
-  status: ['internal', 'public']
+  status: [...DEFAULT_STATUS_FILTER]
 }
 
 export const useProjectStore = create<ProjectStore>((set) => ({

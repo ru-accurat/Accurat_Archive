@@ -4,9 +4,10 @@ import { useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useProjectStore, type Filters } from '@/stores/project-store'
 import { useUiStore } from '@/stores/ui-store'
+import { DEFAULT_STATUS_FILTER, normalizeStatus } from '@/lib/status'
 
 // Default filters mirror the store. Anything matching the default is NOT serialized.
-const DEFAULT_STATUS = ['internal', 'public']
+const DEFAULT_STATUS: string[] = DEFAULT_STATUS_FILTER
 
 function arraysEqual(a: string[], b: string[]) {
   if (a.length !== b.length) return false
@@ -83,7 +84,8 @@ export function deserializeState(searchParams: URLSearchParams): {
   if (missing) filters.missing = missing.split(',').filter(Boolean)
 
   const status = searchParams.get('status')
-  if (status) filters.status = status.split(',').filter(Boolean)
+  // Old links may carry 'internal' (now private)
+  if (status) filters.status = [...new Set(status.split(',').filter(Boolean).map((s) => normalizeStatus(s)))]
 
   const from = searchParams.get('from')
   const to = searchParams.get('to')

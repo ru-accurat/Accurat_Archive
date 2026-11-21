@@ -1,4 +1,5 @@
 import type { Project, ProjectSummary, Client, Engagement, ImportBatch, Offering } from './types'
+import { normalizeStatus } from './status'
 
 // Database row type (snake_case columns)
 export interface ProjectRow {
@@ -104,7 +105,7 @@ export function rowToProject(row: ProjectRow): Project {
     aiGenerated: row.ai_generated || undefined,
     clientLogo: row.client_logo || undefined,
     pdfFiles: row.pdf_files || [],
-    status: (row.status as 'draft' | 'internal' | 'public') || 'draft',
+    status: normalizeStatus(row.status),
     locationName: row.location_name || undefined,
     latitude: row.latitude,
     longitude: row.longitude,
@@ -200,7 +201,7 @@ export function rowToProjectSummary(row: ProjectSummaryRow): ProjectSummary {
     thumbImage: row.thumb_image || undefined,
     aiGenerated: row.ai_generated || undefined,
     clientLogo: row.client_logo || undefined,
-    status: (row.status as 'draft' | 'internal' | 'public') || 'draft',
+    status: normalizeStatus(row.status),
     locationName: row.location_name || undefined,
     latitude: row.latitude,
     longitude: row.longitude,

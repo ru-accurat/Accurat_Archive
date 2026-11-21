@@ -5,17 +5,26 @@ import type { Project } from '@/lib/types'
 import { InlineEditCell } from '@/components/shared/InlineEditCell'
 import { LocationAutocomplete } from '@/components/edit/LocationAutocomplete'
 import { parsePartners } from '@/lib/partners'
+import { ON_WEBSITE, STATUS_LABELS, STATUS_OPTIONS, isProjectStatus } from '@/lib/status'
 
 interface ProjectMetadataProps {
   project: Project
   onUpdate: (field: keyof Project, value: unknown) => Promise<void>
 }
 
-const STATUS_OPTIONS = [
-  { label: 'Draft', value: 'draft' },
-  { label: 'Internal', value: 'internal' },
-  { label: 'Public', value: 'public' },
-]
+/** Asks before a status change moves a project onto or off the website. */
+function confirmStatusChange(project: Project, next: string): boolean {
+  if (!isProjectStatus(next) || next === project.status) return true
+  const name = `${project.client} - ${project.projectName}`
+  const lib = project.deckNo != null ? `Library ${String(project.deckNo).padStart(3, '0')}` : 'the next free Library number'
+  if (ON_WEBSITE.has(next) && !ON_WEBSITE.has(project.status)) {
+    return confirm(`Set ${name} to ${STATUS_LABELS[next]}?\n\nIt goes on the website${next === 'private' ? ' as confidential' : ''} with ${lib}. It needs selected media with a hero and thumbnail, a category, an offering and "What we made"; if anything is missing, nothing changes.`)
+  }
+  if (!ON_WEBSITE.has(next) && ON_WEBSITE.has(project.status)) {
+    return confirm(`Set ${name} to ${STATUS_LABELS[next]}?\n\nIt leaves the website. Its ${lib} stays reserved for it.`)
+  }
+  return true
+}
 
 const TIER_OPTIONS = [
   { label: 'Tier 1', value: '1' },
@@ -85,10 +94,11 @@ export function ProjectMetadata({ project, onUpdate }: ProjectMetadataProps) {
           className="!text-white/50 !bg-transparent hover:!bg-white/5"
         />
       </div>
-      <div className="w-[110px]">
+      <div className="w-[130px]">
         <InlineEditCell
           value={project.status}
-          onSave={(v) => onUpdate('status', v)}
+          onSave={async (v) => { if (confirmStatusChange(project, String(v))) await onUpdate('status', v) }}
+          formatDisplay={(v) => (isProjectStatus(v) ? STATUS_LABELS[v] : String(v ?? ''))}
           type="select"
           options={STATUS_OPTIONS}
           className="!text-white/50 !bg-transparent hover:!bg-white/5 uppercase"
