@@ -217,6 +217,23 @@ export default function ProjectPage() {
     }
   }, [id, refreshMedia])
 
+  // Website listing: a number puts the project on the website (or renumbers it), null removes it
+  const handleSetWebsiteNumber = useCallback(async (deckNo: number | null) => {
+    if (!id) return false
+    try {
+      const updated = await api.setWebsiteNumber(id, deckNo)
+      setProject(updated)
+      updateProjectInStore(id, projectToSummary(updated))
+      const n = updated.deckNo != null ? String(updated.deckNo).padStart(3, '0') : ''
+      toast.success(deckNo == null ? 'Removed from the website' : updated.status === 'public' ? `On the website as Library ${n}` : `Library ${n} set; set status to Public to show it`)
+      return true
+    } catch (err) {
+      console.error('Website change failed:', err)
+      toast.error('Nothing changed. ' + (err instanceof Error ? err.message : String(err)))
+      return false
+    }
+  }, [id, setProject, updateProjectInStore])
+
   // Website hero / thumbnail: sets project_media.is_hero / is_thumbnail and the project's hero_image / thumb_image
   const handleSetMediaSpecial = useCallback(async (file: MediaFile, kind: 'hero' | 'thumbnail') => {
     if (!id || !file.mediaId) return
@@ -615,6 +632,7 @@ export default function ProjectPage() {
                   ? handleFieldUpdate('end', null).then(() => handleFieldUpdate('ongoing', true))
                   : handleFieldUpdate(field, value)
               ) : undefined}
+              onSetWebsiteNumber={userCanEdit ? handleSetWebsiteNumber : undefined}
             />
           </div>
           <ProjectTagsSection project={p} onUpdate={handleFieldUpdate} dark />

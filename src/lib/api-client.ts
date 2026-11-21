@@ -1,4 +1,4 @@
-import type { Category, Project, ProjectSummary, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow, FilterPreset, CaseStudyDraft } from './types'
+import type { Category, Project, ProjectSummary, HistoryEntry, MediaFile, Engagement, Client, ImportBatch, ClientMatch, ParsedEngagementRow, FilterPreset, CaseStudyDraft, WebsiteStatus } from './types'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -118,6 +118,23 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mediaId, kind }),
     }).then(r => json(r)),
+
+  getWebsiteStatus: (projectId: string): Promise<WebsiteStatus> =>
+    fetch(`/api/projects/${projectId}/website`).then(r => json(r)),
+
+  /** A number puts the project on the website (or changes its Library number); null removes it. */
+  setWebsiteNumber: async (projectId: string, deckNo: number | null): Promise<Project> => {
+    const res = await fetch(`/api/projects/${projectId}/website`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deckNo }),
+    })
+    if (res.status === 409) {
+      const data = await res.json() as { error: string; problems?: string[] }
+      throw new Error(data.problems ? `${data.error}. Missing: ${data.problems.join('; ')}` : data.error)
+    }
+    return json(res)
+  },
 
   getCategories: (): Promise<Category[]> =>
     fetch('/api/categories').then(r => json(r)),

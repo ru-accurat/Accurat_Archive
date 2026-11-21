@@ -70,6 +70,16 @@ export interface Category {
   shortDescription: string
 }
 
+/** Whether a project is on the website (deck_no set AND status public), from /api/projects/[id]/website. */
+export interface WebsiteStatus {
+  deckNo: number | null
+  live: boolean
+  /** The first Library number after the highest one in use */
+  nextFree: number
+  /** What a project needs before it can go on the website */
+  checks: { key: string; label: string; ok: boolean }[]
+}
+
 /**
  * Lightweight Project shape used in list views (home/timeline/map).
  * Excludes heavy text fields (challenge, solution, deliverables, clientQuotes)
