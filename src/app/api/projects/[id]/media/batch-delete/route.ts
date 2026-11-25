@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { requireEditor } from '@/lib/api-auth'
+import { checkMediaDelete } from '@/lib/media-register'
 
 // POST /api/projects/[id]/media/batch-delete
 export async function POST(
@@ -28,6 +29,13 @@ export async function POST(
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   }
 
+  const { blocked, rowIds } = await checkMediaDelete(supabase, id, project.folder_name, filenames)
+  if (blocked.length > 0) {
+    return NextResponse.json({
+      error: `${blocked.length} of these files are Selected and shown on the website. Move them to Backup first.`,
+    }, { status: 409 })
+  }
+
   // Delete files from storage
   const paths = filenames.map(f => `${project.folder_name}/${f}`)
   const { error } = await supabase.storage.from('project-media').remove(paths)
@@ -35,6 +43,7 @@ export async function POST(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+  if (rowIds.length > 0) await supabase.from('project_media').delete().in('id', rowIds)
 
   // Update DB
   const deleteSet = new Set(filenames)

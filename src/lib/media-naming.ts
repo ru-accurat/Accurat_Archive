@@ -56,9 +56,15 @@ export function nextConventionalName(
   return `${folder}_${mid}${nn}.${cleanExt}`
 }
 
+/**
+ * Renames non-conventional files in the folder to {folder}_{NN}.{ext}.
+ * `keep` lists file names that must not be renamed: files tracked in project_media, whose path
+ * is what the Archive roles and the website read. Renaming them breaks both.
+ */
 export async function normalizeFolderFiles(
   supabase: SupabaseClient,
-  folder: string
+  folder: string,
+  keep: Set<string> = new Set()
 ): Promise<Record<string, string>> {
   const renames: Record<string, string> = {}
 
@@ -74,7 +80,7 @@ export async function normalizeFolderFiles(
 
   for (const file of files) {
     const name = file.name
-    if (isConventional(folder, name)) continue
+    if (isConventional(folder, name) || keep.has(name)) continue
 
     const extMatch = name.match(/\.([^.]+)$/)
     if (!extMatch) continue

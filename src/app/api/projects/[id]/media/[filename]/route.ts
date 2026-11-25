@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { requireEditor } from '@/lib/api-auth'
+import { checkMediaDelete } from '@/lib/media-register'
 
 // DELETE /api/projects/[id]/media/[filename]
 export async function DELETE(
@@ -23,12 +24,17 @@ export async function DELETE(
   }
 
   const decodedFilename = decodeURIComponent(filename)
+  const { blocked, rowIds } = await checkMediaDelete(supabase, id, project.folder_name, [decodedFilename])
+  if (blocked.length > 0) {
+    return NextResponse.json({ error: 'This file is Selected and shown on the website. Move it to Backup first.' }, { status: 409 })
+  }
   const storagePath = `${project.folder_name}/${decodedFilename}`
   const { error } = await supabase.storage.from('project-media').remove([storagePath])
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+  if (rowIds.length > 0) await supabase.from('project_media').delete().in('id', rowIds)
 
   // Update media_order to remove the deleted file
   const { data: proj } = await supabase

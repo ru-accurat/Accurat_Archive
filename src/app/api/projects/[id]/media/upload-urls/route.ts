@@ -50,7 +50,7 @@ export async function POST(
 
     const { data, error } = await supabase.storage
       .from('project-media')
-      .createSignedUploadUrl(storagePath, { upsert: true })
+      .createSignedUploadUrl(storagePath, { upsert: false })
 
     if (error) {
       // If signed URL creation fails, fall back to returning error

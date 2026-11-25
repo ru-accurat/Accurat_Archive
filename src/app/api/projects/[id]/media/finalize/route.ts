@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { MEDIA_EXTS } from '@/lib/media-types'
 import { normalizeFolderFiles } from '@/lib/media-naming'
+import { registerNewMedia, trackedNames } from '@/lib/media-register'
 import sharp from 'sharp'
 import { requireEditor } from '@/lib/api-auth'
 
@@ -42,11 +43,15 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to list files' }, { status: 500 })
   }
 
+  // Files tracked in project_media keep their name and bytes: roles, the Library and the website
+  // read them by path. Only new uploads are converted and renamed.
+  const tracked = await trackedNames(supabase, id, folder)
+
   // Convert non-web-friendly images to WebP
   let converted = 0
   for (const file of allFiles) {
     const ext = '.' + file.name.split('.').pop()?.toLowerCase()
-    if (!CONVERT_EXTS.has(ext)) continue
+    if (!CONVERT_EXTS.has(ext) || tracked.has(file.name)) continue
 
     try {
       // Download the original
@@ -89,7 +94,7 @@ export async function POST(
 
   // Normalize file names to the convention {folder}_{NN}.{ext}.
   // Files already conforming are left untouched.
-  const renames = await normalizeFolderFiles(supabase, folder)
+  const renames = await normalizeFolderFiles(supabase, folder, tracked)
   const remap = (name: string | null | undefined): string | null | undefined => {
     if (!name) return name
     return renames[name] ?? name
@@ -135,9 +140,18 @@ export async function POST(
 
   await supabase.from('projects').update(updates).eq('id', id)
 
+  // New uploads become Backup media (with size and fingerprint for images)
+  const registered = await registerNewMedia(
+    supabase,
+    id,
+    folder,
+    (finalFiles || []).map((f) => ({ name: f.name, size: (f.metadata as Record<string, unknown> | null)?.size as number | undefined }))
+  )
+
   return NextResponse.json({
     success: true,
     mediaCount: mediaOrder.length,
     converted,
+    registered,
   })
 }
